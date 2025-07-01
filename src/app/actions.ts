@@ -213,6 +213,8 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 
 // ===== App Info Actions =====
 
+const MENU_RECORD_ID = 'vph860h5ys84561';
+
 function recordToAppInfo(record: RecordModel): AppInfo {
     return {
         id: record.id,
@@ -223,30 +225,19 @@ function recordToAppInfo(record: RecordModel): AppInfo {
 
 export async function getAppInfoAction(): Promise<AppInfo> {
     try {
-        const records = await pb.collection(menuCollectionName).getFullList({ sort: 'created' });
-        if (records.length > 0) {
-            return recordToAppInfo(records[0]);
-        }
-    } catch (e: any) {
-        if (e.status !== 404) {
-             console.error('Failed to fetch app info:', e.response || e);
-             // Fall through to create default
-        }
-    }
-
-    // If no record, or collection doesn't exist, create a default one.
-    try {
-        const defaultData = { title: 'DevZen', logo: 'Logo' };
-        const record = await pb.collection(menuCollectionName).create(defaultData);
-        console.warn('No app info found, created a default entry. You might need to create the "devzen_menu" collection with "title" and "logo" text fields.');
+        const record = await pb.collection(menuCollectionName).getOne(MENU_RECORD_ID);
         return recordToAppInfo(record);
     } catch (e: any) {
-        console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e.response || e);
-        if (e?.originalError) {
-            console.error('Underlying connection error:', e.originalError);
-       }
+        if (e.status === 404) {
+             console.warn(`App info record with ID "${MENU_RECORD_ID}" not found in collection "${menuCollectionName}". Please ensure this record exists. Falling back to default values.`);
+        } else {
+             console.error('Failed to fetch app info:', e.response || e);
+             if (e?.originalError) {
+                console.error('Underlying connection error:', e.originalError);
+           }
+        }
         // Return a static default to prevent crashing the app
-        return { id: 'default', title: 'DevZen', logo: 'Logo' };
+        return { id: MENU_RECORD_ID, title: 'DevZen', logo: 'Logo' };
     }
 }
 
