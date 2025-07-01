@@ -57,7 +57,7 @@ function DroppableSidebarMenu({
               isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
             )}
           >
-            <SidebarMenuItem>
+            <SidebarMenuItem className='px-4'>
               <SidebarMenuButton
                 onClick={() => setActiveSpaceId(space.id)}
                 isActive={activeSpaceId === space.id}
