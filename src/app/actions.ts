@@ -1,8 +1,8 @@
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
-import type { Bookmark, Folder, SpaceItem } from '@/lib/types';
-import { pb, bookmarksCollectionName } from '@/lib/pocketbase';
+import type { Bookmark, Folder, Space, SpaceItem } from '@/lib/types';
+import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 
 function recordToSpaceItem(record: RecordModel): SpaceItem {
@@ -35,10 +35,12 @@ export async function addBookmarkAction({
   title,
   url,
   spaceId,
+  parentId,
 }: {
   title: string;
   url: string;
   spaceId: string;
+  parentId?: string | null;
 }): Promise<Bookmark> {
   if (!title || !url || !spaceId) {
     throw new Error('Missing required fields');
@@ -67,7 +69,7 @@ export async function addBookmarkAction({
       url: parsedUrl.href,
       summary,
       spaceId,
-      parentId: null,
+      parentId: parentId ?? null,
     },
   };
 
@@ -119,7 +121,6 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
   const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id);
 
   if (itemToDelete.tool.type === 'folder') {
-    // If it's a folder, find all children and move them to the root of the space
     const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
       filter: `tool.parentId = "${id}"`,
     });
@@ -166,6 +167,14 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   return { folder: newFolder, bookmarks: updatedBookmarks };
 }
 
+export async function updateFolderNameAction({ id, name }: { id: string, name: string }): Promise<Folder> {
+  const record = await pb.collection(bookmarksCollectionName).getOne(id);
+  const data = { tool: { ...record.tool, name } };
+  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
+  return recordToSpaceItem(updatedRecord) as Folder;
+}
+
+
 export async function moveItemAction({ id, newSpaceId, newParentId }: { id: string, newSpaceId?: string, newParentId?: string | null }): Promise<SpaceItem> {
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   const tool = { ...record.tool };
@@ -182,4 +191,40 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   const data = { tool };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   return recordToSpaceItem(updatedRecord);
+}
+
+// ===== Space Actions =====
+
+function recordToSpace(record: RecordModel): Space {
+    return {
+        id: record.id,
+        name: record.name,
+        icon: record.icon,
+    };
+}
+
+export async function createSpaceAction(data: { name: string, icon: string }): Promise<Space> {
+    const record = await pb.collection(spacesCollectionName).create(data);
+    return recordToSpace(record);
+}
+
+export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string } }): Promise<Space> {
+    const record = await pb.collection(spacesCollectionName).update(id, data);
+    return recordToSpace(record);
+}
+
+export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
+    // First, find all bookmarks and folders in this space
+    const itemsInSpace = await pb.collection(bookmarksCollectionName).getFullList({
+        filter: `tool.spaceId = "${id}"`,
+    });
+
+    // Delete all of them
+    const deletePromises = itemsInSpace.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
+    await Promise.all(deletePromises);
+
+    // Finally, delete the space itself
+    await pb.collection(spacesCollectionName).delete(id);
+
+    return { success: true };
 }

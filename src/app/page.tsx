@@ -1,5 +1,5 @@
-import type { SpaceItem } from '@/lib/types';
-import { pb, bookmarksCollectionName } from '@/lib/pocketbase';
+import type { Space, SpaceItem } from '@/lib/types';
+import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { BookmarkDashboard } from '@/components/bookmark-dashboard';
 import type { RecordModel } from 'pocketbase';
 
@@ -29,7 +29,6 @@ function recordToSpaceItem(record: RecordModel): SpaceItem {
   };
 }
 
-
 async function getItems(): Promise<SpaceItem[]> {
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
@@ -42,7 +41,31 @@ async function getItems(): Promise<SpaceItem[]> {
   }
 }
 
+function recordToSpace(record: RecordModel): Space {
+  return {
+    id: record.id,
+    name: record.name,
+    icon: record.icon,
+  };
+}
+
+async function getSpaces(): Promise<Space[]> {
+  try {
+    const records = await pb.collection(spacesCollectionName).getFullList({
+      sort: 'created',
+    });
+    return records.map(recordToSpace);
+  } catch (error) {
+    console.error('Failed to fetch spaces:', error);
+    if ((error as any).status === 404) {
+        console.warn('Spaces collection not found or empty. You can create some via the UI.');
+    }
+    return [];
+  }
+}
+
+
 export default async function HomePage() {
-  const items = await getItems();
-  return <BookmarkDashboard initialItems={items} />;
+  const [items, spaces] = await Promise.all([getItems(), getSpaces()]);
+  return <BookmarkDashboard initialItems={items} initialSpaces={spaces} />;
 }

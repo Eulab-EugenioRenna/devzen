@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 export type SpaceItem = Bookmark | Folder;
 
 interface BaseItem {
@@ -24,5 +22,5 @@ export interface Folder extends BaseItem {
 export interface Space {
   id:string;
   name: string;
-  icon: LucideIcon;
+  icon: string;
 }

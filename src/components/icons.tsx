@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import * as LucideIcons from 'lucide-react';
 
 export const Icons = {
   logo: (props: SVGProps<SVGSVGElement>) => (
@@ -17,3 +18,26 @@ export const Icons = {
     </svg>
   ),
 };
+
+export const iconMap: { [key: string]: LucideIcons.LucideIcon } = {
+  Briefcase: LucideIcons.Briefcase,
+  Code: LucideIcons.Code,
+  FileText: LucideIcons.FileText,
+  Bot: LucideIcons.Bot,
+  Terminal: LucideIcons.Terminal,
+  Database: LucideIcons.Database,
+  Book: LucideIcons.Book,
+  PenTool: LucideIcons.PenTool,
+  Lightbulb: LucideIcons.Lightbulb,
+  Globe: LucideIcons.Globe,
+};
+
+export function getIcon(name: string | undefined): React.FC<LucideIcons.LucideProps> {
+  const DefaultIcon = LucideIcons.Folder;
+  if (!name) return DefaultIcon;
+  
+  const iconKey = name.charAt(0).toUpperCase() + name.slice(1);
+  const IconComponent = iconMap[iconKey as keyof typeof iconMap];
+  
+  return IconComponent || DefaultIcon;
+}

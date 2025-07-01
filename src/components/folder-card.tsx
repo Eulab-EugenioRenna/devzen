@@ -32,10 +32,13 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from './ui/input';
 
 interface FolderCardProps {
   folder: Folder;
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
+  onView: (folder: Folder) => void;
+  onNameUpdated: (id: string, name: string) => void;
   isOverlay?: boolean;
 }
 
@@ -47,13 +50,51 @@ function getDomain(url: string) {
   }
 }
 
-export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
+export function FolderCard({ folder, onDeleted, onView, onNameUpdated, isOverlay }: FolderCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: folder.id,
     data: { type: 'folder', item: folder },
   });
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [name, setName] = React.useState(folder.name);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleTitleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isOverlay) return;
+    setIsEditing(true);
+  };
+
+  const handleInputBlur = () => {
+    if (name.trim() && name.trim() !== folder.name) {
+      onNameUpdated(folder.id, name.trim());
+    } else {
+      setName(folder.name);
+    }
+    setIsEditing(false);
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputBlur();
+    } else if (e.key === 'Escape') {
+      setName(folder.name);
+      setIsEditing(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [isEditing]);
+  
+  React.useEffect(() => {
+    setName(folder.name);
+  }, [folder.name])
 
   return (
     <div
@@ -62,6 +103,7 @@ export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
         'transition-shadow duration-200 ease-in-out',
         isOverlay && 'shadow-2xl'
       )}
+      onDoubleClick={() => !isOverlay && onView(folder)}
     >
       <Card
         className={cn(
@@ -72,9 +114,23 @@ export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
         <CardHeader>
           <div className="flex items-start gap-4">
             <div className="flex-1 overflow-hidden">
-              <CardTitle className="font-headline text-lg leading-tight">
-                {folder.name}
-              </CardTitle>
+              <div onDoubleClick={handleTitleDoubleClick}>
+                {isEditing ? (
+                  <Input
+                    ref={inputRef}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleInputKeyDown}
+                    className="h-7 text-lg font-headline p-1"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <CardTitle className="font-headline text-lg leading-tight p-1 rounded-sm">
+                    {folder.name}
+                  </CardTitle>
+                )}
+              </div>
               <CardDescription className="mt-1 text-xs">
                 {folder.items.length} item(s)
               </CardDescription>
@@ -82,12 +138,12 @@ export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
              <div className="flex items-center">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Folder options</span>
                     </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
@@ -108,16 +164,19 @@ export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
                    const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
                   return (
                     <Tooltip key={bookmark.id}>
-                      <TooltipTrigger>
+                      <TooltipTrigger asChild>
+                        <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                          <Avatar className="h-8 w-8 rounded-md border">
                           <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
                           <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
                             {bookmark.title?.[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
+                        </a>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{bookmark.title}</p>
+                      <TooltipContent onClick={(e) => e.stopPropagation()}>
+                        <p className='font-bold'>{bookmark.title}</p>
+                        <p className='text-muted-foreground text-xs'>{bookmark.url}</p>
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -131,7 +190,7 @@ export function FolderCard({ folder, onDeleted, isOverlay }: FolderCardProps) {
       </Card>
       
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
