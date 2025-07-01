@@ -118,7 +118,7 @@ function DroppableSidebarMenu({
   onDelete: (space: Space) => void;
 }) {
   return (
-    <SidebarMenu>
+    <SidebarMenu className="p-2">
       {spaces.map((space) => (
         <SidebarSpaceMenuItem
           key={space.id}
