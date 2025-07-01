@@ -40,6 +40,7 @@ interface BookmarkCardProps {
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   onCustomize: () => void;
   isOverlay?: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 function getDomain(url: string) {
@@ -50,7 +51,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverlay }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverlay, viewMode = 'grid' }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform, isDragging } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -99,6 +100,107 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                 </CardDescription>
             </div>
         </Card>
+    )
+  }
+  
+  if (viewMode === 'list') {
+    return (
+    <div
+      ref={setDroppableNodeRef}
+      style={cardStyle}
+      className={cn(
+        'transition-transform duration-200 ease-in-out relative',
+        isDragging && 'opacity-50'
+      )}
+    >
+      <Card
+        className={cn(
+            "overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        )}
+        style={{
+            backgroundColor: bookmark.backgroundColor ? `${bookmark.backgroundColor}A0` : undefined,
+        }}
+      >
+        <div className="flex items-center p-3 gap-4">
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
+                        <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
+                        <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
+                        <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
+                            {bookmark.title?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                        </Avatar>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
+                </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <div className="flex-1 overflow-hidden">
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CardTitle className="font-headline text-base leading-tight hover:underline truncate">
+                {bookmark.title}
+              </CardTitle>
+            </a>
+            <CardDescription className="mt-1 truncate text-xs">
+              {domain}
+            </CardDescription>
+          </div>
+          <div className="flex items-center ml-auto">
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Bookmark options</span>
+                  </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                      className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                      Delete
+                  </DropdownMenuItem>
+                  </DropdownMenuContent>
+              </DropdownMenu>
+          </div>
+        </div>
+      </Card>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the bookmark for &quot;{bookmark.title}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => onDeleted(bookmark.id, 'bookmark')}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
     )
   }
 

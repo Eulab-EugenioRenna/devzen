@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import type { Folder } from '@/lib/types';
-import { useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal } from 'lucide-react';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { MoreHorizontal, FolderIcon } from 'lucide-react';
 
 import {
   Card,
@@ -42,6 +42,7 @@ interface FolderCardProps {
   onNameUpdated: (id: string, name: string) => void;
   onCustomize: () => void;
   isOverlay?: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 function getDomain(url: string) {
@@ -52,8 +53,13 @@ function getDomain(url: string) {
   }
 }
 
-export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, isOverlay }: FolderCardProps) {
-  const { setNodeRef, isOver } = useDroppable({
+export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, isOverlay, viewMode = 'grid' }: FolderCardProps) {
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+    id: folder.id,
+    data: { type: 'folder', item: folder },
+  });
+  
+   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: folder.id,
     data: { type: 'folder', item: folder },
   });
@@ -104,9 +110,106 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     color: folder.textColor,
   } as React.CSSProperties;
 
+  const setCombinedNodeRef = (node: HTMLElement | null) => {
+    setDroppableNodeRef(node);
+    setDraggableNodeRef(node);
+  };
+  
+  if (viewMode === 'list') {
+    return (
+     <div
+      ref={setDroppableNodeRef}
+      className={cn(
+        'transition-shadow duration-200 ease-in-out',
+        isOverlay && 'shadow-2xl'
+      )}
+      onDoubleClick={() => !isOverlay && onView(folder)}
+      style={cardStyle}
+    >
+      <Card
+        className={cn(
+            "overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        )}
+        style={{
+            backgroundColor: folder.backgroundColor ? `${folder.backgroundColor}A0` : undefined,
+        }}
+      >
+        <div className="flex items-center p-3 gap-4">
+            <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
+                <FolderIcon className="h-8 w-8 flex-shrink-0" />
+            </div>
+            <div className="flex-1 overflow-hidden" onDoubleClick={handleTitleDoubleClick}>
+               {isEditing ? (
+                  <Input
+                    ref={inputRef}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleInputKeyDown}
+                    className="h-7 text-base font-headline p-1"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <CardTitle className="font-headline text-base leading-tight p-1 rounded-sm truncate">
+                    {folder.name}
+                  </CardTitle>
+                )}
+                <CardDescription className="mt-1 text-xs px-1">
+                    {folder.items.length} item(s)
+                </CardDescription>
+            </div>
+             <div className="flex items-center ml-auto">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Folder options</span>
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => onView(folder)}>View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Rename</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                        Delete
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+      </Card>
+      
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the folder &quot;{folder.name}&quot; and move all bookmarks inside it to the root of the space.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => onDeleted(folder.id, 'folder')}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+    )
+  }
+
   return (
     <div
-      ref={setNodeRef}
+      ref={setDroppableNodeRef}
       className={cn(
         'transition-shadow duration-200 ease-in-out',
         isOverlay && 'shadow-2xl'
@@ -126,7 +229,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
         <CardHeader>
           <div className="flex items-start gap-4">
             <div className="flex-1 overflow-hidden">
-              <div onDoubleClick={handleTitleDoubleClick}>
+              <div onDoubleClick={handleTitleDoubleClick} ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
                 {isEditing ? (
                   <Input
                     ref={inputRef}

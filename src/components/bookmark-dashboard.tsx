@@ -37,12 +37,13 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
+import { Input } from './ui/input';
 
 function SidebarSpaceMenuItem({
   space,
@@ -74,7 +75,7 @@ function SidebarSpaceMenuItem({
             e.stopPropagation();
           }}
         >
-          <SidebarMenuItem className="px-4">
+          <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => onClick(space.id)}
               isActive={isActive}
@@ -141,6 +142,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
 
   const [isMounted, setIsMounted] = React.useState(false);
   const { toast } = useToast();
@@ -161,8 +164,23 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
 
   const { folders, rootBookmarks } = React.useMemo(() => {
     const spaceItems = items.filter((item) => item.spaceId === activeSpaceId);
-    const allBookmarks = spaceItems.filter((i) => i.type === 'bookmark') as Bookmark[];
-    const allFolders = spaceItems.filter((i) => i.type === 'folder') as Folder[];
+    
+    const filteredItems = spaceItems.filter(item => {
+        if (!searchTerm) return true;
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        if (item.type === 'bookmark') {
+            return item.title.toLowerCase().includes(lowerCaseSearch) ||
+                   item.url.toLowerCase().includes(lowerCaseSearch) ||
+                   (item.summary ?? '').toLowerCase().includes(lowerCaseSearch);
+        }
+        if (item.type === 'folder') {
+            return item.name.toLowerCase().includes(lowerCaseSearch);
+        }
+        return false;
+    });
+
+    const allBookmarks = filteredItems.filter((i) => i.type === 'bookmark') as Bookmark[];
+    const allFolders = filteredItems.filter((i) => i.type === 'folder') as Folder[];
 
     const foldersById = new Map<string, Folder>(
       allFolders.map((f) => [f.id, { ...f, items: [] }])
@@ -176,9 +194,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
         rootBookmarks.push(bookmark);
       }
     }
+    
+    const populatedFolders = Array.from(foldersById.values()).map(folder => {
+        const folderBookmarks = allBookmarks.filter(bm => bm.parentId === folder.id);
+        return {...folder, items: folderBookmarks};
+    });
 
-    return { folders: Array.from(foldersById.values()), rootBookmarks };
-  }, [items, activeSpaceId]);
+    return { folders: populatedFolders, rootBookmarks };
+  }, [items, activeSpaceId, searchTerm]);
 
   const displayedItems: SpaceItem[] = [...folders, ...rootBookmarks];
 
@@ -261,7 +284,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
        setItems(prev => prev.filter(i => i.id !== active.id && i.id !== over.id));
        try {
         const { folder, bookmarks } = await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [String(active.id), String(over.id)] });
-        setItems(prev => [...prev, folder, ...bookmarks]);
+        setItems(prev => [...prev.filter(i => !bookmarks.find(b => b.id === i.id)), folder, ...bookmarks]);
        } catch (e) {
          setItems(originalItems);
          toast({ variant: 'destructive', title: 'Error', description: 'Failed to create folder.' });
@@ -344,7 +367,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
               </Button>
             </div>
           </SidebarHeader>
-          <SidebarContent className='px-2'>
+          <SidebarContent>
             <DroppableSidebarMenu
               spaces={spaces}
               activeSpaceId={activeSpaceId}
@@ -355,20 +378,43 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
           </SidebarContent>
         </Sidebar>
         <SidebarInset className="flex flex-col">
-          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-            <h2 className="text-xl font-bold font-headline">
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+            <h2 className="text-xl font-bold font-headline truncate">
               {activeSpace?.name ?? 'Dashboard'}
             </h2>
-            <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
-              <Button disabled={!activeSpaceId}>
-                <PlusCircle className="mr-2" />
-                Add Bookmark
-              </Button>
-            </AddBookmarkDialog>
+            <div className='flex-grow max-w-md'>
+                 <Input 
+                    placeholder='Search in this space...'
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <div className='flex items-center gap-2'>
+                <div className='flex items-center rounded-md bg-muted p-1'>
+                    <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')}>
+                        <LayoutGrid className='h-4 w-4' />
+                        <span className='sr-only'>Grid View</span>
+                    </Button>
+                    <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
+                        <List className='h-4 w-4' />
+                        <span className='sr-only'>List View</span>
+                    </Button>
+                </div>
+                <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
+                  <Button disabled={!activeSpaceId}>
+                    <PlusCircle className="mr-2" />
+                    Add Bookmark
+                  </Button>
+                </AddBookmarkDialog>
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             {displayedItems.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className={cn(
+                  viewMode === 'grid' 
+                    ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "flex flex-col gap-4"
+              )}>
                 {displayedItems.map(item => item.type === 'folder' ? (
                   <FolderCard
                     key={item.id}
@@ -377,6 +423,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     onView={() => setViewingFolder(item as Folder)}
                     onNameUpdated={handleUpdateFolderName}
                     onCustomize={() => setCustomizingItem(item)}
+                    viewMode={viewMode}
                   />
                 ) : (
                   <BookmarkCard
@@ -385,14 +432,15 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     onEdit={() => setEditingBookmark(item)}
                     onDeleted={handleDeleteItem}
                     onCustomize={() => setCustomizingItem(item)}
+                    viewMode={viewMode}
                   />
                 ))}
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center">
-                <h3 className="text-lg font-semibold font-headline">{activeSpace ? 'This space is empty!' : 'No spaces yet!'}</h3>
+                <h3 className="text-lg font-semibold font-headline">{searchTerm ? 'No results found' : (activeSpace ? 'This space is empty!' : 'No spaces yet!')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {activeSpace ? `Add your first bookmark to '${activeSpace.name}' to get started.` : 'Create your first space using the [+] button in the sidebar.'}
+                  {searchTerm ? `Your search for "${searchTerm}" did not match any items.` : (activeSpace ? `Add your first bookmark to '${activeSpace.name}' to get started.` : 'Create your first space using the [+] button in the sidebar.')}
                 </p>
               </div>
             )}
