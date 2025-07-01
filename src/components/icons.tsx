@@ -19,7 +19,8 @@ export const Icons = {
   ),
 };
 
-export const iconMap: { [key: string]: LucideIcons.LucideIcon } = {
+export const iconMap: { [key: string]: React.FC<any> } = {
+  Logo: Icons.logo,
   Briefcase: LucideIcons.Briefcase,
   Code: LucideIcons.Code,
   FileText: LucideIcons.FileText,

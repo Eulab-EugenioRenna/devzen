@@ -30,6 +30,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { getIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -37,13 +38,14 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
 import { Input } from './ui/input';
+import { EditAppInfoDialog } from './edit-app-info-dialog';
 
 function SidebarSpaceMenuItem({
   space,
@@ -144,6 +146,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
+  
+  const [appName, setAppName] = React.useState('DevZen');
+  const [appIcon, setAppIcon] = React.useState('Logo');
+  const [isEditingAppInfo, setIsEditingAppInfo] = React.useState(false);
 
   const [isMounted, setIsMounted] = React.useState(false);
   const { toast } = useToast();
@@ -351,6 +357,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
   const handleItemMove = (updatedItem: SpaceItem) => {
     setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
+  
+  const handleAppInfoSave = (data: { name: string, icon: string }) => {
+    setAppName(data.name);
+    setAppIcon(data.icon);
+    toast({ title: 'App info updated!', description: 'Your application name and icon have been changed.'});
+  }
+
+  const AppIcon = getIcon(appIcon);
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -358,13 +372,24 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
         <Sidebar>
           <SidebarHeader>
             <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6"><path d="M4 4h8a4 4 0 0 1 4 4v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-4" /><path d="M20 12V8a4 4 0 0 0-4-4H8" /></svg>
-                 <h1 className="text-lg font-semibold font-headline">DevZen</h1>
+              <div className="flex items-center gap-2 overflow-hidden">
+                 <AppIcon className="size-6 shrink-0" />
+                 <h1 className="text-lg font-semibold font-headline truncate">{appName}</h1>
               </div>
-              <Button variant="ghost" size="icon" className='h-7 w-7' onClick={() => setIsAddingSpace(true)}>
-                <Plus className="h-4 w-4"/>
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className='h-7 w-7 shrink-0'>
+                    <MoreVertical className="h-4 w-4"/>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>Edit Title & Icon</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsAddingSpace(true)}>
+                        <Plus className="mr-2 h-4 w-4" /> Add Space
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -379,9 +404,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
         </Sidebar>
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-            <h2 className="text-xl font-bold font-headline truncate">
-              {activeSpace?.name ?? 'Dashboard'}
-            </h2>
+            <div className='flex items-center gap-2'>
+              <SidebarTrigger />
+              <h2 className="text-xl font-bold font-headline truncate">
+                {activeSpace?.name ?? 'Dashboard'}
+              </h2>
+            </div>
             <div className='flex-grow max-w-md'>
                  <Input 
                     placeholder='Search in this space...'
@@ -525,6 +553,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
             item={customizingItem}
             onOpenChange={(open) => !open && setCustomizingItem(null)}
             onItemUpdated={handleItemUpdate}
+        />
+      )}
+      {isEditingAppInfo && (
+        <EditAppInfoDialog
+            appName={appName}
+            appIcon={appIcon}
+            onSave={handleAppInfoSave}
+            onOpenChange={setIsEditingAppInfo}
         />
       )}
     </DndContext>
