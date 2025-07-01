@@ -68,8 +68,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        'transition-transform duration-200 ease-in-out',
+        'transition-transform duration-200 ease-in-out cursor-grab',
         isDragging && 'opacity-50',
         isOverlay && 'shadow-2xl'
       )}
@@ -102,9 +104,6 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
               </CardDescription>
             </div>
             <div className="flex items-center">
-                <div {...attributes} {...listeners} className="cursor-grab p-2 -m-2">
-                    <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
