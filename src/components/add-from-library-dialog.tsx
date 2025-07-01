@@ -25,6 +25,14 @@ interface AddFromLibraryDialogProps {
   onBookmarkAdded: (bookmark: Bookmark) => void;
 }
 
+function getDomain(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch (e) {
+    return '';
+  }
+}
+
 export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded }: AddFromLibraryDialogProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [tools, setTools] = React.useState<ToolsAi[]>([]);
@@ -95,10 +103,14 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded 
             </div>
           ) : (
             <div className="pr-4">
-              {filteredTools.map(tool => (
+              {filteredTools.map(tool => {
+                const domain = getDomain(tool.link);
+                const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+                
+                return (
                 <div key={tool.id} className="flex items-center gap-4 p-3 border-b transition-colors hover:bg-muted/50">
                     <Avatar className="h-12 w-12 flex-shrink-0 rounded-lg border">
-                        <AvatarImage src={tool.brand} alt={tool.name} />
+                        <AvatarImage src={faviconUrl} alt={tool.name} />
                         <AvatarFallback className="rounded-lg bg-transparent font-semibold">
                             {tool.name?.[0]?.toUpperCase()}
                         </AvatarFallback>
@@ -127,7 +139,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded 
                         Import
                     </Button>
                 </div>
-              ))}
+              )})}
               {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">No tools found.</p>}
             </div>
           )}
