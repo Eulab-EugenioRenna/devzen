@@ -243,7 +243,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
     } catch (e: any) {
         console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e.response || e);
         if (e?.originalError) {
-            console.error('Underlying connection error:', e.originalError.message);
+            console.error('Underlying connection error:', e.originalError);
        }
         // Return a static default to prevent crashing the app
         return { id: 'default', title: 'DevZen', logo: 'Logo' };

@@ -16,7 +16,7 @@ async function getItems(): Promise<SpaceItem[]> {
     if (error?.status === 404) {
         console.warn(`Warning: The collection "${bookmarksCollectionName}" was not found in your PocketBase instance. Please create it to store bookmarks and folders.`);
     } else if (error?.originalError) {
-        console.error('Underlying connection error:', error.originalError.message);
+        console.error('Underlying connection error:', error.originalError);
     }
     return [];
   }
@@ -41,7 +41,7 @@ async function getSpaces(): Promise<Space[]> {
     if (error?.status === 404) {
         console.warn(`Warning: The collection "${spacesCollectionName}" was not found. You can create some via the UI.`);
     } else if (error?.originalError) {
-        console.error('Underlying connection error:', error.originalError.message);
+        console.error('Underlying connection error:', error.originalError);
     }
     return [];
   }
