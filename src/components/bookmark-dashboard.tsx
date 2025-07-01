@@ -43,6 +43,60 @@ import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
 
+function SidebarSpaceMenuItem({
+  space,
+  isActive,
+  onClick,
+  onEdit,
+  onDelete,
+}: {
+  space: Space;
+  isActive: boolean;
+  onClick: (id: string) => void;
+  onEdit: (space: Space) => void;
+  onDelete: (space: Space) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: space.id });
+  const Icon = getIcon(space.icon);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <div
+          ref={setNodeRef}
+          className={cn(
+            'rounded-lg transition-colors',
+            isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+          )}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <SidebarMenuItem className="px-4">
+            <SidebarMenuButton
+              onClick={() => onClick(space.id)}
+              isActive={isActive}
+              tooltip={space.name}
+            >
+              <Icon />
+              <span>{space.name}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+          onClick={() => onDelete(space)}
+        >
+          Delete Space
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+
 function DroppableSidebarMenu({
   spaces,
   activeSpaceId,
@@ -58,48 +112,16 @@ function DroppableSidebarMenu({
 }) {
   return (
     <SidebarMenu>
-      {spaces.map((space) => {
-        const { setNodeRef, isOver } = useDroppable({ id: space.id });
-        const Icon = getIcon(space.icon);
-
-        return (
-          <DropdownMenu key={space.id}>
-            <DropdownMenuTrigger asChild>
-              <div
-                ref={setNodeRef}
-                className={cn(
-                  'rounded-lg transition-colors',
-                  isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
-                )}
-                // This onContextMenu is a fallback for touch devices/etc.
-                // Right-clicking the button itself is more reliable.
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                <SidebarMenuItem className="px-4">
-                  <SidebarMenuButton
-                    onClick={() => setActiveSpaceId(space.id)}
-                    isActive={activeSpaceId === space.id}
-                    tooltip={space.name}
-                  >
-                    <Icon />
-                    <span>{space.name}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                onClick={() => onDelete(space)}
-              >
-                Delete Space
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      })}
+      {spaces.map((space) => (
+        <SidebarSpaceMenuItem
+          key={space.id}
+          space={space}
+          isActive={activeSpaceId === space.id}
+          onClick={setActiveSpaceId}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ))}
     </SidebarMenu>
   );
 }
