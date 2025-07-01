@@ -117,7 +117,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
                 {domain}
               </CardDescription>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center" onMouseDown={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
