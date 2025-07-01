@@ -41,7 +41,7 @@ const summarizeBookmarkFlow = ai.defineFlow(
     outputSchema: SummarizeBookmarkOutputSchema,
   },
   async input => {
-    const {output} = await summarizeBookmarkPrompt(input);
+    const {output} = await summarizeBookmarkPrompt(input, {model: 'googleai/gemini-1.5-flash-latest'});
     return output!;
   }
 );

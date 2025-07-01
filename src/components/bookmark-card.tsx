@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +56,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const domain = getDomain(bookmark.url);
-  const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+  const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 
   const style = transform
     ? {
