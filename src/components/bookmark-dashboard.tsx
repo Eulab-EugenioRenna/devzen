@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Bookmark, Folder, Space, SpaceItem } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem } from '@/lib/types';
 import {
   DndContext,
   useDroppable,
@@ -18,6 +18,7 @@ import {
   updateSpaceAction,
   deleteSpaceAction,
   updateFolderNameAction,
+  updateAppInfoAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -133,7 +134,7 @@ function DroppableSidebarMenu({
   );
 }
 
-export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItems: SpaceItem[], initialSpaces: Space[] }) {
+export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo }: { initialItems: SpaceItem[], initialSpaces: Space[], initialAppInfo: AppInfo }) {
   const [spaces, setSpaces] = React.useState<Space[]>(initialSpaces);
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
@@ -147,8 +148,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
   const [searchTerm, setSearchTerm] = React.useState('');
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   
-  const [appName, setAppName] = React.useState('DevZen');
-  const [appIcon, setAppIcon] = React.useState('Logo');
+  const [appInfo, setAppInfo] = React.useState<AppInfo>(initialAppInfo);
   const [isEditingAppInfo, setIsEditingAppInfo] = React.useState(false);
 
   const [isMounted, setIsMounted] = React.useState(false);
@@ -358,13 +358,22 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
     setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
   
-  const handleAppInfoSave = (data: { name: string, icon: string }) => {
-    setAppName(data.name);
-    setAppIcon(data.icon);
-    toast({ title: 'App info updated!', description: 'Your application name and icon have been changed.'});
+  const handleAppInfoSave = async (data: { name: string, icon: string }) => {
+    const originalAppInfo = appInfo;
+    const newAppInfo = { ...appInfo, ...data };
+    setAppInfo(newAppInfo); // Optimistic update
+    setIsEditingAppInfo(false);
+    try {
+        const updatedInfo = await updateAppInfoAction({ id: appInfo.id, ...data });
+        setAppInfo(updatedInfo); // Update with result from server
+        toast({ title: 'App info updated!', description: 'Your application name and icon have been changed.'});
+    } catch (e) {
+        setAppInfo(originalAppInfo); // Revert on error
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update app info.' });
+    }
   }
 
-  const AppIcon = getIcon(appIcon);
+  const AppIcon = getIcon(appInfo.icon);
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -374,7 +383,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
                  <AppIcon className="size-6 shrink-0" />
-                 <h1 className="text-lg font-semibold font-headline truncate">{appName}</h1>
+                 <h1 className="text-lg font-semibold font-headline truncate">{appInfo.name}</h1>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -557,8 +566,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
       )}
       {isEditingAppInfo && (
         <EditAppInfoDialog
-            appName={appName}
-            appIcon={appIcon}
+            appName={appInfo.name}
+            appIcon={appInfo.icon}
             onSave={handleAppInfoSave}
             onOpenChange={setIsEditingAppInfo}
         />

@@ -26,3 +26,9 @@ export interface Space {
   name: string;
   icon: string;
 }
+
+export interface AppInfo {
+  id: string;
+  name: string;
+  icon: string;
+}

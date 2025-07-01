@@ -1,7 +1,8 @@
-import type { Space, SpaceItem } from '@/lib/types';
+import type { AppInfo, Space, SpaceItem } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { BookmarkDashboard } from '@/components/bookmark-dashboard';
 import type { RecordModel } from 'pocketbase';
+import { getAppInfoAction } from './actions';
 
 function recordToSpaceItem(record: RecordModel): SpaceItem {
   const toolData = (record as any).tool;
@@ -66,6 +67,10 @@ async function getSpaces(): Promise<Space[]> {
 
 
 export default async function HomePage() {
-  const [items, spaces] = await Promise.all([getItems(), getSpaces()]);
-  return <BookmarkDashboard initialItems={items} initialSpaces={spaces} />;
+  const [items, spaces, appInfo] = await Promise.all([
+      getItems(), 
+      getSpaces(),
+      getAppInfoAction(),
+    ]);
+  return <BookmarkDashboard initialItems={items} initialSpaces={spaces} initialAppInfo={appInfo} />;
 }

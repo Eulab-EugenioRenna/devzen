@@ -1,8 +1,8 @@
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
-import type { Bookmark, Folder, Space, SpaceItem } from '@/lib/types';
-import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo } from '@/lib/types';
+import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 
 function recordToSpaceItem(record: RecordModel): SpaceItem {
@@ -236,4 +236,46 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
     await pb.collection(spacesCollectionName).delete(id);
 
     return { success: true };
+}
+
+// ===== App Info Actions =====
+
+function recordToAppInfo(record: RecordModel): AppInfo {
+    return {
+        id: record.id,
+        name: record.name,
+        icon: record.icon,
+    };
+}
+
+export async function getAppInfoAction(): Promise<AppInfo> {
+    try {
+        const records = await pb.collection(menuCollectionName).getFullList({ sort: 'created' });
+        if (records.length > 0) {
+            return recordToAppInfo(records[0]);
+        }
+    } catch (e: any) {
+        if (e.status !== 404) {
+             console.error('Failed to fetch app info:', e);
+             // Fall through to create default
+        }
+    }
+
+    // If no record, or collection doesn't exist, create a default one.
+    try {
+        const defaultData = { name: 'DevZen', icon: 'Logo' };
+        const record = await pb.collection(menuCollectionName).create(defaultData);
+        console.warn('No app info found, created a default entry. You might need to create the "devzen_menu" collection with "name" and "icon" text fields.');
+        return recordToAppInfo(record);
+    } catch (e) {
+        console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e);
+        // Return a static default to prevent crashing the app
+        return { id: 'default', name: 'DevZen', icon: 'Logo' };
+    }
+}
+
+export async function updateAppInfoAction({ id, name, icon }: { id: string, name: string, icon: string }): Promise<AppInfo> {
+    const data = { name, icon };
+    const record = await pb.collection(menuCollectionName).update(id, data);
+    return recordToAppInfo(record);
 }
