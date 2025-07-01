@@ -32,3 +32,25 @@ export interface AppInfo {
   title: string;
   logo: string;
 }
+
+export interface ToolsAiSummary {
+  apiAvailable: boolean;
+  category: string;
+  concepts: string[];
+  derivedLink: string;
+  name: string;
+  summary: string;
+  tags: string[];
+  useCases: string[];
+}
+
+export interface ToolsAi {
+  id: string;
+  name: string;
+  link: string;
+  category: string;
+  source: string;
+  summary: ToolsAiSummary;
+  deleted: boolean;
+  brand: string;
+}

@@ -12,6 +12,10 @@ if (!process.env.POCKETBASE_COLLECTION_SPACES) {
 if (!process.env.POCKETBASE_COLLECTION_MENU) {
     throw new Error('POCKETBASE_COLLECTION_MENU is not set in the environment variables. Please add it to your .env file.');
 }
+if (!process.env.POCKETBASE_COLLECTION_TOOLS_AI) {
+    throw new Error('POCKETBASE_COLLECTION_TOOLS_AI is not set in the environment variables. Please add it to your .env file.');
+}
+
 
 export const pb = new PocketBase(process.env.POCKETBASE_URL);
 
@@ -27,3 +31,5 @@ pb.fetch = (url, options) => {
 export const bookmarksCollectionName = process.env.POCKETBASE_COLLECTION_BOOKMARKS;
 export const spacesCollectionName = process.env.POCKETBASE_COLLECTION_SPACES;
 export const menuCollectionName = process.env.POCKETBASE_COLLECTION_MENU;
+export const toolsAiCollectionName = process.env.POCKETBASE_COLLECTION_TOOLS_AI;
+export const menuRecordId = 'vph860h5ys84561';

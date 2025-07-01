@@ -1,8 +1,8 @@
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo } from '@/lib/types';
-import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName } from '@/lib/pocketbase';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
+import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem } from '@/lib/data-mappers';
 
@@ -213,8 +213,6 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 
 // ===== App Info Actions =====
 
-const MENU_RECORD_ID = 'vph860h5ys84561';
-
 function recordToAppInfo(record: RecordModel): AppInfo {
     const logoUrl = record.logo ? pb.files.getUrl(record, record.logo) : '';
     return {
@@ -226,11 +224,11 @@ function recordToAppInfo(record: RecordModel): AppInfo {
 
 export async function getAppInfoAction(): Promise<AppInfo> {
     try {
-        const record = await pb.collection(menuCollectionName).getOne(MENU_RECORD_ID);
+        const record = await pb.collection(menuCollectionName).getOne(menuRecordId);
         return recordToAppInfo(record);
     } catch (e: any) {
         if (e.status === 404) {
-             console.warn(`App info record with ID "${MENU_RECORD_ID}" not found in collection "${menuCollectionName}". Please ensure this record exists. Falling back to default values.`);
+             console.warn(`App info record with ID "${menuRecordId}" not found in collection "${menuCollectionName}". Please ensure this record exists. Falling back to default values.`);
         } else {
              console.error('Failed to fetch app info:', e.response || e);
              if (e?.originalError) {
@@ -238,11 +236,73 @@ export async function getAppInfoAction(): Promise<AppInfo> {
            }
         }
         // Return a static default to prevent crashing the app
-        return { id: MENU_RECORD_ID, title: 'DevZen', logo: 'Logo' };
+        return { id: menuRecordId, title: 'DevZen', logo: 'Logo' };
     }
 }
 
 export async function updateAppInfoAction(id: string, formData: FormData): Promise<AppInfo> {
     const record = await pb.collection(menuCollectionName).update(id, formData);
     return recordToAppInfo(record);
+}
+
+// ===== AI Tools Library Actions =====
+
+export async function getToolsAiAction(): Promise<ToolsAi[]> {
+  const records = await pb.collection(toolsAiCollectionName).getFullList({
+    filter: 'deleted = false',
+  });
+  return records.map(record => ({
+    id: record.id,
+    name: record.name,
+    link: record.link,
+    category: record.category,
+    source: record.source,
+    summary: record.summary, // PocketBase SDK automatically parses JSON fields
+    deleted: record.deleted,
+    brand: record.brand,
+  }));
+}
+
+export async function addBookmarkFromLibraryAction({
+  toolId,
+  spaceId,
+}: {
+  toolId: string;
+  spaceId: string;
+}): Promise<Bookmark> {
+  if (!toolId || !spaceId) {
+    throw new Error('Missing required fields');
+  }
+
+  const toolRecord = await pb.collection(toolsAiCollectionName).getOne(toolId);
+  
+  const tool: ToolsAi = {
+      id: toolRecord.id,
+      name: toolRecord.name,
+      link: toolRecord.link,
+      category: toolRecord.category,
+      source: toolRecord.source,
+      summary: toolRecord.summary,
+      deleted: toolRecord.deleted,
+      brand: toolRecord.brand,
+  };
+
+  const data = {
+    tool: {
+      type: 'bookmark',
+      title: tool.name,
+      url: tool.link,
+      summary: tool.summary.summary, // using the summary from the JSON
+      spaceId: spaceId,
+      parentId: null,
+    },
+  };
+
+  try {
+    const record = await pb.collection(bookmarksCollectionName).create(data);
+    return recordToSpaceItem(record) as Bookmark;
+  } catch (e) {
+    console.error('Failed to create bookmark from library in PocketBase', e);
+    throw new Error('Failed to save bookmark from library.');
+  }
 }

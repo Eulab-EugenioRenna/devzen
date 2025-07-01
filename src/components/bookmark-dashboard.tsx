@@ -39,7 +39,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -47,6 +47,7 @@ import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
 import { Input } from './ui/input';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
+import { AddFromLibraryDialog } from './add-from-library-dialog';
 
 function SidebarSpaceMenuItem({
   space,
@@ -438,6 +439,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
                         <span className='sr-only'>List View</span>
                     </Button>
                 </div>
+                <AddFromLibraryDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
+                    <Button variant="outline" disabled={!activeSpaceId}>
+                        <Library className="mr-2" />
+                        Add from Library
+                    </Button>
+                </AddFromLibraryDialog>
                 <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
                   <Button disabled={!activeSpaceId}>
                     <PlusCircle className="mr-2" />
