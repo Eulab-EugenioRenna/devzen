@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { getToolsAiAction, addBookmarkFromLibraryAction } from '@/app/actions';
+import { addBookmarkFromLibraryAction } from '@/app/actions';
 import type { ToolsAi, Bookmark } from '@/lib/types';
 import {
   Dialog,
@@ -23,6 +23,7 @@ interface AddFromLibraryDialogProps {
   children: React.ReactNode;
   activeSpaceId: string;
   onBookmarkAdded: (bookmark: Bookmark) => void;
+  tools: ToolsAi[];
 }
 
 function getDomain(url: string) {
@@ -33,26 +34,11 @@ function getDomain(url: string) {
   }
 }
 
-export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded }: AddFromLibraryDialogProps) {
+export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [tools, setTools] = React.useState<ToolsAi[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isAdding, setIsAdding] = React.useState<string | null>(null);
   const { toast } = useToast();
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      getToolsAiAction()
-        .then(setTools)
-        .catch(err => {
-          console.error(err);
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not load AI tools library.' });
-        })
-        .finally(() => setIsLoading(false));
-    }
-  }, [isOpen, toast]);
 
   const handleAddTool = async (tool: ToolsAi) => {
     setIsAdding(tool.id);
@@ -97,52 +83,46 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded 
           />
         </div>
         <ScrollArea className="h-[60vh]">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="pr-4">
-              {filteredTools.map(tool => {
-                const domain = getDomain(tool.link);
-                const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-                
-                return (
-                <div key={tool.id} className="flex items-center gap-4 p-3 border-b transition-colors hover:bg-muted/50">
-                    <Avatar className="h-12 w-12 flex-shrink-0 rounded-lg border">
-                        <AvatarImage src={faviconUrl} alt={tool.name} />
-                        <AvatarFallback className="rounded-lg bg-transparent font-semibold">
-                            {tool.name?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-grow overflow-hidden">
-                        <p className="font-semibold truncate">{tool.name}</p>
-                        <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">{tool.link}</a>
-                        <p className="text-sm text-muted-foreground mt-1">{tool.summary.summary}</p>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                            {tool.summary.tags.slice(0, 5).map(tag => (
-                                <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
-                            ))}
-                        </div>
-                    </div>
-                    <Button
-                        size="sm"
-                        onClick={() => handleAddTool(tool)}
-                        disabled={isAdding === tool.id}
-                        className="shrink-0 ml-4"
-                    >
-                        {isAdding === tool.id ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Plus className="mr-2 h-4 w-4" />
-                        )}
-                        Import
-                    </Button>
-                </div>
-              )})}
-              {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">No tools found.</p>}
-            </div>
-          )}
+          <div className="pr-4">
+            {filteredTools.map(tool => {
+              const domain = getDomain(tool.link);
+              const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+              
+              return (
+              <div key={tool.id} className="flex items-center gap-4 p-3 border-b transition-colors hover:bg-muted/50">
+                  <Avatar className="h-12 w-12 flex-shrink-0 rounded-lg border">
+                      <AvatarImage src={faviconUrl} alt={tool.name} />
+                      <AvatarFallback className="rounded-lg bg-transparent font-semibold">
+                          {tool.name?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow overflow-hidden">
+                      <p className="font-semibold truncate">{tool.name}</p>
+                      <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">{tool.link}</a>
+                      <p className="text-sm text-muted-foreground mt-1">{tool.summary.summary}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                          {tool.summary.tags.slice(0, 5).map(tag => (
+                              <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
+                          ))}
+                      </div>
+                  </div>
+                  <Button
+                      size="sm"
+                      onClick={() => handleAddTool(tool)}
+                      disabled={isAdding === tool.id}
+                      className="shrink-0 ml-4"
+                  >
+                      {isAdding === tool.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                          <Plus className="mr-2 h-4 w-4" />
+                      )}
+                      Import
+                  </Button>
+              </div>
+            )})}
+            {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">No tools found.</p>}
+          </div>
         </ScrollArea>
       </DialogContent>
     </Dialog>

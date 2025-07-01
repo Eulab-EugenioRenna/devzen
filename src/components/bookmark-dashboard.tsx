@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { AppInfo, Bookmark, Folder, Space, SpaceItem } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi } from '@/lib/types';
 import {
   DndContext,
   useDroppable,
@@ -48,6 +48,8 @@ import { CustomizeItemDialog } from './customize-item-dialog';
 import { Input } from './ui/input';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
+import { pb, toolsAiCollectionName } from '@/lib/pocketbase';
+import { recordToToolAi } from '@/lib/data-mappers';
 
 function SidebarSpaceMenuItem({
   space,
@@ -135,7 +137,7 @@ function DroppableSidebarMenu({
   );
 }
 
-export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo }: { initialItems: SpaceItem[], initialSpaces: Space[], initialAppInfo: AppInfo }) {
+export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo, initialTools }: { initialItems: SpaceItem[], initialSpaces: Space[], initialAppInfo: AppInfo, initialTools: ToolsAi[] }) {
   const [spaces, setSpaces] = React.useState<Space[]>(initialSpaces);
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
@@ -152,11 +154,35 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
   const [appInfo, setAppInfo] = React.useState<AppInfo>(initialAppInfo);
   const [isEditingAppInfo, setIsEditingAppInfo] = React.useState(false);
 
+  const [tools, setTools] = React.useState<ToolsAi[]>(initialTools);
   const [isMounted, setIsMounted] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
     setIsMounted(true);
+    
+    const handleToolUpdate = (e: { action: string; record: any }) => {
+      const tool = recordToToolAi(e.record);
+      setTools((currentTools) => {
+        if (e.action === 'delete' || tool.deleted) {
+          return currentTools.filter((t) => t.id !== tool.id);
+        }
+        const existingIndex = currentTools.findIndex((t) => t.id === tool.id);
+        if (existingIndex > -1) {
+          const newTools = [...currentTools];
+          newTools[existingIndex] = tool;
+          return newTools;
+        } else {
+          return [tool, ...currentTools];
+        }
+      });
+    };
+    
+    pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
+
+    return () => {
+        pb.collection(toolsAiCollectionName).unsubscribe('*');
+    };
   }, []);
   
   // Set first space as active if the active one is deleted
@@ -439,7 +465,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
                         <span className='sr-only'>List View</span>
                     </Button>
                 </div>
-                <AddFromLibraryDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
+                <AddFromLibraryDialog tools={tools} activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
                     <Button variant="outline" disabled={!activeSpaceId}>
                         <Library className="mr-2" />
                         Add from Library

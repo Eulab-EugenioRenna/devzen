@@ -1,5 +1,5 @@
 import type { RecordModel } from 'pocketbase';
-import type { SpaceItem } from '@/lib/types';
+import type { SpaceItem, ToolsAi } from '@/lib/types';
 
 export function recordToSpaceItem(record: RecordModel): SpaceItem {
   const toolData = (record as any).tool;
@@ -27,4 +27,17 @@ export function recordToSpaceItem(record: RecordModel): SpaceItem {
     url: toolData.url,
     summary: toolData.summary,
   };
+}
+
+export function recordToToolAi(record: RecordModel): ToolsAi {
+    return {
+        id: record.id,
+        name: record.name,
+        link: record.link,
+        category: record.category,
+        source: record.source,
+        summary: record.summary, // PocketBase SDK automatically parses JSON fields
+        deleted: record.deleted,
+        brand: record.brand,
+    };
 }
