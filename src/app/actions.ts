@@ -229,7 +229,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
         }
     } catch (e: any) {
         if (e.status !== 404) {
-             console.error('Failed to fetch app info:', e);
+             console.error('Failed to fetch app info:', e.response || e);
              // Fall through to create default
         }
     }
@@ -240,8 +240,11 @@ export async function getAppInfoAction(): Promise<AppInfo> {
         const record = await pb.collection(menuCollectionName).create(defaultData);
         console.warn('No app info found, created a default entry. You might need to create the "devzen_menu" collection with "title" and "logo" text fields.');
         return recordToAppInfo(record);
-    } catch (e) {
-        console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e);
+    } catch (e: any) {
+        console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e.response || e);
+        if (e?.originalError) {
+            console.error('Underlying connection error:', e.originalError.message);
+       }
         // Return a static default to prevent crashing the app
         return { id: 'default', title: 'DevZen', logo: 'Logo' };
     }

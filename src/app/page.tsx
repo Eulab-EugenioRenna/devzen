@@ -3,32 +3,7 @@ import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketb
 import { BookmarkDashboard } from '@/components/bookmark-dashboard';
 import type { RecordModel } from 'pocketbase';
 import { getAppInfoAction } from './actions';
-
-function recordToSpaceItem(record: RecordModel): SpaceItem {
-  const toolData = (record as any).tool;
-  const baseItem = {
-    id: record.id,
-    spaceId: toolData.spaceId,
-    parentId: toolData.parentId,
-  };
-
-  if (toolData.type === 'folder') {
-    return {
-      ...baseItem,
-      type: 'folder',
-      name: toolData.name,
-      items: [], // Populated on the client
-    };
-  }
-
-  return {
-    ...baseItem,
-    type: 'bookmark',
-    title: toolData.title,
-    url: toolData.url,
-    summary: toolData.summary,
-  };
-}
+import { recordToSpaceItem } from '@/lib/data-mappers';
 
 async function getItems(): Promise<SpaceItem[]> {
   try {
@@ -36,8 +11,13 @@ async function getItems(): Promise<SpaceItem[]> {
       sort: '-created',
     });
     return records.map(recordToSpaceItem);
-  } catch (error) {
-    console.error('Failed to fetch items:', error);
+  } catch (error: any) {
+    console.error('Failed to fetch items:', error.response || error);
+    if (error?.status === 404) {
+        console.warn(`Warning: The collection "${bookmarksCollectionName}" was not found in your PocketBase instance. Please create it to store bookmarks and folders.`);
+    } else if (error?.originalError) {
+        console.error('Underlying connection error:', error.originalError.message);
+    }
     return [];
   }
 }
@@ -56,10 +36,12 @@ async function getSpaces(): Promise<Space[]> {
       sort: 'created',
     });
     return records.map(recordToSpace);
-  } catch (error) {
-    console.error('Failed to fetch spaces:', error);
-    if ((error as any).status === 404) {
-        console.warn('Spaces collection not found or empty. You can create some via the UI.');
+  } catch (error: any) {
+    console.error('Failed to fetch spaces:', error.response || error);
+    if (error?.status === 404) {
+        console.warn(`Warning: The collection "${spacesCollectionName}" was not found. You can create some via the UI.`);
+    } else if (error?.originalError) {
+        console.error('Underlying connection error:', error.originalError.message);
     }
     return [];
   }
