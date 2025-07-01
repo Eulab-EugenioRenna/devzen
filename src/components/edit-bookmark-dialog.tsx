@@ -4,7 +4,7 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { addBookmarkAction } from '@/app/actions';
+import { updateBookmarkAction } from '@/app/actions';
 import type { Bookmark } from '@/lib/types';
 
 import {
@@ -13,7 +13,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
@@ -35,65 +34,54 @@ const bookmarkSchema = z.object({
   url: z.string().url({ message: 'Please enter a valid URL.' }),
 });
 
-interface AddBookmarkDialogProps {
-  children: React.ReactNode;
-  activeSpaceId: string;
-  onBookmarkAdded: (bookmark: Bookmark) => void;
+interface EditBookmarkDialogProps {
+  bookmark: Bookmark;
+  onOpenChange: (open: boolean) => void;
+  onBookmarkUpdated: (bookmark: Bookmark) => void;
 }
 
-export function AddBookmarkDialog({
-  children,
-  activeSpaceId,
-  onBookmarkAdded,
-}: AddBookmarkDialogProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+export function EditBookmarkDialog({
+  bookmark,
+  onOpenChange,
+  onBookmarkUpdated,
+}: EditBookmarkDialogProps) {
   const { toast } = useToast();
-  
+
   const form = useForm<z.infer<typeof bookmarkSchema>>({
     resolver: zodResolver(bookmarkSchema),
     defaultValues: {
-      title: '',
-      url: '',
+      title: bookmark.title,
+      url: bookmark.url,
     },
   });
-  
+
   const { isSubmitting } = form.formState;
 
   const onSubmit = async (values: z.infer<typeof bookmarkSchema>) => {
     try {
-      const newBookmark = await addBookmarkAction({
+      const updatedBookmark = await updateBookmarkAction({
+        id: bookmark.id,
         ...values,
-        spaceId: activeSpaceId,
       });
-      onBookmarkAdded(newBookmark);
-      setIsOpen(false);
-      form.reset();
+      onBookmarkUpdated(updatedBookmark);
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: `Failed to add bookmark: ${errorMessage}`,
+        description: `Failed to update bookmark: ${errorMessage}`,
       });
     }
   };
-  
-  React.useEffect(() => {
-    if (!isOpen) {
-      form.reset();
-    }
-  }, [isOpen, form]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Add New Bookmark</DialogTitle>
+          <DialogTitle className="font-headline">Edit Bookmark</DialogTitle>
           <DialogDescription>
-            Enter the details for your new bookmark. An AI summary will be
-            generated automatically.
+            Make changes to your bookmark here. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -125,14 +113,14 @@ export function AddBookmarkDialog({
               )}
             />
             <DialogFooter>
-               <DialogClose asChild>
+              <DialogClose asChild>
                 <Button type="button" variant="ghost">
                   Cancel
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Bookmark
+                Save Changes
               </Button>
             </DialogFooter>
           </form>
