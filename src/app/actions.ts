@@ -216,10 +216,11 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 const MENU_RECORD_ID = 'vph860h5ys84561';
 
 function recordToAppInfo(record: RecordModel): AppInfo {
+    const logoUrl = record.logo ? pb.files.getUrl(record, record.logo) : '';
     return {
         id: record.id,
         title: record.title,
-        logo: record.logo,
+        logo: logoUrl,
     };
 }
 
@@ -241,8 +242,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
     }
 }
 
-export async function updateAppInfoAction({ id, title, logo }: { id: string, title: string, logo: string }): Promise<AppInfo> {
-    const data = { title, logo };
-    const record = await pb.collection(menuCollectionName).update(id, data);
+export async function updateAppInfoAction(id: string, formData: FormData): Promise<AppInfo> {
+    const record = await pb.collection(menuCollectionName).update(id, formData);
     return recordToAppInfo(record);
 }

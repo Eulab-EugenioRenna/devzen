@@ -358,22 +358,19 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
     setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
   
-  const handleAppInfoSave = async (data: { title: string, logo: string }) => {
-    const originalAppInfo = appInfo;
-    const newAppInfo = { ...appInfo, ...data };
-    setAppInfo(newAppInfo); // Optimistic update
+  const handleAppInfoSave = async (formData: FormData) => {
     setIsEditingAppInfo(false);
     try {
-        const updatedInfo = await updateAppInfoAction({ id: appInfo.id, ...data });
-        setAppInfo(updatedInfo); // Update with result from server
+        const updatedInfo = await updateAppInfoAction(appInfo.id, formData);
+        setAppInfo(updatedInfo);
         toast({ title: 'App info updated!', description: 'Your application name and icon have been changed.'});
     } catch (e) {
-        setAppInfo(originalAppInfo); // Revert on error
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update app info.' });
     }
   }
 
-  const AppIcon = getIcon(appInfo.logo);
+  const isLogoUrl = appInfo.logo?.startsWith('http');
+  const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -382,7 +379,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
           <SidebarHeader>
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
-                 <AppIcon className="size-6 shrink-0" />
+                 {isLogoUrl ? (
+                   <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
+                 ) : (
+                    AppIcon && <AppIcon className="size-6 shrink-0" />
+                 )}
                  <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
               </div>
               <DropdownMenu>
@@ -392,7 +393,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>Edit Title & Icon</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>Edit Title & Logo</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsAddingSpace(true)}>
                         <Plus className="mr-2 h-4 w-4" /> Add Space
@@ -566,8 +567,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
       )}
       {isEditingAppInfo && (
         <EditAppInfoDialog
-            appTitle={appInfo.title}
-            appLogo={appInfo.logo}
+            appInfo={appInfo}
             onSave={handleAppInfoSave}
             onOpenChange={setIsEditingAppInfo}
         />

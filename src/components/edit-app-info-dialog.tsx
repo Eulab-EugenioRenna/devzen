@@ -4,7 +4,8 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { iconMap, getIcon } from './icons';
+import type { AppInfo } from '@/lib/types';
+import { getIcon } from './icons';
 
 import {
   Dialog,
@@ -22,46 +23,45 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 
 const appInfoSchema = z.object({
   title: z.string().min(1, { message: 'App name is required.' }),
-  logo: z.string().min(1, { message: 'Icon is required.' }),
+  logo: z.any().optional(),
 });
 
 interface EditAppInfoDialogProps {
-  appTitle: string;
-  appLogo: string;
-  onSave: (data: z.infer<typeof appInfoSchema>) => void;
+  appInfo: AppInfo;
+  onSave: (formData: FormData) => void;
   onOpenChange: (open: boolean) => void;
 }
 
-export function EditAppInfoDialog({ appTitle, appLogo, onSave, onOpenChange }: EditAppInfoDialogProps) {
+export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfoDialogProps) {
   const form = useForm<z.infer<typeof appInfoSchema>>({
     resolver: zodResolver(appInfoSchema),
     defaultValues: {
-      title: appTitle,
-      logo: appLogo,
+      title: appInfo.title,
+      logo: null,
     },
   });
   
   const { isSubmitting } = form.formState;
-  const availableIcons = Object.keys(iconMap);
 
   const onSubmit = (values: z.infer<typeof appInfoSchema>) => {
-    onSave(values);
-    onOpenChange(false);
+    const formData = new FormData();
+    formData.append('title', values.title);
+    if (values.logo && values.logo.length > 0) {
+      formData.append('logo', values.logo[0]);
+    }
+    onSave(formData);
   };
+  
+  const isLogoUrl = appInfo.logo?.startsWith('http');
+  const IconComponent = !isLogoUrl ? getIcon(appInfo.logo) : null;
   
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
@@ -72,6 +72,16 @@ export function EditAppInfoDialog({ appTitle, appLogo, onSave, onOpenChange }: E
             Update the name and icon for your application.
           </DialogDescription>
         </DialogHeader>
+        
+        <div className="flex items-center gap-2 pt-2">
+            <span className="text-sm font-medium text-muted-foreground">Current Logo:</span>
+            {isLogoUrl ? (
+                <img src={appInfo.logo} alt="current logo" className="h-10 w-10 rounded-md object-cover" />
+            ) : (
+                IconComponent && <IconComponent className="h-10 w-10" />
+            )}
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -90,29 +100,20 @@ export function EditAppInfoDialog({ appTitle, appLogo, onSave, onOpenChange }: E
             <FormField
               control={form.control}
               name="logo"
-              render={({ field }) => (
+              render={({ field: { onChange, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel>Icon</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an icon" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableIcons.map((iconName) => {
-                         const IconComponent = getIcon(iconName);
-                        return (
-                           <SelectItem key={iconName} value={iconName}>
-                            <div className='flex items-center gap-2'>
-                                <IconComponent className='h-4 w-4'/>
-                                <span>{iconName}</span>
-                            </div>
-                           </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Upload New Logo</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => onChange(e.target.files)}
+                      {...fieldProps}
+                     />
+                  </FormControl>
+                  <FormDescription>
+                    Leave blank to keep the current logo.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
