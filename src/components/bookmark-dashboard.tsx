@@ -48,8 +48,8 @@ import { CustomizeItemDialog } from './customize-item-dialog';
 import { Input } from './ui/input';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
-import { pb, toolsAiCollectionName } from '@/lib/pocketbase';
-import { recordToToolAi } from '@/lib/data-mappers';
+import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
+import { recordToToolAi, recordToSpaceItem } from '@/lib/data-mappers';
 
 function SidebarSpaceMenuItem({
   space,
@@ -161,6 +161,76 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   React.useEffect(() => {
     setIsMounted(true);
 
+    // --- Subscription for Bookmarks/Folders (items) ---
+    const handleItemUpdate = (e: { action: string; record: any }) => {
+      try {
+        const item = recordToSpaceItem(e.record);
+        if (!item) return;
+
+        setItems((currentItems) => {
+          if (e.action === 'delete') {
+            return currentItems.filter((i) => i.id !== item.id);
+          }
+          const existingIndex = currentItems.findIndex((i) => i.id === item.id);
+          if (existingIndex > -1) {
+            const newItems = [...currentItems];
+            newItems[existingIndex] = item;
+            return newItems;
+          } else {
+            return [item, ...currentItems];
+          }
+        });
+      } catch (error) {
+        console.error('Error processing real-time item update:', error);
+      }
+    };
+    pb.collection(bookmarksCollectionName)
+      .subscribe('*', handleItemUpdate)
+      .catch((err) => {
+        console.error('Failed to subscribe to items collection:', err);
+        toast({
+          variant: 'destructive',
+          title: 'Real-time Connection Failed',
+          description: 'Could not connect for live updates on bookmarks.',
+        });
+      });
+
+    // --- Subscription for Spaces ---
+    const handleSpaceUpdate = (e: { action: string; record: any }) => {
+      try {
+        const space: Space = { id: e.record.id, name: e.record.name, icon: e.record.icon };
+        if (!space) return;
+
+        setSpaces((currentSpaces) => {
+          if (e.action === 'delete') {
+            return currentSpaces.filter((s) => s.id !== space.id);
+          }
+          const existingIndex = currentSpaces.findIndex((s) => s.id === space.id);
+          if (existingIndex > -1) {
+            const newSpaces = [...currentSpaces];
+            newSpaces[existingIndex] = space;
+            return newSpaces;
+          } else {
+            return [...currentSpaces, space];
+          }
+        });
+      } catch (error) {
+        console.error('Error processing real-time space update:', error);
+      }
+    };
+    pb.collection(spacesCollectionName)
+      .subscribe('*', handleSpaceUpdate)
+      .catch((err) => {
+        console.error('Failed to subscribe to spaces collection:', err);
+        toast({
+          variant: 'destructive',
+          title: 'Real-time Connection Failed',
+          description: 'Could not connect for live updates on spaces.',
+        });
+      });
+
+
+    // --- Subscription for AI Tools ---
     const handleToolUpdate = (e: { action: string; record: any }) => {
       try {
         const tool = recordToToolAi(e.record);
@@ -199,6 +269,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
     return () => {
         try {
+            pb.collection(bookmarksCollectionName).unsubscribe('*');
+            pb.collection(spacesCollectionName).unsubscribe('*');
             pb.collection(toolsAiCollectionName).unsubscribe('*');
         } catch (error) {
             // Fails if subscription was never established, safe to ignore.
