@@ -118,7 +118,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded 
                     <div className="flex-grow overflow-hidden">
                         <p className="font-semibold truncate">{tool.name}</p>
                         <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">{tool.link}</a>
-                        <p className="text-sm text-muted-foreground mt-1 truncate">{tool.summary.summary}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{tool.summary.summary}</p>
                         <div className="flex flex-wrap gap-1 mt-2">
                             {tool.summary.tags.slice(0, 5).map(tag => (
                                 <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
