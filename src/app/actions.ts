@@ -4,34 +4,7 @@ import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
-
-function recordToSpaceItem(record: RecordModel): SpaceItem {
-  const toolData = (record as any).tool;
-  const baseItem = {
-    id: record.id,
-    spaceId: toolData.spaceId,
-    parentId: toolData.parentId,
-    backgroundColor: toolData.backgroundColor,
-    textColor: toolData.textColor,
-  };
-
-  if (toolData.type === 'folder') {
-    return {
-      ...baseItem,
-      type: 'folder',
-      name: toolData.name,
-      items: [], // This will be populated on the client side
-    };
-  }
-
-  return {
-    ...baseItem,
-    type: 'bookmark',
-    title: toolData.title,
-    url: toolData.url,
-    summary: toolData.summary,
-  };
-}
+import { recordToSpaceItem } from '@/lib/data-mappers';
 
 export async function addBookmarkAction({
   title,
@@ -243,8 +216,8 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 function recordToAppInfo(record: RecordModel): AppInfo {
     return {
         id: record.id,
-        name: record.name,
-        icon: record.icon,
+        title: record.title,
+        logo: record.logo,
     };
 }
 
@@ -263,19 +236,19 @@ export async function getAppInfoAction(): Promise<AppInfo> {
 
     // If no record, or collection doesn't exist, create a default one.
     try {
-        const defaultData = { name: 'DevZen', icon: 'Logo' };
+        const defaultData = { title: 'DevZen', logo: 'Logo' };
         const record = await pb.collection(menuCollectionName).create(defaultData);
-        console.warn('No app info found, created a default entry. You might need to create the "devzen_menu" collection with "name" and "icon" text fields.');
+        console.warn('No app info found, created a default entry. You might need to create the "devzen_menu" collection with "title" and "logo" text fields.');
         return recordToAppInfo(record);
     } catch (e) {
         console.error("Fatal: Could not create default app info. Please check if the 'devzen_menu' collection exists in PocketBase.", e);
         // Return a static default to prevent crashing the app
-        return { id: 'default', name: 'DevZen', icon: 'Logo' };
+        return { id: 'default', title: 'DevZen', logo: 'Logo' };
     }
 }
 
-export async function updateAppInfoAction({ id, name, icon }: { id: string, name: string, icon: string }): Promise<AppInfo> {
-    const data = { name, icon };
+export async function updateAppInfoAction({ id, title, logo }: { id: string, title: string, logo: string }): Promise<AppInfo> {
+    const data = { title, logo };
     const record = await pb.collection(menuCollectionName).update(id, data);
     return recordToAppInfo(record);
 }

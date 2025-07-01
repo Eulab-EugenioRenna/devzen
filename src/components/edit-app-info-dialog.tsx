@@ -35,23 +35,23 @@ import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 
 const appInfoSchema = z.object({
-  name: z.string().min(1, { message: 'App name is required.' }),
-  icon: z.string().min(1, { message: 'Icon is required.' }),
+  title: z.string().min(1, { message: 'App name is required.' }),
+  logo: z.string().min(1, { message: 'Icon is required.' }),
 });
 
 interface EditAppInfoDialogProps {
-  appName: string;
-  appIcon: string;
+  appTitle: string;
+  appLogo: string;
   onSave: (data: z.infer<typeof appInfoSchema>) => void;
   onOpenChange: (open: boolean) => void;
 }
 
-export function EditAppInfoDialog({ appName, appIcon, onSave, onOpenChange }: EditAppInfoDialogProps) {
+export function EditAppInfoDialog({ appTitle, appLogo, onSave, onOpenChange }: EditAppInfoDialogProps) {
   const form = useForm<z.infer<typeof appInfoSchema>>({
     resolver: zodResolver(appInfoSchema),
     defaultValues: {
-      name: appName,
-      icon: appIcon,
+      title: appTitle,
+      logo: appLogo,
     },
   });
   
@@ -76,7 +76,7 @@ export function EditAppInfoDialog({ appName, appIcon, onSave, onOpenChange }: Ed
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="title"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>App Name</FormLabel>
@@ -89,7 +89,7 @@ export function EditAppInfoDialog({ appName, appIcon, onSave, onOpenChange }: Ed
             />
             <FormField
               control={form.control}
-              name="icon"
+              name="logo"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Icon</FormLabel>

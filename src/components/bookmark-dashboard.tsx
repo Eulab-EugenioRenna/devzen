@@ -358,7 +358,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
     setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
   };
   
-  const handleAppInfoSave = async (data: { name: string, icon: string }) => {
+  const handleAppInfoSave = async (data: { title: string, logo: string }) => {
     const originalAppInfo = appInfo;
     const newAppInfo = { ...appInfo, ...data };
     setAppInfo(newAppInfo); // Optimistic update
@@ -373,7 +373,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
     }
   }
 
-  const AppIcon = getIcon(appInfo.icon);
+  const AppIcon = getIcon(appInfo.logo);
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -383,7 +383,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2 overflow-hidden">
                  <AppIcon className="size-6 shrink-0" />
-                 <h1 className="text-lg font-semibold font-headline truncate">{appInfo.name}</h1>
+                 <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -566,8 +566,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo 
       )}
       {isEditingAppInfo && (
         <EditAppInfoDialog
-            appName={appInfo.name}
-            appIcon={appInfo.icon}
+            appTitle={appInfo.title}
+            appLogo={appInfo.logo}
             onSave={handleAppInfoSave}
             onOpenChange={setIsEditingAppInfo}
         />
