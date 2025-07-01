@@ -160,30 +160,51 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   React.useEffect(() => {
     setIsMounted(true);
-    
+
     const handleToolUpdate = (e: { action: string; record: any }) => {
-      const tool = recordToToolAi(e.record);
-      setTools((currentTools) => {
-        if (e.action === 'delete' || tool.deleted) {
-          return currentTools.filter((t) => t.id !== tool.id);
+      try {
+        const tool = recordToToolAi(e.record);
+
+        if (!tool) {
+          return;
         }
-        const existingIndex = currentTools.findIndex((t) => t.id === tool.id);
-        if (existingIndex > -1) {
-          const newTools = [...currentTools];
-          newTools[existingIndex] = tool;
-          return newTools;
-        } else {
-          return [tool, ...currentTools];
-        }
-      });
+
+        setTools((currentTools) => {
+          if (e.action === 'delete' || tool.deleted) {
+            return currentTools.filter((t) => t.id !== tool.id);
+          }
+          const existingIndex = currentTools.findIndex((t) => t.id === tool.id);
+          if (existingIndex > -1) {
+            const newTools = [...currentTools];
+            newTools[existingIndex] = tool;
+            return newTools;
+          } else {
+            return [tool, ...currentTools];
+          }
+        });
+      } catch (error) {
+          console.error("Error processing real-time tool update:", error);
+      }
     };
     
-    pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
+    pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate)
+      .catch(err => {
+          console.error("Failed to subscribe to AI tools collection:", err);
+          toast({
+              variant: 'destructive',
+              title: 'Real-time Connection Failed',
+              description: 'Could not connect to the tools library for live updates. Check collection permissions.',
+          });
+      });
 
     return () => {
-        pb.collection(toolsAiCollectionName).unsubscribe('*');
+        try {
+            pb.collection(toolsAiCollectionName).unsubscribe('*');
+        } catch (error) {
+            // Fails if subscription was never established, safe to ignore.
+        }
     };
-  }, []);
+  }, [toast]);
   
   // Set first space as active if the active one is deleted
   React.useEffect(() => {

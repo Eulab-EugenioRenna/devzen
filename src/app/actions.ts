@@ -4,7 +4,7 @@ import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
-import { recordToSpaceItem } from '@/lib/data-mappers';
+import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
 
 export async function addBookmarkAction({
   title,
@@ -248,19 +248,15 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
 // ===== AI Tools Library Actions =====
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
-  const records = await pb.collection(toolsAiCollectionName).getFullList({
-    filter: 'deleted = false',
-  });
-  return records.map(record => ({
-    id: record.id,
-    name: record.name,
-    link: record.link,
-    category: record.category,
-    source: record.source,
-    summary: record.summary, // PocketBase SDK automatically parses JSON fields
-    deleted: record.deleted,
-    brand: record.brand,
-  }));
+  try {
+    const records = await pb.collection(toolsAiCollectionName).getFullList({
+      filter: 'deleted = false',
+    });
+    return records.map(recordToToolAi).filter((tool): tool is ToolsAi => tool !== null);
+  } catch (error) {
+    console.error("Failed to fetch AI tools library on server:", error);
+    return [];
+  }
 }
 
 export async function addBookmarkFromLibraryAction({
