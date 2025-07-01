@@ -17,7 +17,10 @@ if (!process.env.NEXT_PUBLIC_POCKETBASE_COLLECTION_TOOLS_AI) {
 }
 
 
-export const pb = new PocketBase(process.env.POCKETBASE_URL);
+export const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL);
+
+// This is disabled to prevent client-side navigation from cancelling
+// server-side actions. It's particularly important in Next.js.
 pb.autoCancellation(false);
 
 
