@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { MoreHorizontal } from 'lucide-react';
 
 import {
@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onEdit: () => void;
-  onDeleted: (id: string) => void;
+  onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   isOverlay?: boolean;
 }
 
@@ -49,10 +49,21 @@ function getDomain(url: string) {
 }
 
 export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: BookmarkCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform, isDragging } = useDraggable({
     id: bookmark.id,
-    data: { bookmark },
+    data: { type: 'bookmark', item: bookmark },
   });
+  
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+    id: bookmark.id,
+    data: { type: 'bookmark', item: bookmark },
+  });
+  
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDraggableNodeRef(node);
+    setDroppableNodeRef(node);
+  }
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const domain = getDomain(bookmark.url);
@@ -71,13 +82,16 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
       {...attributes}
       {...listeners}
       className={cn(
-        'transition-transform duration-200 ease-in-out cursor-grab',
+        'transition-transform duration-200 ease-in-out cursor-grab relative',
         isDragging && 'opacity-50',
         isOverlay && 'shadow-2xl'
       )}
     >
       <Card
-        className="flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-shadow duration-200 hover:shadow-lg"
+        className={cn(
+            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-lg",
+            isOver && "ring-2 ring-primary"
+        )}
       >
         <CardHeader>
           <div className="flex items-start gap-4">
@@ -142,7 +156,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
-              onClick={() => onDeleted(bookmark.id)}
+              onClick={() => onDeleted(bookmark.id, 'bookmark')}
             >
               Delete
             </AlertDialogAction>

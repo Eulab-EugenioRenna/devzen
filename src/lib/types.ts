@@ -1,15 +1,28 @@
 import type { LucideIcon } from "lucide-react";
 
-export interface Bookmark {
+export type SpaceItem = Bookmark | Folder;
+
+interface BaseItem {
   id: string;
+  spaceId: string;
+  parentId?: string | null;
+}
+
+export interface Bookmark extends BaseItem {
+  type: 'bookmark';
   title: string;
   url: string;
   summary?: string;
-  spaceId: string;
+}
+
+export interface Folder extends BaseItem {
+  type: 'folder';
+  name: string;
+  items: Bookmark[];
 }
 
 export interface Space {
-  id: string;
+  id:string;
   name: string;
   icon: LucideIcon;
 }
