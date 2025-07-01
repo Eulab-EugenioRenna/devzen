@@ -49,21 +49,11 @@ function getDomain(url: string) {
 }
 
 export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: BookmarkCardProps) {
-  const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
   });
   
-  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
-    id: bookmark.id,
-    data: { type: 'bookmark', item: bookmark },
-  });
-  
-  const setNodeRef = (node: HTMLElement | null) => {
-    setDraggableNodeRef(node);
-    setDroppableNodeRef(node);
-  }
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const domain = getDomain(bookmark.url);
@@ -74,27 +64,12 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
       }
     : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        'transition-transform duration-200 ease-in-out cursor-grab relative',
-        isDragging && 'opacity-50',
-        isOverlay && 'shadow-2xl'
-      )}
-    >
-      <Card
-        className={cn(
-            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-lg",
-            isOver && "ring-2 ring-primary"
-        )}
-      >
-        <CardHeader>
-          <div className="flex items-start gap-4">
+    
+  if (isOverlay) {
+    return (
+        <Card
+            className={cn("flex w-64 items-center gap-4 p-3 shadow-2xl")}
+        >
             <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
               <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
               <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
@@ -102,12 +77,48 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 overflow-hidden">
+                <CardTitle className="font-headline text-base leading-tight truncate">
+                  {bookmark.title}
+                </CardTitle>
+                <CardDescription className="truncate text-xs">
+                    {domain}
+                </CardDescription>
+            </div>
+        </Card>
+    )
+  }
+
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'transition-transform duration-200 ease-in-out relative',
+        isDragging && 'opacity-50'
+      )}
+    >
+      <Card
+        className={cn(
+            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-lg"
+        )}
+      >
+        <CardHeader>
+          <div className="flex items-start gap-4">
+             <div {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+                <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
+                  <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
+                  <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
+                    {bookmark.title?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+            </div>
+            <div className="flex-1 overflow-hidden">
               <a
                 href={bookmark.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-                onClick={(e) => e.stopPropagation()}
               >
                 <CardTitle className="font-headline text-lg leading-tight hover:underline">
                   {bookmark.title}
@@ -117,15 +128,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
                 {domain}
               </CardDescription>
             </div>
-            <div className="flex items-center" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="flex items-center">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Bookmark options</span>
                     </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -145,7 +156,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
       </Card>
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
