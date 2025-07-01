@@ -10,7 +10,7 @@ async function getItems(): Promise<SpaceItem[]> {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
       sort: '-created',
     });
-    return records.map(recordToSpaceItem);
+    return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
   } catch (error: any) {
     console.error('Failed to fetch items:', error.response || error);
     if (error?.status === 404) {

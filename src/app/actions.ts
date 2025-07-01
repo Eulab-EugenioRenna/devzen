@@ -50,7 +50,11 @@ export async function addBookmarkAction({
 
   try {
     const record = await pb.collection(bookmarksCollectionName).create(data);
-    return recordToSpaceItem(record) as Bookmark;
+    const newBookmark = recordToSpaceItem(record);
+    if (!newBookmark || newBookmark.type !== 'bookmark') {
+      throw new Error('Failed to create or map bookmark from new record.');
+    }
+    return newBookmark as Bookmark;
   } catch (e) {
     console.error('Failed to create bookmark in PocketBase', e);
     throw new Error('Failed to save bookmark.');
@@ -89,7 +93,11 @@ export async function updateBookmarkAction({
   };
 
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
-  return recordToSpaceItem(updatedRecord) as Bookmark;
+  const updatedBookmark = recordToSpaceItem(updatedRecord);
+  if (!updatedBookmark || updatedBookmark.type !== 'bookmark') {
+    throw new Error('Failed to update or map bookmark from record.');
+  }
+  return updatedBookmark as Bookmark;
 }
 
 export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean, updatedBookmarks?: Bookmark[] }> {
@@ -106,7 +114,9 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
     });
     
     const updatedRecords = await Promise.all(updatePromises);
-    const updatedBookmarks = updatedRecords.map(recordToSpaceItem).filter(item => item.type === 'bookmark') as Bookmark[];
+    const updatedBookmarks = updatedRecords
+        .map(recordToSpaceItem)
+        .filter((item): item is Bookmark => !!item && item.type === 'bookmark');
     
     await pb.collection(bookmarksCollectionName).delete(id);
     return { success: true, updatedBookmarks };
@@ -128,7 +138,14 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   };
 
   const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
-  const newFolder = recordToSpaceItem(folderRecord) as Folder;
+  const newFolderUnchecked = recordToSpaceItem(folderRecord);
+
+  if (!newFolderUnchecked || newFolderUnchecked.type !== 'folder') {
+    // Attempt to clean up the invalid record that was just created
+    await pb.collection(bookmarksCollectionName).delete(folderRecord.id).catch(e => console.error("Failed to clean up invalid folder record after creation error.", e));
+    throw new Error('Failed to create or map new folder from record.');
+  }
+  const newFolder = newFolderUnchecked as Folder;
 
   const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
     const record = await pb.collection(bookmarksCollectionName).getOne(bookmarkId);
@@ -137,7 +154,9 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   });
   
   const updatedRecords = await Promise.all(updatePromises);
-  const updatedBookmarks = updatedRecords.map(recordToSpaceItem) as Bookmark[];
+  const updatedBookmarks = updatedRecords
+    .map(recordToSpaceItem)
+    .filter((item): item is Bookmark => !!item && item.type === 'bookmark');
 
   return { folder: newFolder, bookmarks: updatedBookmarks };
 }
@@ -146,7 +165,11 @@ export async function updateFolderNameAction({ id, name }: { id: string, name: s
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   const data = { tool: { ...record.tool, name } };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
-  return recordToSpaceItem(updatedRecord) as Folder;
+  const updatedFolder = recordToSpaceItem(updatedRecord);
+  if (!updatedFolder || updatedFolder.type !== 'folder') {
+      throw new Error('Failed to update folder name or map record.');
+  }
+  return updatedFolder as Folder;
 }
 
 
@@ -165,14 +188,22 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   
   const data = { tool };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
-  return recordToSpaceItem(updatedRecord);
+  const updatedItem = recordToSpaceItem(updatedRecord);
+  if (!updatedItem) {
+    throw new Error('Failed to move or map item.');
+  }
+  return updatedItem;
 }
 
 export async function updateItemColorsAction({ id, backgroundColor, textColor }: { id: string, backgroundColor: string, textColor: string }): Promise<SpaceItem> {
     const record = await pb.collection(bookmarksCollectionName).getOne(id);
     const data = { tool: { ...record.tool, backgroundColor, textColor } };
     const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
-    return recordToSpaceItem(updatedRecord);
+    const updatedItem = recordToSpaceItem(updatedRecord);
+    if (!updatedItem) {
+        throw new Error('Failed to update colors or map item.');
+    }
+    return updatedItem;
 }
 
 // ===== Space Actions =====
@@ -296,7 +327,11 @@ export async function addBookmarkFromLibraryAction({
 
   try {
     const record = await pb.collection(bookmarksCollectionName).create(data);
-    return recordToSpaceItem(record) as Bookmark;
+    const newBookmark = recordToSpaceItem(record);
+    if (!newBookmark || newBookmark.type !== 'bookmark') {
+      throw new Error('Failed to create or map bookmark from library tool.');
+    }
+    return newBookmark as Bookmark;
   } catch (e) {
     console.error('Failed to create bookmark from library in PocketBase', e);
     throw new Error('Failed to save bookmark from library.');
