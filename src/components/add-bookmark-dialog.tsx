@@ -13,9 +13,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -32,7 +32,7 @@ import { Loader2 } from 'lucide-react';
 
 const bookmarkSchema = z.object({
   title: z.string().min(1, { message: 'Title is required.' }),
-  url: z.string().url({ message: 'Please enter a valid URL.' }),
+  url: z.string().min(1, { message: 'URL is required.' }),
 });
 
 interface AddBookmarkDialogProps {
@@ -61,8 +61,14 @@ export function AddBookmarkDialog({
 
   const onSubmit = async (values: z.infer<typeof bookmarkSchema>) => {
     try {
+      let url = values.url;
+      if (!/^(https?:\/\/)/i.test(url)) {
+        url = `https://${url}`;
+      }
+      
       const newBookmark = await addBookmarkAction({
         ...values,
+        url,
         spaceId: activeSpaceId,
       });
       onBookmarkAdded(newBookmark);
@@ -71,11 +77,15 @@ export function AddBookmarkDialog({
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: `Failed to add bookmark: ${errorMessage}`,
-      });
+      if (errorMessage.includes('Invalid URL')) {
+        form.setError('url', { type: 'manual', message: 'Please enter a valid URL.' });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Failed to add bookmark: ${errorMessage}`,
+        });
+      }
     }
   };
   
@@ -118,7 +128,14 @@ export function AddBookmarkDialog({
                 <FormItem>
                   <FormLabel>URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://nextjs.org" {...field} />
+                    <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 text-base ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
+                        <span className="text-muted-foreground">https://</span>
+                        <input
+                            {...field}
+                            placeholder="nextjs.org"
+                            className="w-full border-none bg-transparent pl-1 text-foreground placeholder:text-muted-foreground focus:outline-none"
+                        />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
