@@ -62,6 +62,7 @@ function DroppableSidebarMenu({
                 onClick={() => setActiveSpaceId(space.id)}
                 isActive={activeSpaceId === space.id}
                 tooltip={space.name}
+                className="px-4"
               >
                 <space.icon />
                 <span>{space.name}</span>
