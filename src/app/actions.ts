@@ -11,6 +11,8 @@ function recordToSpaceItem(record: RecordModel): SpaceItem {
     id: record.id,
     spaceId: toolData.spaceId,
     parentId: toolData.parentId,
+    backgroundColor: toolData.backgroundColor,
+    textColor: toolData.textColor,
   };
 
   if (toolData.type === 'folder') {
@@ -191,6 +193,13 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   const data = { tool };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   return recordToSpaceItem(updatedRecord);
+}
+
+export async function updateItemColorsAction({ id, backgroundColor, textColor }: { id: string, backgroundColor: string, textColor: string }): Promise<SpaceItem> {
+    const record = await pb.collection(bookmarksCollectionName).getOne(id);
+    const data = { tool: { ...record.tool, backgroundColor, textColor } };
+    const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
+    return recordToSpaceItem(updatedRecord);
 }
 
 // ===== Space Actions =====

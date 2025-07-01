@@ -32,11 +32,13 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onEdit: () => void;
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
+  onCustomize: () => void;
   isOverlay?: boolean;
 }
 
@@ -48,8 +50,13 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: BookmarkCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverlay }: BookmarkCardProps) {
+  const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform, isDragging } = useDraggable({
+    id: bookmark.id,
+    data: { type: 'bookmark', item: bookmark },
+  });
+
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
   });
@@ -65,6 +72,13 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
       }
     : undefined;
     
+  const cardStyle: React.CSSProperties = {
+    ...style,
+    '--glow-color': bookmark.backgroundColor ?? 'hsl(var(--primary))',
+    backgroundColor: bookmark.backgroundColor,
+    color: bookmark.textColor,
+  } as React.CSSProperties;
+
   if (isOverlay) {
     return (
         <Card
@@ -88,11 +102,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
     )
   }
 
-
   return (
     <div
-      ref={setNodeRef}
-      style={style}
+      ref={setDroppableNodeRef}
+      style={cardStyle}
       className={cn(
         'transition-transform duration-200 ease-in-out relative',
         isDragging && 'opacity-50'
@@ -100,25 +113,40 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
     >
       <Card
         className={cn(
-            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-lg"
+            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
+        style={{
+            backgroundColor: bookmark.backgroundColor ? `${bookmark.backgroundColor}A0` : undefined,
+        }}
       >
         <CardHeader>
           <div className="flex items-start gap-4">
-             <div {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
-                <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
-                  <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-                  <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                    {bookmark.title?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-            </div>
+             <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+                            <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
+                            <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
+                            <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
+                                {bookmark.title?.[0]?.toUpperCase()}
+                            </AvatarFallback>
+                            </Avatar>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
+                    </TooltipContent>
+                </Tooltip>
+             </TooltipProvider>
+
             <div className="flex-1 overflow-hidden">
               <a
                 href={bookmark.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                onClick={(e) => e.stopPropagation()}
               >
                 <CardTitle className="font-headline text-lg leading-tight hover:underline">
                   {bookmark.title}
@@ -131,13 +159,14 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, isOverlay }: Bookmar
             <div className="flex items-center">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
                         <span className="sr-only">Bookmark options</span>
                     </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"

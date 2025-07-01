@@ -4,6 +4,8 @@ interface BaseItem {
   id: string;
   spaceId: string;
   parentId?: string | null;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 export interface Bookmark extends BaseItem {

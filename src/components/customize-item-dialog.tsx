@@ -4,8 +4,8 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { updateBookmarkAction } from '@/app/actions';
-import type { Bookmark } from '@/lib/types';
+import type { SpaceItem } from '@/lib/types';
+import { updateItemColorsAction } from '@/app/actions';
 
 import {
   Dialog,
@@ -29,88 +29,93 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-const bookmarkSchema = z.object({
-  title: z.string().min(1, { message: 'Title is required.' }),
-  url: z.string().url({ message: 'Please enter a valid URL.' }),
+const colorSchema = z.object({
+  backgroundColor: z.string(),
+  textColor: z.string(),
 });
 
-interface EditBookmarkDialogProps {
-  bookmark: Bookmark;
+interface CustomizeItemDialogProps {
+  item: SpaceItem;
   onOpenChange: (open: boolean) => void;
-  onBookmarkUpdated: (bookmark: Bookmark) => void;
+  onItemUpdated: (item: SpaceItem) => void;
 }
 
-export function EditBookmarkDialog({
-  bookmark,
+export function CustomizeItemDialog({
+  item,
   onOpenChange,
-  onBookmarkUpdated,
-}: EditBookmarkDialogProps) {
+  onItemUpdated,
+}: CustomizeItemDialogProps) {
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof bookmarkSchema>>({
-    resolver: zodResolver(bookmarkSchema),
+  const form = useForm<z.infer<typeof colorSchema>>({
+    resolver: zodResolver(colorSchema),
     defaultValues: {
-      title: bookmark.title,
-      url: bookmark.url,
+      backgroundColor: item.backgroundColor ?? '#FFFFFF',
+      textColor: item.textColor ?? '#000000',
     },
   });
 
   const { isSubmitting } = form.formState;
 
-  const onSubmit = async (values: z.infer<typeof bookmarkSchema>) => {
+  const onSubmit = async (values: z.infer<typeof colorSchema>) => {
     try {
-      const updatedBookmark = await updateBookmarkAction({
-        id: bookmark.id,
+      const updatedItem = await updateItemColorsAction({
+        id: item.id,
         ...values,
       });
-      onBookmarkUpdated(updatedBookmark);
-      toast({
-        title: 'Bookmark updated!',
-        description: `"${updatedBookmark.title}" has been saved.`,
-       });
+      onItemUpdated(updatedItem);
+      onOpenChange(false);
     } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: `Failed to update bookmark: ${errorMessage}`,
+        description: `Failed to update colors: ${errorMessage}`,
       });
     }
   };
+
+  const itemName = item.type === 'bookmark' ? item.title : item.name;
 
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Edit Bookmark</DialogTitle>
+          <DialogTitle className="font-headline">Customize &quot;{itemName}&quot;</DialogTitle>
           <DialogDescription>
-            Make changes to your bookmark here. Click save when you're done.
+            Change the background and text color of your item.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="title"
+              name="backgroundColor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Background Color</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Next.js Docs" {...field} />
+                    <div className='flex items-center gap-2'>
+                       <Input type="color" {...field} className='p-1 h-10 w-14' />
+                       <Input type="text" {...field} placeholder="#FFFFFF" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
-              name="url"
+              name="textColor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>URL</FormLabel>
+                  <FormLabel>Text Color</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://nextjs.org" {...field} />
+                     <div className='flex items-center gap-2'>
+                       <Input type="color" {...field} className='p-1 h-10 w-14' />
+                       <Input type="text" {...field} placeholder="#000000" />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

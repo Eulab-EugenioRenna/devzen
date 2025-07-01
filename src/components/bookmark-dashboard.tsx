@@ -37,11 +37,12 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, MoreVertical } from 'lucide-react';
+import { PlusCircle, Plus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
+import { CustomizeItemDialog } from './customize-item-dialog';
 
 function SidebarSpaceMenuItem({
   space,
@@ -68,7 +69,10 @@ function SidebarSpaceMenuItem({
             'rounded-lg transition-colors',
             isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
           )}
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           <SidebarMenuItem className="px-4">
             <SidebarMenuButton
@@ -82,7 +86,7 @@ function SidebarSpaceMenuItem({
           </SidebarMenuItem>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -136,6 +140,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
   const [isAddingSpace, setIsAddingSpace] = React.useState(false);
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
+  const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
 
   const [isMounted, setIsMounted] = React.useState(false);
   const { toast } = useToast();
@@ -186,15 +191,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
       description: `"${newBookmark.title}" has been saved.`,
     });
   };
-
-  const handleUpdateBookmark = (updatedBookmark: Bookmark) => {
-    setItems((prev) => prev.map((b) => (b.id === updatedBookmark.id ? updatedBookmark : b)));
-    setEditingBookmark(null);
-    toast({
-      title: 'Bookmark updated!',
-      description: `"${updatedBookmark.title}" has been saved.`,
-    });
+  
+  const handleItemUpdate = (updatedItem: SpaceItem) => {
+    setItems((prev) => prev.map((i) => (i.id === updatedItem.id ? updatedItem : i)));
+    if (editingBookmark && editingBookmark.id === updatedItem.id) setEditingBookmark(null);
+    if (customizingItem && customizingItem.id === updatedItem.id) setCustomizingItem(null);
   };
+
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
     const itemToDelete = items.find((i) => i.id === id);
@@ -373,6 +376,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     onDeleted={handleDeleteItem}
                     onView={() => setViewingFolder(item as Folder)}
                     onNameUpdated={handleUpdateFolderName}
+                    onCustomize={() => setCustomizingItem(item)}
                   />
                 ) : (
                   <BookmarkCard
@@ -380,6 +384,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     bookmark={item}
                     onEdit={() => setEditingBookmark(item)}
                     onDeleted={handleDeleteItem}
+                    onCustomize={() => setCustomizingItem(item)}
                   />
                 ))}
               </div>
@@ -402,6 +407,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     bookmark={draggedItem}
                     onEdit={() => {}}
                     onDeleted={() => {}}
+                    onCustomize={() => {}}
                     isOverlay
                 />
             ) : (
@@ -410,6 +416,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
                     onDeleted={() => {}}
                     onView={() => {}}
                     onNameUpdated={() => {}}
+                    onCustomize={() => {}}
                     isOverlay
                 />
             )
@@ -421,7 +428,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
         <EditBookmarkDialog
           bookmark={editingBookmark}
           onOpenChange={(open) => !open && setEditingBookmark(null)}
-          onBookmarkUpdated={handleUpdateBookmark}
+          onBookmarkUpdated={handleItemUpdate}
         />
       )}
       {(isAddingSpace || editingSpace) && (
@@ -463,6 +470,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces }: { initialItem
           onOpenChange={(open) => !open && setViewingFolder(null)}
           onItemMove={handleItemMove}
           onItemDelete={handleDeleteItem}
+        />
+      )}
+      {customizingItem && (
+        <CustomizeItemDialog
+            item={customizingItem}
+            onOpenChange={(open) => !open && setCustomizingItem(null)}
+            onItemUpdated={handleItemUpdate}
         />
       )}
     </DndContext>

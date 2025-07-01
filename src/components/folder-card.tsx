@@ -16,6 +16,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -39,6 +40,7 @@ interface FolderCardProps {
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   onView: (folder: Folder) => void;
   onNameUpdated: (id: string, name: string) => void;
+  onCustomize: () => void;
   isOverlay?: boolean;
 }
 
@@ -50,7 +52,7 @@ function getDomain(url: string) {
   }
 }
 
-export function FolderCard({ folder, onDeleted, onView, onNameUpdated, isOverlay }: FolderCardProps) {
+export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, isOverlay }: FolderCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: folder.id,
     data: { type: 'folder', item: folder },
@@ -96,6 +98,12 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, isOverlay
     setName(folder.name);
   }, [folder.name])
 
+  const cardStyle: React.CSSProperties = {
+    '--glow-color': folder.backgroundColor ?? 'hsl(var(--primary))',
+    backgroundColor: folder.backgroundColor,
+    color: folder.textColor,
+  } as React.CSSProperties;
+
   return (
     <div
       ref={setNodeRef}
@@ -104,12 +112,16 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, isOverlay
         isOverlay && 'shadow-2xl'
       )}
       onDoubleClick={() => !isOverlay && onView(folder)}
+      style={cardStyle}
     >
       <Card
         className={cn(
-            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-lg",
-            isOver && "ring-2 ring-primary"
+            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
+        style={{
+            backgroundColor: folder.backgroundColor ? `${folder.backgroundColor}A0` : undefined,
+        }}
       >
         <CardHeader>
           <div className="flex items-start gap-4">
@@ -144,6 +156,8 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, isOverlay
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
