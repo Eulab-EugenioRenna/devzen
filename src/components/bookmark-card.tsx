@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
 
@@ -85,18 +84,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
   );
   
   const DraggableIcon = (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
-            {iconContent}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-            <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+        {iconContent}
+    </div>
   );
 
   if (isOverlay) {
