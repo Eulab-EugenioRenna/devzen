@@ -34,6 +34,8 @@ const customizeSchema = z.object({
   backgroundColor: z.string(),
   textColor: z.string(),
   icon: z.string().optional(),
+  iconUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  iconColor: z.string().optional(),
 });
 
 interface CustomizeItemDialogProps {
@@ -48,13 +50,16 @@ export function CustomizeItemDialog({
   onItemUpdated,
 }: CustomizeItemDialogProps) {
   const { toast } = useToast();
+  const isBookmark = item.type === 'bookmark';
 
   const form = useForm<z.infer<typeof customizeSchema>>({
     resolver: zodResolver(customizeSchema),
     defaultValues: {
       backgroundColor: item.backgroundColor ?? '#FFFFFF',
       textColor: item.textColor ?? '#000000',
-      icon: item.type === 'bookmark' ? (item as Bookmark).icon ?? '' : undefined,
+      icon: isBookmark ? (item as Bookmark).icon ?? '' : undefined,
+      iconUrl: isBookmark ? (item as Bookmark).iconUrl ?? '' : undefined,
+      iconColor: isBookmark ? (item as Bookmark).iconColor ?? '#000000' : undefined,
     },
   });
 
@@ -66,7 +71,9 @@ export function CustomizeItemDialog({
         id: item.id,
         backgroundColor: values.backgroundColor,
         textColor: values.textColor,
-        icon: item.type === 'bookmark' ? values.icon : undefined,
+        icon: isBookmark ? values.icon : undefined,
+        iconUrl: isBookmark ? values.iconUrl : undefined,
+        iconColor: isBookmark ? values.iconColor : undefined,
       });
       onItemUpdated(updatedItem);
       onOpenChange(false);
@@ -126,26 +133,63 @@ export function CustomizeItemDialog({
                 </FormItem>
               )}
             />
-            {item.type === 'bookmark' && (
-              <FormField
-                control={form.control}
-                name="icon"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom Icon</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., nextdotjs" {...field} value={field.value ?? ''}/>
-                    </FormControl>
-                     <FormDescription>
-                      Enter a slug from{' '}
-                      <a href="https://simpleicons.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">
-                        Simple Icons
-                      </a>. Leave blank to use the website favicon.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {isBookmark && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="iconUrl"
+                  render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Custom Icon URL</FormLabel>
+                          <FormControl>
+                              <Input placeholder="https://example.com/icon.png" {...field} value={field.value ?? ''}/>
+                          </FormControl>
+                          <FormDescription>
+                              Provide a direct URL to an image. This will override the Simple Icon and favicon.
+                          </FormDescription>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="icon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Icon (from Simple Icons)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., nextdotjs" {...field} value={field.value ?? ''}/>
+                      </FormControl>
+                      <FormDescription>
+                        Enter a slug from{' '}
+                        <a href="https://simpleicons.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                          Simple Icons
+                        </a>. Leave blank to use the website favicon.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="iconColor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Icon Color</FormLabel>
+                      <FormControl>
+                          <div className='flex items-center gap-2'>
+                          <Input type="color" {...field} className='p-1 h-10 w-14' value={field.value ?? '#000000'} />
+                          <Input type="text" {...field} placeholder="#000000" value={field.value ?? '#000000'} />
+                          </div>
+                      </FormControl>
+                      <FormDescription>
+                          Only applies to icons from Simple Icons.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
             <DialogFooter>
               <DialogClose asChild>

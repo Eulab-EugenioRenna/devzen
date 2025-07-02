@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
+import { TooltipProvider } from './ui/tooltip';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -72,16 +73,33 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
     color: bookmark.textColor,
   } as React.CSSProperties;
 
-  const iconContent = bookmark.icon ? (
-    <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
-      <SimpleIcon slug={bookmark.icon} />
-    </div>
-  ) : (
-    <Favicon
-      url={bookmark.url}
-      title={bookmark.title}
-    />
-  );
+  const iconContent = (() => {
+    if (bookmark.iconUrl) {
+      return (
+        <img
+          src={bookmark.iconUrl}
+          alt={bookmark.title}
+          className="h-8 w-8 flex-shrink-0 rounded-md border object-contain p-1 bg-white"
+        />
+      );
+    }
+    if (bookmark.icon) {
+      return (
+        <div
+          className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card"
+          style={{ color: bookmark.iconColor ?? 'currentColor' }}
+        >
+          <SimpleIcon slug={bookmark.icon} />
+        </div>
+      );
+    }
+    return (
+      <Favicon
+        url={bookmark.url}
+        title={bookmark.title}
+      />
+    );
+  })();
   
   const DraggableIcon = (
     <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
@@ -146,6 +164,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
             </CardDescription>
           </div>
           <div className="flex items-center ml-auto">
+            <TooltipProvider>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
@@ -165,6 +184,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                   </DropdownMenuItem>
                   </DropdownMenuContent>
               </DropdownMenu>
+              </TooltipProvider>
           </div>
         </div>
       </Card>
@@ -231,6 +251,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
               </CardDescription>
             </div>
             <div className="flex items-center">
+              <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
@@ -250,6 +271,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                </TooltipProvider>
             </div>
           </div>
         </CardHeader>

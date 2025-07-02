@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { Input } from './ui/input';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
+import { TooltipProvider } from './ui/tooltip';
 
 interface FolderCardProps {
   folder: Folder;
@@ -152,6 +153,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                 </CardDescription>
             </div>
              <div className="flex items-center ml-auto">
+              <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
@@ -172,6 +174,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+              </TooltipProvider>
             </div>
         </div>
       </Card>
@@ -243,6 +246,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
               </CardDescription>
             </div>
              <div className="flex items-center">
+               <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
@@ -261,6 +265,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                </TooltipProvider>
             </div>
           </div>
         </CardHeader>
@@ -268,16 +273,33 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
           {folder.items.length > 0 ? (
             <div className="grid grid-cols-5 gap-2">
               {folder.items.slice(0, 10).map((bookmark) => {
-                const iconContent = bookmark.icon ? (
-                  <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
-                    <SimpleIcon slug={bookmark.icon} />
-                  </div>
-                ) : (
-                  <Favicon
-                    url={bookmark.url}
-                    title={bookmark.title}
-                  />
-                );
+                const iconContent = (() => {
+                  if (bookmark.iconUrl) {
+                    return (
+                      <img
+                        src={bookmark.iconUrl}
+                        alt={bookmark.title}
+                        className="h-8 w-8 flex-shrink-0 rounded-md border object-contain p-1 bg-white"
+                      />
+                    );
+                  }
+                  if (bookmark.icon) {
+                    return (
+                      <div
+                        className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card"
+                        style={{ color: bookmark.iconColor ?? 'currentColor' }}
+                      >
+                        <SimpleIcon slug={bookmark.icon} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <Favicon
+                      url={bookmark.url}
+                      title={bookmark.title}
+                    />
+                  );
+                })();
 
                 return (
                   <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} key={bookmark.id}>

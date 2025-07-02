@@ -14,6 +14,8 @@ export interface Bookmark extends BaseItem {
   url: string;
   summary?: string;
   icon?: string;
+  iconUrl?: string;
+  iconColor?: string;
 }
 
 export interface Folder extends BaseItem {

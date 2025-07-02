@@ -78,16 +78,34 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
             {bookmarks.length > 0 ? (
                 <ul className='space-y-2'>
                     {bookmarks.map(bookmark => {
-                       const iconContent = bookmark.icon ? (
-                        <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
-                          <SimpleIcon slug={bookmark.icon} />
-                        </div>
-                      ) : (
-                        <Favicon
-                          url={bookmark.url}
-                          title={bookmark.title}
-                        />
-                      );
+                       const iconContent = (() => {
+                          if (bookmark.iconUrl) {
+                            return (
+                              <img
+                                src={bookmark.iconUrl}
+                                alt={bookmark.title}
+                                className="h-8 w-8 flex-shrink-0 rounded-md border object-contain p-1 bg-white"
+                              />
+                            );
+                          }
+                          if (bookmark.icon) {
+                            return (
+                              <div
+                                className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card"
+                                style={{ color: bookmark.iconColor ?? 'currentColor' }}
+                              >
+                                <SimpleIcon slug={bookmark.icon} />
+                              </div>
+                            );
+                          }
+                          return (
+                            <Favicon
+                              url={bookmark.url}
+                              title={bookmark.title}
+                            />
+                          );
+                        })();
+
                         return (
                             <li key={bookmark.id} className='flex items-center gap-4 p-2 rounded-md hover:bg-muted/50'>
                                 {iconContent}

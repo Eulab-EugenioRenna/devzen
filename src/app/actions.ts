@@ -195,12 +195,18 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   return updatedItem;
 }
 
-export async function customizeItemAction({ id, backgroundColor, textColor, icon }: { id: string, backgroundColor: string, textColor: string, icon?: string }): Promise<SpaceItem> {
+export async function customizeItemAction({ id, backgroundColor, textColor, icon, iconUrl, iconColor }: { id: string, backgroundColor: string, textColor: string, icon?: string, iconUrl?: string, iconColor?: string }): Promise<SpaceItem> {
     const record = await pb.collection(bookmarksCollectionName).getOne(id);
     const tool = { ...record.tool, backgroundColor, textColor };
 
     if (icon !== undefined) {
       (tool as any).icon = icon;
+    }
+    if (iconUrl !== undefined) {
+        (tool as any).iconUrl = iconUrl;
+    }
+    if (iconColor !== undefined) {
+        (tool as any).iconColor = iconColor;
     }
 
     const data = { tool };

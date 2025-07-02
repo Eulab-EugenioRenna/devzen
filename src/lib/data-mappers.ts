@@ -44,6 +44,8 @@ export function recordToSpaceItem(record: RecordModel): SpaceItem | null {
         url: toolData.url,
         summary: toolData.summary,
         icon: toolData.icon,
+        iconUrl: toolData.iconUrl,
+        iconColor: toolData.iconColor,
       };
       return bookmark;
     }
