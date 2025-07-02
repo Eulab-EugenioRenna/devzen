@@ -16,22 +16,14 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { Favicon } from './favicon';
 
 interface AddFromLibraryDialogProps {
   children: React.ReactNode;
   activeSpaceId: string;
   onBookmarkAdded: (bookmark: Bookmark) => void;
   tools: ToolsAi[];
-}
-
-function getDomain(url: string) {
-  try {
-    return new URL(url).hostname;
-  } catch (e) {
-    return '';
-  }
 }
 
 export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
@@ -84,22 +76,18 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
         </div>
         <ScrollArea className="h-[60vh]">
           <div className="pr-4">
-            {filteredTools.map(tool => {
-              const domain = getDomain(tool.link);
-              const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-              
-              return (
+            {filteredTools.map(tool => (
               <div key={tool.id} className="flex items-center gap-4 p-3 border-b transition-colors hover:bg-muted/50">
-                  <Avatar className="h-12 w-12 flex-shrink-0 rounded-lg border">
-                      <AvatarImage src={faviconUrl} alt={tool.name} />
-                      <AvatarFallback className="rounded-lg bg-transparent font-semibold">
-                          {tool.name?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                  </Avatar>
+                  <Favicon 
+                    url={tool.link} 
+                    title={tool.name}
+                    className="h-12 w-12 flex-shrink-0 rounded-lg" 
+                    fallbackClassName="rounded-lg text-xl"
+                  />
                   <div className="flex-grow overflow-hidden">
                       <p className="font-semibold truncate">{tool.name}</p>
                       <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">{tool.link}</a>
-                      <p className="text-sm text-muted-foreground mt-1">{tool.summary.summary}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{tool.summary.summary}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                           {tool.summary.tags.slice(0, 5).map(tag => (
                               <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
@@ -120,7 +108,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                       Import
                   </Button>
               </div>
-            )})}
+            ))}
             {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">No tools found.</p>}
           </div>
         </ScrollArea>

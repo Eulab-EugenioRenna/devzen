@@ -29,11 +29,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from './ui/input';
+import { SimpleIcon } from './simple-icon';
+import { Favicon } from './favicon';
 
 interface FolderCardProps {
   folder: Folder;
@@ -43,14 +44,6 @@ interface FolderCardProps {
   onCustomize: () => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
-}
-
-function getDomain(url: string) {
-  try {
-    return new URL(url).hostname;
-  } catch (e) {
-    return '';
-  }
 }
 
 export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, isOverlay, viewMode = 'grid' }: FolderCardProps) {
@@ -277,18 +270,22 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             <TooltipProvider>
               <div className="grid grid-cols-5 gap-2">
                 {folder.items.slice(0, 10).map((bookmark) => {
-                   const domain = getDomain(bookmark.url);
-                   const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+                  const iconContent = bookmark.icon ? (
+                    <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
+                      <SimpleIcon slug={bookmark.icon} />
+                    </div>
+                  ) : (
+                    <Favicon
+                      url={bookmark.url}
+                      title={bookmark.title}
+                    />
+                  );
+
                   return (
                     <Tooltip key={bookmark.id}>
                       <TooltipTrigger asChild>
                         <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                         <Avatar className="h-8 w-8 rounded-md border">
-                          <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-                          <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                            {bookmark.title?.[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                         {iconContent}
                         </a>
                       </TooltipTrigger>
                       <TooltipContent onClick={(e) => e.stopPropagation()}>

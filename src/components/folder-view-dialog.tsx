@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import type { Bookmark, Folder, SpaceItem } from '@/lib/types';
-import { moveItemAction, deleteItemAction } from '@/app/actions';
+import { moveItemAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Trash2, ArrowUpRightFromSquare } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,20 +24,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { SimpleIcon } from './simple-icon';
+import { Favicon } from './favicon';
+
 
 interface FolderViewDialogProps {
   folder: Folder;
   onOpenChange: (open: boolean) => void;
   onItemMove: (item: SpaceItem) => void;
   onItemDelete: (id: string, type: 'bookmark' | 'folder') => void;
-}
-
-function getDomain(url: string) {
-  try {
-    return new URL(url).hostname;
-  } catch (e) {
-    return '';
-  }
 }
 
 export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelete }: FolderViewDialogProps) {
@@ -84,16 +78,19 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
             {bookmarks.length > 0 ? (
                 <ul className='space-y-2'>
                     {bookmarks.map(bookmark => {
-                        const domain = getDomain(bookmark.url);
-                        const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+                       const iconContent = bookmark.icon ? (
+                        <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
+                          <SimpleIcon slug={bookmark.icon} />
+                        </div>
+                      ) : (
+                        <Favicon
+                          url={bookmark.url}
+                          title={bookmark.title}
+                        />
+                      );
                         return (
-                            <li key={bookmark.id} className='flex items-center gap-4 p-2 rounded-md hover:bg-accent'>
-                                <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
-                                    <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-                                    <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                                        {bookmark.title?.[0]?.toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
+                            <li key={bookmark.id} className='flex items-center gap-4 p-2 rounded-md hover:bg-muted/50'>
+                                {iconContent}
                                 <div className='flex-grow overflow-hidden'>
                                     <p className='font-medium truncate'>{bookmark.title}</p>
                                     <p className='text-xs text-muted-foreground truncate'>{bookmark.url}</p>

@@ -4,8 +4,8 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import type { SpaceItem } from '@/lib/types';
-import { updateItemColorsAction } from '@/app/actions';
+import type { Bookmark, SpaceItem } from '@/lib/types';
+import { customizeItemAction } from '@/app/actions';
 
 import {
   Dialog,
@@ -19,6 +19,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,9 +30,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-const colorSchema = z.object({
+const customizeSchema = z.object({
   backgroundColor: z.string(),
   textColor: z.string(),
+  icon: z.string().optional(),
 });
 
 interface CustomizeItemDialogProps {
@@ -47,21 +49,24 @@ export function CustomizeItemDialog({
 }: CustomizeItemDialogProps) {
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof colorSchema>>({
-    resolver: zodResolver(colorSchema),
+  const form = useForm<z.infer<typeof customizeSchema>>({
+    resolver: zodResolver(customizeSchema),
     defaultValues: {
       backgroundColor: item.backgroundColor ?? '#FFFFFF',
       textColor: item.textColor ?? '#000000',
+      icon: item.type === 'bookmark' ? (item as Bookmark).icon ?? '' : undefined,
     },
   });
 
   const { isSubmitting } = form.formState;
 
-  const onSubmit = async (values: z.infer<typeof colorSchema>) => {
+  const onSubmit = async (values: z.infer<typeof customizeSchema>) => {
     try {
-      const updatedItem = await updateItemColorsAction({
+      const updatedItem = await customizeItemAction({
         id: item.id,
-        ...values,
+        backgroundColor: values.backgroundColor,
+        textColor: values.textColor,
+        icon: item.type === 'bookmark' ? values.icon : undefined,
       });
       onItemUpdated(updatedItem);
       onOpenChange(false);
@@ -71,7 +76,7 @@ export function CustomizeItemDialog({
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: `Failed to update colors: ${errorMessage}`,
+        description: `Failed to update customization: ${errorMessage}`,
       });
     }
   };
@@ -84,7 +89,7 @@ export function CustomizeItemDialog({
         <DialogHeader>
           <DialogTitle className="font-headline">Customize &quot;{itemName}&quot;</DialogTitle>
           <DialogDescription>
-            Change the background and text color of your item.
+            Change the appearance of your item.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -121,6 +126,27 @@ export function CustomizeItemDialog({
                 </FormItem>
               )}
             />
+            {item.type === 'bookmark' && (
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom Icon</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., nextdotjs" {...field} value={field.value ?? ''}/>
+                    </FormControl>
+                     <FormDescription>
+                      Enter a slug from{' '}
+                      <a href="https://simpleicons.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                        Simple Icons
+                      </a>. Leave blank to use the website favicon.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">

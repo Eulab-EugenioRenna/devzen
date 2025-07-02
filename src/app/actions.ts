@@ -195,13 +195,19 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   return updatedItem;
 }
 
-export async function updateItemColorsAction({ id, backgroundColor, textColor }: { id: string, backgroundColor: string, textColor: string }): Promise<SpaceItem> {
+export async function customizeItemAction({ id, backgroundColor, textColor, icon }: { id: string, backgroundColor: string, textColor: string, icon?: string }): Promise<SpaceItem> {
     const record = await pb.collection(bookmarksCollectionName).getOne(id);
-    const data = { tool: { ...record.tool, backgroundColor, textColor } };
+    const tool = { ...record.tool, backgroundColor, textColor };
+
+    if (icon !== undefined) {
+      (tool as any).icon = icon;
+    }
+
+    const data = { tool };
     const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
     const updatedItem = recordToSpaceItem(updatedRecord);
     if (!updatedItem) {
-        throw new Error('Failed to update colors or map item.');
+        throw new Error('Failed to customize or map item.');
     }
     return updatedItem;
 }
@@ -303,16 +309,10 @@ export async function addBookmarkFromLibraryAction({
 
   const toolRecord = await pb.collection(toolsAiCollectionName).getOne(toolId);
   
-  const tool: ToolsAi = {
-      id: toolRecord.id,
-      name: toolRecord.name,
-      link: toolRecord.link,
-      category: toolRecord.category,
-      source: toolRecord.source,
-      summary: toolRecord.summary,
-      deleted: toolRecord.deleted,
-      brand: toolRecord.brand,
-  };
+  const tool: ToolsAi | null = recordToToolAi(toolRecord);
+  if (!tool) {
+    throw new Error('The selected library tool has invalid data.');
+  }
 
   const data = {
     tool: {

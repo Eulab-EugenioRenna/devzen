@@ -13,6 +13,7 @@ export interface Bookmark extends BaseItem {
   title: string;
   url: string;
   summary?: string;
+  icon?: string;
 }
 
 export interface Folder extends BaseItem {

@@ -29,10 +29,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { SimpleIcon } from './simple-icon';
+import { Favicon } from './favicon';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -65,7 +66,6 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const domain = getDomain(bookmark.url);
-  const faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 
   const style = transform
     ? {
@@ -80,17 +80,23 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
     color: bookmark.textColor,
   } as React.CSSProperties;
 
+  const iconContent = bookmark.icon ? (
+    <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
+      <SimpleIcon slug={bookmark.icon} />
+    </div>
+  ) : (
+    <Favicon
+      url={bookmark.url}
+      title={bookmark.title}
+    />
+  );
+
   if (isOverlay) {
     return (
         <Card
             className={cn("flex w-64 items-center gap-4 p-3 shadow-2xl")}
         >
-            <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
-              <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-              <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                {bookmark.title?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            {iconContent}
             <div className="flex-1 overflow-hidden">
                 <CardTitle className="font-headline text-base leading-tight truncate">
                   {bookmark.title}
@@ -127,12 +133,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
             <Tooltip>
                 <TooltipTrigger asChild>
                     <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
-                        <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
-                        <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-                        <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                            {bookmark.title?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                        </Avatar>
+                        {iconContent}
                     </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -228,12 +229,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
-                            <Avatar className="h-8 w-8 flex-shrink-0 rounded-md border">
-                            <AvatarImage src={faviconUrl} alt={`${bookmark.title} favicon`} />
-                            <AvatarFallback className="rounded-md bg-transparent text-xs font-bold">
-                                {bookmark.title?.[0]?.toUpperCase()}
-                            </AvatarFallback>
-                            </Avatar>
+                          {iconContent}
                         </div>
                     </TooltipTrigger>
                     <TooltipContent>
