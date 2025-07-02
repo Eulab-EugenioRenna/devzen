@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from './ui/input';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
@@ -281,17 +281,19 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                 );
 
                 return (
-                  <Tooltip key={bookmark.id}>
-                    <TooltipTrigger asChild>
-                      <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                       {iconContent}
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent onClick={(e) => e.stopPropagation()}>
-                      <p className='font-bold'>{bookmark.title}</p>
-                      <p className='text-muted-foreground text-xs'>{bookmark.url}</p>
-                    </TooltipContent>
-                  </Tooltip>
+                  <TooltipProvider key={bookmark.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                        {iconContent}
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent onClick={(e) => e.stopPropagation()}>
+                        <p className='font-bold'>{bookmark.title}</p>
+                        <p className='text-muted-foreground text-xs'>{bookmark.url}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 );
               })}
             </div>

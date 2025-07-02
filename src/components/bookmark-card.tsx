@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from './ui/tooltip';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
 
@@ -53,7 +53,7 @@ function getDomain(url: string) {
 }
 
 export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverlay, viewMode = 'grid' }: BookmarkCardProps) {
-  const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef: setDraggableNodeRef, isDragging } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
   });
@@ -66,15 +66,8 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const domain = getDomain(bookmark.url);
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
     
   const cardStyle: React.CSSProperties = {
-    ...style,
     '--glow-color': bookmark.backgroundColor ?? 'hsl(var(--primary))',
     backgroundColor: bookmark.backgroundColor,
     color: bookmark.textColor,
@@ -89,6 +82,21 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       url={bookmark.url}
       title={bookmark.title}
     />
+  );
+  
+  const DraggableIcon = (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+            {iconContent}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+            <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 
   if (isOverlay) {
@@ -115,7 +123,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       ref={setDroppableNodeRef}
       style={cardStyle}
       className={cn(
-        'transition-transform duration-200 ease-in-out relative',
+        'relative',
         isDragging && 'opacity-50'
       )}
     >
@@ -129,16 +137,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
         }}
       >
         <div className="flex items-center p-3 gap-4">
-          <Tooltip>
-              <TooltipTrigger asChild>
-                  <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
-                      {iconContent}
-                  </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                  <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
-              </TooltipContent>
-          </Tooltip>
+          {DraggableIcon}
 
           <div className="flex-1 overflow-hidden">
             <a
@@ -208,7 +207,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       ref={setDroppableNodeRef}
       style={cardStyle}
       className={cn(
-        'transition-transform duration-200 ease-in-out relative',
+        'relative',
         isDragging && 'opacity-50'
       )}
     >
@@ -223,16 +222,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       >
         <CardHeader>
           <div className="flex items-start gap-4">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
-                      {iconContent}
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
-                </TooltipContent>
-            </Tooltip>
+            {DraggableIcon}
 
             <div className="flex-1 overflow-hidden">
               <a
