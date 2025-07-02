@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from './ui/input';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
@@ -267,36 +267,34 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
         </CardHeader>
         <CardContent>
           {folder.items.length > 0 ? (
-            <TooltipProvider>
-              <div className="grid grid-cols-5 gap-2">
-                {folder.items.slice(0, 10).map((bookmark) => {
-                  const iconContent = bookmark.icon ? (
-                    <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
-                      <SimpleIcon slug={bookmark.icon} />
-                    </div>
-                  ) : (
-                    <Favicon
-                      url={bookmark.url}
-                      title={bookmark.title}
-                    />
-                  );
+            <div className="grid grid-cols-5 gap-2">
+              {folder.items.slice(0, 10).map((bookmark) => {
+                const iconContent = bookmark.icon ? (
+                  <div className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card">
+                    <SimpleIcon slug={bookmark.icon} />
+                  </div>
+                ) : (
+                  <Favicon
+                    url={bookmark.url}
+                    title={bookmark.title}
+                  />
+                );
 
-                  return (
-                    <Tooltip key={bookmark.id}>
-                      <TooltipTrigger asChild>
-                        <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                         {iconContent}
-                        </a>
-                      </TooltipTrigger>
-                      <TooltipContent onClick={(e) => e.stopPropagation()}>
-                        <p className='font-bold'>{bookmark.title}</p>
-                        <p className='text-muted-foreground text-xs'>{bookmark.url}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </TooltipProvider>
+                return (
+                  <Tooltip key={bookmark.id}>
+                    <TooltipTrigger asChild>
+                      <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                       {iconContent}
+                      </a>
+                    </TooltipTrigger>
+                    <TooltipContent onClick={(e) => e.stopPropagation()}>
+                      <p className='font-bold'>{bookmark.title}</p>
+                      <p className='text-muted-foreground text-xs'>{bookmark.url}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
           ) : (
              <p className="text-sm text-muted-foreground">This folder is empty. Drag bookmarks here to add them.</p>
           )}

@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
 
@@ -129,18 +129,16 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
         }}
       >
         <div className="flex items-center p-3 gap-4">
-          <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
-                        {iconContent}
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
-                </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+              <TooltipTrigger asChild>
+                  <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
+                      {iconContent}
+                  </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                  <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
+              </TooltipContent>
+          </Tooltip>
 
           <div className="flex-1 overflow-hidden">
             <a
@@ -225,18 +223,16 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       >
         <CardHeader>
           <div className="flex items-start gap-4">
-             <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
-                          {iconContent}
-                        </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
-                    </TooltipContent>
-                </Tooltip>
-             </TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+                      {iconContent}
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p className='text-xs'>Drag to move to another space or onto another bookmark to create a folder.</p>
+                </TooltipContent>
+            </Tooltip>
 
             <div className="flex-1 overflow-hidden">
               <a
