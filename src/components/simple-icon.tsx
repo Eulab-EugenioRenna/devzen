@@ -1,15 +1,27 @@
 'use client';
 
 import * as React from 'react';
-import * as simpleIcons from 'simple-icons';
 import { cn } from '@/lib/utils';
+
+const { get } = require('simple-icons');
 
 interface SimpleIconProps extends React.SVGProps<SVGSVGElement> {
   slug: string;
 }
 
 export function SimpleIcon({ slug, className, ...props }: SimpleIconProps) {
-  const icon = simpleIcons.get(slug);
+  if (!slug) {
+    return null;
+  }
+
+  let icon;
+  try {
+    icon = get(slug);
+  } catch (e) {
+    // Suppress the error and return null if the icon is not found.
+    // This prevents the app from crashing with an invalid slug.
+    return null;
+  }
 
   if (!icon) {
     return null;
