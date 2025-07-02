@@ -5,6 +5,8 @@ import type { RecordModel } from 'pocketbase';
 import { getAppInfoAction, getToolsAiAction } from './actions';
 import { recordToSpaceItem } from '@/lib/data-mappers';
 
+export const dynamic = 'force-dynamic';
+
 async function getItems(): Promise<SpaceItem[]> {
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
