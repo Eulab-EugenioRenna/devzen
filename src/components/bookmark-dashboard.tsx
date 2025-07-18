@@ -78,37 +78,38 @@ function SidebarSpaceMenuItem({
   };
 
   return (
-    <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
-      <DropdownMenuTrigger asChild>
-        <SidebarMenuItem
-          ref={setNodeRef}
-          className={cn(
-            'rounded-lg transition-colors',
-            isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
-          )}
-          onContextMenu={handleContextMenu}
-        >
-          <SidebarMenuButton
+    <SidebarMenuItem
+      ref={setNodeRef}
+      className={cn(
+        'rounded-lg transition-colors',
+        isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+      )}
+      onContextMenu={handleContextMenu}
+    >
+      <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <span className="sr-only">Open context menu for {space.name}</span>
+        </DropdownMenuTrigger>
+        <SidebarMenuButton
             onClick={() => onClick(space.id)}
             isActive={isActive}
             tooltip={space.name}
-          >
+        >
             <Icon />
             <span>{space.name}</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-          onClick={() => onDelete(space)}
-        >
-          Delete Space
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </SidebarMenuButton>
+        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+            onClick={() => onDelete(space)}
+          >
+            Delete Space
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
   );
 }
 
@@ -206,6 +207,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newSpaces[existingIndex] = space;
             return newSpaces;
           } else {
+            // Check if it already exists to prevent duplication from optimistic updates
+            if (currentSpaces.some(s => s.id === space.id)) {
+                return currentSpaces;
+            }
             return [...currentSpaces, space];
           }
         });
@@ -341,30 +346,35 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
     const itemToDelete = items.find((i) => i.id === id);
-    
-    // Optimistically update the state
-    let newItems = items.filter((i) => i.id !== id);
-    let originalItemsState = items; // Save original state for potential rollback
-    
+    if (!itemToDelete) return;
+
+    let originalItemsState = items; 
+    let newItems = items.filter(i => i.id !== id);
+
     try {
       const result = await deleteItemAction({ id });
-      
+
       if (result.success && type === 'folder' && result.updatedBookmarks) {
         const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
         newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
         newItems.push(...result.updatedBookmarks);
       }
-      
+
       setItems(newItems);
 
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
         description: `Successfully removed.`,
       });
+
     } catch (error) {
-      // If the delete fails, revert to the original state
       setItems(originalItemsState);
-      toast({ variant: 'destructive', title: 'Error', description: `Failed to delete ${type}.`});
+      console.error(`Failed to delete ${type}`, error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Failed to delete ${type}.`,
+      });
     }
   };
 
