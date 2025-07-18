@@ -121,7 +121,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                                 </Button>
                             </div>
                         </div>
-                        <AccordionContent className="p-4 pt-0">
+                        <AccordionContent className="p-4 pt-0 pl-20">
                             <p className="text-sm text-muted-foreground">{tool.summary.summary}</p>
                         </AccordionContent>
                     </AccordionItem>
