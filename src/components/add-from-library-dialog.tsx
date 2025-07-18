@@ -86,38 +86,40 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                 <Accordion type="single" collapsible className="pr-4">
                     {filteredTools.map(tool => (
                     <AccordionItem value={tool.id} key={tool.id} className="border-b">
-                        <AccordionTrigger className="p-3 text-left hover:no-underline hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-4 w-full">
-                                <Favicon 
-                                    url={tool.link} 
-                                    title={tool.name}
-                                    className="h-12 w-12 flex-shrink-0 rounded-lg" 
-                                    fallbackClassName="rounded-lg text-xl"
-                                />
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold truncate">{tool.name}</p>
-                                    <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block" onClick={(e) => e.stopPropagation()}>{tool.link}</a>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                        {tool.summary.tags.slice(0, 5).map(tag => (
-                                            <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
-                                        ))}
+                        <div className="flex items-center gap-4 w-full p-3 hover:bg-muted/50 transition-colors">
+                            <AccordionTrigger className="flex-1 p-0 text-left hover:no-underline">
+                                <div className="flex items-center gap-4 w-full">
+                                    <Favicon 
+                                        url={tool.link} 
+                                        title={tool.name}
+                                        className="h-12 w-12 flex-shrink-0 rounded-lg" 
+                                        fallbackClassName="rounded-lg text-xl"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold truncate">{tool.name}</p>
+                                        <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block" onClick={(e) => e.stopPropagation()}>{tool.link}</a>
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                            {tool.summary.tags.slice(0, 5).map(tag => (
+                                                <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
-                                <Button
-                                    size="sm"
-                                    onClick={(e) => { e.stopPropagation(); handleAddTool(tool); }}
-                                    disabled={isAdding === tool.id}
-                                    className="shrink-0 ml-4"
-                                >
-                                    {isAdding === tool.id ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Plus className="mr-2 h-4 w-4" />
-                                    )}
-                                    Import
-                                </Button>
-                            </div>
-                        </AccordionTrigger>
+                            </AccordionTrigger>
+                            <Button
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); handleAddTool(tool); }}
+                                disabled={isAdding === tool.id}
+                                className="shrink-0 ml-4"
+                            >
+                                {isAdding === tool.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Plus className="mr-2 h-4 w-4" />
+                                )}
+                                Import
+                            </Button>
+                        </div>
                         <AccordionContent className="p-4 pt-0">
                             <p className="text-sm text-muted-foreground">{tool.summary.summary}</p>
                         </AccordionContent>
