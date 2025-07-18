@@ -1,7 +1,8 @@
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
+import { generateWorkspace } from '@/ai/flows/generate-workspace';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AISpace, AISpaceItem, AIBookmark } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
@@ -342,4 +343,143 @@ export async function addBookmarkFromLibraryAction({
     console.error('Failed to create bookmark from library in PocketBase', e);
     throw new Error('Failed to save bookmark from library.');
   }
+}
+
+// ===== AI Workspace Generation Actions =====
+
+export async function generateWorkspaceAction(prompt: string): Promise<AIWorkspace> {
+    if (!prompt) {
+        throw new Error("Prompt cannot be empty.");
+    }
+    // For JSON import, we parse it directly. Otherwise, we call the AI.
+    try {
+        const json = JSON.parse(prompt);
+        if (json.spaces) {
+            // Basic validation to see if it looks like our workspace structure
+            return json as AIWorkspace;
+        }
+    } catch (e) {
+        // Not a valid JSON, so we treat it as a text prompt for the AI
+    }
+
+    try {
+        const result = await generateWorkspace({ prompt });
+        return result;
+    } catch (e) {
+        console.error("Failed to generate workspace from prompt", e);
+        throw new Error("The AI failed to generate a workspace. Please try a different prompt.");
+    }
+}
+
+export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Promise<{ newSpaces: Space[], newItems: SpaceItem[] }> {
+    const newSpaces: Space[] = [];
+    const newItems: SpaceItem[] = [];
+
+    for (const aiSpace of workspace.spaces) {
+        const spaceRecord = await pb.collection(spacesCollectionName).create({
+            name: aiSpace.name,
+            icon: aiSpace.icon,
+        });
+        const newSpace = recordToSpace(spaceRecord);
+        newSpaces.push(newSpace);
+
+        for (const aiItem of aiSpace.items) {
+            if (aiItem.type === 'bookmark') {
+                const newBookmark = await createBookmarkFromAI(aiItem, newSpace.id, null);
+                newItems.push(newBookmark);
+            } else if (aiItem.type === 'folder') {
+                const folderData = {
+                    tool: { type: 'folder', name: aiItem.name, spaceId: newSpace.id, parentId: null }
+                };
+                const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
+                const newFolder = recordToSpaceItem(folderRecord) as Folder;
+                newItems.push(newFolder);
+
+                for (const aiBookmark of aiItem.items) {
+                    const newBookmarkInFolder = await createBookmarkFromAI(aiBookmark, newSpace.id, newFolder.id);
+                    newItems.push(newBookmarkInFolder);
+                }
+            }
+        }
+    }
+
+    return { newSpaces, newItems };
+}
+
+async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, parentId: string | null): Promise<Bookmark> {
+    let summary = 'AI-generated bookmark.';
+    try {
+        const result = await summarizeBookmark({ url: aiBookmark.url });
+        summary = result.summary;
+    } catch (e) {
+        console.warn(`Could not generate summary for ${aiBookmark.url}:`, e);
+    }
+
+    const bookmarkData = {
+        tool: {
+            type: 'bookmark',
+            title: aiBookmark.title,
+            url: aiBookmark.url,
+            summary,
+            icon: aiBookmark.icon,
+            spaceId,
+            parentId,
+        },
+    };
+    const record = await pb.collection(bookmarksCollectionName).create(bookmarkData);
+    return recordToSpaceItem(record) as Bookmark;
+}
+
+
+export async function exportWorkspaceAction(spaceIds: string[]): Promise<string> {
+    const workspace: AIWorkspace = { spaces: [] };
+
+    for (const spaceId of spaceIds) {
+        const spaceRecord = await pb.collection(spacesCollectionName).getOne(spaceId);
+        const spaceItems = await pb.collection(bookmarksCollectionName).getFullList({
+            filter: `tool.spaceId = "${spaceId}"`
+        });
+
+        const items: AISpaceItem[] = [];
+        const foldersMap = new Map<string, AIFolder>();
+
+        // Create folders first
+        spaceItems.forEach(item => {
+            if (item.tool.type === 'folder') {
+                const folder: AIFolder = {
+                    type: 'folder',
+                    name: item.tool.name,
+                    items: []
+                };
+                foldersMap.set(item.id, folder);
+                items.push(folder);
+            }
+        });
+        
+        // Then add bookmarks to folders or root
+        spaceItems.forEach(item => {
+            if (item.tool.type === 'bookmark') {
+                const bookmark: AIBookmark = {
+                    type: 'bookmark',
+                    title: item.tool.title,
+                    url: item.tool.url,
+                    icon: item.tool.icon
+                };
+                if (item.tool.parentId && foldersMap.has(item.tool.parentId)) {
+                    foldersMap.get(item.tool.parentId)!.items.push(bookmark);
+                } else {
+                    items.push(bookmark);
+                }
+            }
+        });
+
+        const aiSpace: AISpace = {
+            name: spaceRecord.name,
+            icon: spaceRecord.icon,
+            items: items.filter(item => !(item.type === 'folder' && item.items.length === 0) || items.some(i => i.type === 'bookmark' && !i.parentId))
+        };
+        workspace.spaces.push(aiSpace);
+    }
+    
+    return JSON.stringify(workspace, null, 2);
 }

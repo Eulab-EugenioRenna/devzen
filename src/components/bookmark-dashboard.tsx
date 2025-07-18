@@ -20,6 +20,8 @@ import {
   deleteSpaceAction,
   updateFolderNameAction,
   updateAppInfoAction,
+  createWorkspaceFromJsonAction,
+  exportWorkspaceAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -40,7 +42,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -51,6 +53,7 @@ import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
 import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { recordToToolAi, recordToSpaceItem } from '@/lib/data-mappers';
+import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 
 function SidebarSpaceMenuItem({
   space,
@@ -157,6 +160,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const [tools, setTools] = React.useState<ToolsAi[]>(initialTools);
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isGeneratingWorkspace, setIsGeneratingWorkspace] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -475,6 +479,33 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     }
   }
 
+    const handleWorkspaceGenerated = (newSpaces: Space[], newItems: SpaceItem[]) => {
+        setSpaces(prev => [...prev, ...newSpaces]);
+        setItems(prev => [...prev, ...newItems]);
+        if (newSpaces.length > 0) {
+            setActiveSpaceId(newSpaces[0].id);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const jsonString = await exportWorkspaceAction(spaces.map(s => s.id));
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'workspace.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast({ title: 'Export Successful', description: 'Your workspace has been downloaded as a JSON file.' });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Export Failed', description: 'Could not export your workspace.' });
+        }
+    };
+
   const isLogoUrl = appInfo.logo?.startsWith('http');
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
 
@@ -507,6 +538,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsAddingSpace(true)}>
                         <Plus className="mr-2 h-4 w-4" /> Add Space
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExport}>
+                        Export Workspace
                     </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -548,6 +582,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                         <span className='sr-only'>List View</span>
                     </Button>
                 </div>
+                <Button variant="outline" onClick={() => setIsGeneratingWorkspace(true)}>
+                    <Bot className="mr-2 h-4 w-4" />
+                    Generate with AI
+                </Button>
                 <AddFromLibraryDialog tools={tools} activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
                     <Button variant="outline" disabled={!activeSpaceId}>
                         <Library className="mr-2" />
@@ -658,7 +696,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90"
-                  onClick={handleConfirmDeleteSpace}
+                  onClick={handleConfirmDelete}
                 >
                   Delete
                 </AlertDialogAction>
@@ -686,6 +724,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             appInfo={appInfo}
             onSave={handleAppInfoSave}
             onOpenChange={setIsEditingAppInfo}
+        />
+      )}
+      {isGeneratingWorkspace && (
+        <GenerateWorkspaceDialog
+            onOpenChange={setIsGeneratingWorkspace}
+            onWorkspaceGenerated={handleWorkspaceGenerated}
         />
       )}
     </DndContext>

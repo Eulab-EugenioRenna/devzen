@@ -57,3 +57,29 @@ export interface ToolsAi {
   deleted: boolean;
   brand: string;
 }
+
+// Types for AI Workspace Generation
+export interface AIBookmark {
+    type: 'bookmark';
+    title: string;
+    url: string;
+    icon?: string;
+}
+
+export interface AIFolder {
+    type: 'folder';
+    name: string;
+    items: AIBookmark[];
+}
+
+export type AISpaceItem = AIBookmark | AIFolder;
+
+export interface AISpace {
+    name: string;
+    icon: string;
+    items: AISpaceItem[];
+}
+
+export interface AIWorkspace {
+    spaces: AISpace[];
+}
