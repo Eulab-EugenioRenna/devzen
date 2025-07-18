@@ -88,16 +88,15 @@ function SidebarSpaceMenuItem({
     >
       <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <span className="sr-only">Open context menu for {space.name}</span>
+           <SidebarMenuButton
+              onClick={() => onClick(space.id)}
+              isActive={isActive}
+              tooltip={space.name}
+          >
+              <Icon />
+              <span>{space.name}</span>
+          </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <SidebarMenuButton
-            onClick={() => onClick(space.id)}
-            isActive={isActive}
-            tooltip={space.name}
-        >
-            <Icon />
-            <span>{space.name}</span>
-        </SidebarMenuButton>
         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -183,7 +182,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newItems[existingIndex] = item;
             return newItems;
           } else {
-            return [item, ...currentItems];
+             // Do not add if it doesn't exist, rely on optimistic updates for creation
+            return currentItems;
           }
         });
       } catch (error) {
@@ -207,11 +207,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newSpaces[existingIndex] = space;
             return newSpaces;
           } else {
-            // Check if it already exists to prevent duplication from optimistic updates
-            if (currentSpaces.some(s => s.id === space.id)) {
-                return currentSpaces;
-            }
-            return [...currentSpaces, space];
+            // Do not add if it doesn't exist, rely on optimistic updates for creation
+            return currentSpaces;
           }
         });
       } catch (error) {
@@ -243,8 +240,6 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       }
     };
     const unsubscribeTools = pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
-
-    const subscriptions = [unsubscribeItems, unsubscribeSpaces, unsubscribeTools];
 
     const connectWithRetry = async (subscribeFn: () => Promise<() => void>, name: string) => {
         try {
