@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -160,8 +161,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   React.useEffect(() => {
     setIsMounted(true);
-
-    // --- Subscription for Bookmarks/Folders (items) ---
+    // Real-time subscriptions are only set up on the client
     const handleItemUpdate = (e: { action: string; record: any }) => {
       try {
         const item = recordToSpaceItem(e.record);
@@ -184,18 +184,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         console.error('Error processing real-time item update:', error);
       }
     };
-    pb.collection(bookmarksCollectionName)
-      .subscribe('*', handleItemUpdate)
-      .catch((err) => {
-        console.error('Failed to subscribe to items collection:', err);
-        toast({
-          variant: 'destructive',
-          title: 'Real-time Connection Failed',
-          description: 'Could not connect for live updates on bookmarks.',
-        });
-      });
+    const unsubscribeItems = pb.collection(bookmarksCollectionName).subscribe('*', handleItemUpdate);
 
-    // --- Subscription for Spaces ---
     const handleSpaceUpdate = (e: { action: string; record: any }) => {
       try {
         const space: Space = { id: e.record.id, name: e.record.name, icon: e.record.icon };
@@ -218,26 +208,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         console.error('Error processing real-time space update:', error);
       }
     };
-    pb.collection(spacesCollectionName)
-      .subscribe('*', handleSpaceUpdate)
-      .catch((err) => {
-        console.error('Failed to subscribe to spaces collection:', err);
-        toast({
-          variant: 'destructive',
-          title: 'Real-time Connection Failed',
-          description: 'Could not connect for live updates on spaces.',
-        });
-      });
+    const unsubscribeSpaces = pb.collection(spacesCollectionName).subscribe('*', handleSpaceUpdate);
 
-
-    // --- Subscription for AI Tools ---
     const handleToolUpdate = (e: { action: string; record: any }) => {
       try {
         const tool = recordToToolAi(e.record);
-
-        if (!tool) {
-          return;
-        }
+        if (!tool) return;
 
         setTools((currentTools) => {
           if (e.action === 'delete' || tool.deleted) {
@@ -253,28 +229,38 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           }
         });
       } catch (error) {
-          console.error("Error processing real-time tool update:", error);
+        console.error("Error processing real-time tool update:", error);
       }
     };
-    
-    pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate)
-      .catch(err => {
-          console.error("Failed to subscribe to AI tools collection:", err);
-          toast({
-              variant: 'destructive',
-              title: 'Real-time Connection Failed',
-              description: 'Could not connect to the tools library for live updates. Check collection permissions.',
-          });
-      });
+    const unsubscribeTools = pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
+
+    const subscriptions = [unsubscribeItems, unsubscribeSpaces, unsubscribeTools];
+
+    const connectWithRetry = async (subscribeFn: () => Promise<() => void>, name: string) => {
+        try {
+            return await subscribeFn();
+        } catch (err: any) {
+            console.error(`Failed to subscribe to ${name} collection:`, err?.originalError || err);
+            toast({
+                variant: 'destructive',
+                title: 'Real-time Connection Failed',
+                description: `Could not connect for live updates on ${name}. Retrying...`,
+            });
+            // Simple retry logic
+            setTimeout(() => connectWithRetry(subscribeFn, name), 5000);
+            return () => {}; // Return a no-op unsub function
+        }
+    };
+
+    connectWithRetry(() => pb.collection(bookmarksCollectionName).subscribe('*', handleItemUpdate), 'bookmarks');
+    connectWithRetry(() => pb.collection(spacesCollectionName).subscribe('*', handleSpaceUpdate), 'spaces');
+    connectWithRetry(() => pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate), 'tools');
+
 
     return () => {
-        try {
-            pb.collection(bookmarksCollectionName).unsubscribe('*');
-            pb.collection(spacesCollectionName).unsubscribe('*');
-            pb.collection(toolsAiCollectionName).unsubscribe('*');
-        } catch (error) {
-            // Fails if subscription was never established, safe to ignore.
-        }
+      pb.collection(bookmarksCollectionName).unsubscribe('*');
+      pb.collection(spacesCollectionName).unsubscribe('*');
+      pb.collection(toolsAiCollectionName).unsubscribe('*');
     };
   }, [toast]);
   
@@ -491,6 +477,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const isLogoUrl = appInfo.logo?.startsWith('http');
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
+
+  if (!isMounted) {
+    return null; // or a skeleton loader
+  }
 
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
