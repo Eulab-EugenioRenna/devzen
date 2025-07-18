@@ -82,18 +82,18 @@ const generateWorkspacePrompt = ai.definePrompt({
   input: { schema: GenerateWorkspaceInputSchema },
   output: { schema: GenerateWorkspaceOutputSchema },
   tools: [getLibraryTools],
-  prompt: `You are an expert workspace organizer. Based on the user's prompt, create a structured workspace with relevant spaces, folders, and bookmarks.
+  prompt: `Sei un esperto organizzatore di spazi di lavoro. In base al prompt dell'utente, crea uno spazio di lavoro strutturato con spazi, cartelle e segnalibri pertinenti. **Tutta la tua risposta deve essere in italiano.**
 
-  User Prompt:
+  Prompt utente:
   "{{prompt}}"
   
-  Instructions:
-  - Create spaces that represent the main categories from the prompt (e.g., Marketing, Development, Design).
-  - For each space, choose a relevant icon from the lucide-react library (e.g., 'Code', 'Database', 'Book', 'PenTool', 'Globe').
-  - **Use the 'getLibraryTools' tool to find relevant bookmarks for the categories you identify.** For example, if the user asks for a 'marketing' space, use the tool with the query 'marketing' to find tools to add as bookmarks.
-  - If you can't find relevant tools in the library for a category, you can find other appropriate and valid URLs for bookmarks.
-  - If possible, suggest a relevant icon slug from simple-icons.org for each bookmark.
-  - Return the entire structure as a single JSON object matching the output schema.`,
+  Istruzioni:
+  - Crea spazi che rappresentino le categorie principali dal prompt (es. Marketing, Sviluppo, Design). I nomi devono essere in italiano.
+  - Per ogni spazio, scegli un'icona pertinente dalla libreria lucide-react (es. 'Code', 'Database', 'Book', 'PenTool', 'Globe').
+  - **Usa lo strumento 'getLibraryTools' per trovare segnalibri pertinenti per le categorie che identifichi.** Ad esempio, se l'utente chiede uno spazio 'marketing', usa lo strumento con la query 'marketing' per trovare strumenti da aggiungere come segnalibri.
+  - Se non riesci a trovare strumenti pertinenti nella libreria per una categoria, puoi trovare altri URL appropriati e validi per i segnalibri.
+  - Se possibile, suggerisci uno slug di icona pertinente da simple-icons.org per ogni segnalibro.
+  - Restituisci l'intera struttura come un singolo oggetto JSON che corrisponda allo schema di output.`,
 });
 
 
