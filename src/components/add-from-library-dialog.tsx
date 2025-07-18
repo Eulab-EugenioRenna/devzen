@@ -86,7 +86,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                         className="h-12 w-12 flex-shrink-0 rounded-lg" 
                         fallbackClassName="rounded-lg text-xl"
                     />
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 w-0">
                         <p className="font-semibold truncate">{tool.name}</p>
                         <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block">{tool.link}</a>
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{tool.summary.summary}</p>
