@@ -73,40 +73,35 @@ function SidebarSpaceMenuItem({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div
-          ref={setNodeRef}
-          className={cn(
-            'rounded-lg transition-colors',
-            isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
-          )}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+        <SidebarMenuItem
+            ref={setNodeRef}
+            className={cn(
+                'rounded-lg transition-colors',
+                isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+            )}
         >
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => onClick(space.id)}
-              isActive={isActive}
-              tooltip={space.name}
+            <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                    onClick={() => onClick(space.id)}
+                    isActive={isActive}
+                    tooltip={space.name}
+                    onContextMenu={(e) => e.preventDefault()}
+                >
+                    <Icon />
+                    <span>{space.name}</span>
+                </SidebarMenuButton>
+            </DropdownMenuTrigger>
+        </SidebarMenuItem>
+        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                onClick={() => onDelete(space)}
             >
-              <Icon />
-              <span>{space.name}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-          onClick={() => onDelete(space)}
-        >
-          Delete Space
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+                Delete Space
+            </DropdownMenuItem>
+        </DropdownMenuContent>
     </DropdownMenu>
   );
 }
@@ -340,29 +335,30 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
     const itemToDelete = items.find((i) => i.id === id);
-    // Optimistically remove the item
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    
+    // Optimistically update the state
+    let newItems = items.filter((i) => i.id !== id);
     
     try {
       const result = await deleteItemAction({ id });
+      
       if (result.success && type === 'folder' && result.updatedBookmarks) {
-         // When a folder is deleted, we get back the bookmarks that were inside it.
-         // We need to replace the old versions of these bookmarks with the new ones.
-         setItems(prev => {
-            const updatedBookmarkIds = new Set(result.updatedBookmarks!.map(b => b.id));
-            // Filter out the old versions of the bookmarks that were in the folder.
-            const otherItems = prev.filter(i => !updatedBookmarkIds.has(i.id));
-            // Add the updated bookmarks.
-            return [...otherItems, ...result.updatedBookmarks!];
-         });
+        // When a folder is deleted, we get back the bookmarks that were inside it.
+        // We need to replace the old versions of these bookmarks with the new ones.
+        const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
+        newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
+        newItems.push(...result.updatedBookmarks);
       }
+      
+      setItems(newItems);
+
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
         description: `Successfully removed.`,
       });
     } catch (error) {
       // If the delete fails, add the item back to the list
-      if(itemToDelete) setItems((prev) => [...prev, itemToDelete]);
+      if (itemToDelete) setItems((prev) => [...prev, itemToDelete]);
       toast({ variant: 'destructive', title: 'Error', description: `Failed to delete ${type}.`});
     }
   };
