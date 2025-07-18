@@ -9,6 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { getToolsAiAction } from '@/app/actions';
 import { z } from 'genkit';
 
 // Input Schema
@@ -49,21 +50,48 @@ export async function generateWorkspace(input: GenerateWorkspaceInput): Promise<
   return generateWorkspaceFlow(input);
 }
 
+// Tool to get tools from the library
+const getLibraryTools = ai.defineTool(
+    {
+        name: 'getLibraryTools',
+        description: 'Get a list of curated AI tools from the library based on a category or keyword.',
+        inputSchema: z.object({
+            query: z.string().describe('A category or keyword to search for, e.g., "marketing" or "development".'),
+        }),
+        outputSchema: z.array(z.object({
+            name: z.string(),
+            link: z.string().url(),
+        })),
+    },
+    async (input) => {
+        const allTools = await getToolsAiAction();
+        const lowerCaseQuery = input.query.toLowerCase();
+        return allTools.filter(tool => 
+            tool.name.toLowerCase().includes(lowerCaseQuery) ||
+            tool.category.toLowerCase().includes(lowerCaseQuery) ||
+            tool.summary.summary.toLowerCase().includes(lowerCaseQuery) ||
+            tool.summary.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
+        ).map(tool => ({ name: tool.name, link: tool.link }));
+    }
+);
+
+
 // The Genkit Prompt
 const generateWorkspacePrompt = ai.definePrompt({
   name: 'generateWorkspacePrompt',
   input: { schema: GenerateWorkspaceInputSchema },
   output: { schema: GenerateWorkspaceOutputSchema },
+  tools: [getLibraryTools],
   prompt: `You are an expert workspace organizer. Based on the user's prompt, create a structured workspace with relevant spaces, folders, and bookmarks.
 
   User Prompt:
   "{{prompt}}"
   
   Instructions:
-  - Create spaces that represent the main categories from the prompt.
-  - For each space, choose a relevant icon from the lucide-react library (e.g., 'Code', 'Database', 'Book', 'Globe').
-  - Inside each space, create folders for sub-categories and bookmarks for direct links.
-  - Find appropriate and valid URLs for all bookmarks.
+  - Create spaces that represent the main categories from the prompt (e.g., Marketing, Development, Design).
+  - For each space, choose a relevant icon from the lucide-react library (e.g., 'Code', 'Database', 'Book', 'PenTool', 'Globe').
+  - **Use the 'getLibraryTools' tool to find relevant bookmarks for the categories you identify.** For example, if the user asks for a 'marketing' space, use the tool with the query 'marketing' to find tools to add as bookmarks.
+  - If you can't find relevant tools in the library for a category, you can find other appropriate and valid URLs for bookmarks.
   - If possible, suggest a relevant icon slug from simple-icons.org for each bookmark.
   - Return the entire structure as a single JSON object matching the output schema.`,
 });

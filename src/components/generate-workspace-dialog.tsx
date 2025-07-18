@@ -27,7 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wand } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const workspaceSchema = z.object({
@@ -79,6 +79,10 @@ export function GenerateWorkspaceDialog({
     }
   };
 
+  const setPrompt = (promptText: string) => {
+    form.setValue('prompt', promptText);
+  }
+
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -89,10 +93,33 @@ export function GenerateWorkspaceDialog({
           </DialogDescription>
         </DialogHeader>
         <Alert>
-          <AlertTitle>How it works</AlertTitle>
-          <AlertDescription>
-            You can either write a prompt (e.g., "Create spaces for my web development projects, including JavaScript frameworks and CSS libraries") or paste a JSON object from a previous export to import a workspace.
-          </AlertDescription>
+            <Wand className="h-4 w-4" />
+            <AlertTitle>Prompt Suggestions</AlertTitle>
+            <AlertDescription>
+                <ul className="list-disc pl-5 mt-2 text-xs space-y-1">
+                    <li>
+                        <button onClick={() => setPrompt("Create a space for social media marketing, including tools for analytics, scheduling, and content creation.")} className="text-left hover:underline text-primary">
+                            "Create a space for social media marketing..."
+                        </button>
+                    </li>
+                    <li>
+                        <button onClick={() => setPrompt("Build a workspace for a front-end developer with links to React, TailwindCSS, and Vercel documentation.")} className="text-left hover:underline text-primary">
+                            "Build a workspace for a front-end developer..."
+                        </button>
+                    </li>
+                    <li>
+                       <button onClick={() => setPrompt("Generate a space called 'AI Research' with bookmarks for research papers, top AI companies, and open-source models.")} className="text-left hover:underline text-primary">
+                           "Generate a space for 'AI Research'..."
+                       </button>
+                    </li>
+                     <li>
+                       <button onClick={() => setPrompt("Create two spaces: one for 'Personal Projects' with a code icon, and one for 'Client Work' with a briefcase icon.")} className="text-left hover:underline text-primary">
+                            "Create two spaces for personal and client work..."
+                       </button>
+                    </li>
+                </ul>
+                <p className='mt-2'>You can also paste a JSON object from a previous export to import a workspace.</p>
+            </AlertDescription>
         </Alert>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
