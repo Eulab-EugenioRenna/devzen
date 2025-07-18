@@ -70,38 +70,44 @@ function SidebarSpaceMenuItem({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: space.id });
   const Icon = getIcon(space.icon);
+  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setIsContextMenuOpen(true);
+  };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
+      <DropdownMenuTrigger asChild>
         <SidebarMenuItem
-            ref={setNodeRef}
-            className={cn(
-                'rounded-lg transition-colors',
-                isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
-            )}
+          ref={setNodeRef}
+          className={cn(
+            'rounded-lg transition-colors',
+            isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+          )}
+          onContextMenu={handleContextMenu}
         >
-            <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                    onClick={() => onClick(space.id)}
-                    isActive={isActive}
-                    tooltip={space.name}
-                    onContextMenu={(e) => e.preventDefault()}
-                >
-                    <Icon />
-                    <span>{space.name}</span>
-                </SidebarMenuButton>
-            </DropdownMenuTrigger>
+          <SidebarMenuButton
+            onClick={() => onClick(space.id)}
+            isActive={isActive}
+            tooltip={space.name}
+          >
+            <Icon />
+            <span>{space.name}</span>
+          </SidebarMenuButton>
         </SidebarMenuItem>
-        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                onClick={() => onDelete(space)}
-            >
-                Delete Space
-            </DropdownMenuItem>
-        </DropdownMenuContent>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+          onClick={() => onDelete(space)}
+        >
+          Delete Space
+        </DropdownMenuItem>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }
@@ -338,13 +344,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     
     // Optimistically update the state
     let newItems = items.filter((i) => i.id !== id);
+    let originalItemsState = items; // Save original state for potential rollback
     
     try {
       const result = await deleteItemAction({ id });
       
       if (result.success && type === 'folder' && result.updatedBookmarks) {
-        // When a folder is deleted, we get back the bookmarks that were inside it.
-        // We need to replace the old versions of these bookmarks with the new ones.
         const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
         newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
         newItems.push(...result.updatedBookmarks);
@@ -357,8 +362,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         description: `Successfully removed.`,
       });
     } catch (error) {
-      // If the delete fails, add the item back to the list
-      if (itemToDelete) setItems((prev) => [...prev, itemToDelete]);
+      // If the delete fails, revert to the original state
+      setItems(originalItemsState);
       toast({ variant: 'destructive', title: 'Error', description: `Failed to delete ${type}.`});
     }
   };
