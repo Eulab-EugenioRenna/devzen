@@ -340,18 +340,28 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
     const itemToDelete = items.find((i) => i.id === id);
+    // Optimistically remove the item
     setItems((prev) => prev.filter((i) => i.id !== id));
     
     try {
       const result = await deleteItemAction({ id });
       if (result.success && type === 'folder' && result.updatedBookmarks) {
-         setItems(prev => [...prev.filter(i => result.updatedBookmarks!.every(u => u.id !== i.id)), ...result.updatedBookmarks!]);
+         // When a folder is deleted, we get back the bookmarks that were inside it.
+         // We need to replace the old versions of these bookmarks with the new ones.
+         setItems(prev => {
+            const updatedBookmarkIds = new Set(result.updatedBookmarks!.map(b => b.id));
+            // Filter out the old versions of the bookmarks that were in the folder.
+            const otherItems = prev.filter(i => !updatedBookmarkIds.has(i.id));
+            // Add the updated bookmarks.
+            return [...otherItems, ...result.updatedBookmarks!];
+         });
       }
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
         description: `Successfully removed.`,
       });
     } catch (error) {
+      // If the delete fails, add the item back to the list
       if(itemToDelete) setItems((prev) => [...prev, itemToDelete]);
       toast({ variant: 'destructive', title: 'Error', description: `Failed to delete ${type}.`});
     }
@@ -696,7 +706,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90"
-                  onClick={handleConfirmDelete}
+                  onClick={handleConfirmDeleteSpace}
                 >
                   Delete
                 </AlertDialogAction>
