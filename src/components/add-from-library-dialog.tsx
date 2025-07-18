@@ -87,7 +87,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                     {filteredTools.map(tool => (
                     <AccordionItem value={tool.id} key={tool.id} className="border-b">
                         <div className="flex items-center gap-4 w-full p-3 hover:bg-muted/50 transition-colors">
-                            <AccordionTrigger className="flex-1 p-0 text-left hover:no-underline">
+                            <AccordionTrigger className="flex-grow p-0 text-left hover:no-underline">
                                 <div className="flex items-center gap-4 w-full">
                                     <Favicon 
                                         url={tool.link} 
@@ -106,19 +106,20 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <Button
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleAddTool(tool); }}
-                                disabled={isAdding === tool.id}
-                                className="shrink-0 ml-4"
-                            >
-                                {isAdding === tool.id ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Plus className="mr-2 h-4 w-4" />
-                                )}
-                                Import
-                            </Button>
+                            <div className="flex-shrink-0 ml-4">
+                                <Button
+                                    size="sm"
+                                    onClick={(e) => { e.stopPropagation(); handleAddTool(tool); }}
+                                    disabled={isAdding === tool.id}
+                                >
+                                    {isAdding === tool.id ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Plus className="mr-2 h-4 w-4" />
+                                    )}
+                                    Import
+                                </Button>
+                            </div>
                         </div>
                         <AccordionContent className="p-4 pt-0">
                             <p className="text-sm text-muted-foreground">{tool.summary.summary}</p>
