@@ -88,8 +88,8 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                     {filteredTools.map(tool => (
                     <AccordionItem value={tool.id} key={tool.id} className="border-b">
                         <div className="relative p-3 hover:bg-muted/50 transition-colors">
-                            <AccordionTrigger className="p-0 text-left hover:no-underline">
-                                <div className="flex items-center gap-4 w-full pr-28">
+                            <AccordionTrigger className="p-0 text-left hover:no-underline pr-28">
+                                <div className="flex items-center gap-4 w-full">
                                     <Favicon 
                                         url={tool.link} 
                                         title={tool.name}
