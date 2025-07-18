@@ -25,6 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
 
 interface AddFromLibraryDialogProps {
   children: React.ReactNode;
@@ -86,9 +87,9 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                 <Accordion type="single" collapsible className="pr-4">
                     {filteredTools.map(tool => (
                     <AccordionItem value={tool.id} key={tool.id} className="border-b">
-                        <div className="flex items-center gap-4 w-full p-3 hover:bg-muted/50 transition-colors">
-                            <AccordionTrigger className="flex-grow p-0 text-left hover:no-underline">
-                                <div className="flex items-center gap-4 w-full">
+                        <div className="relative p-3 hover:bg-muted/50 transition-colors">
+                            <AccordionTrigger className="p-0 text-left hover:no-underline">
+                                <div className="flex items-center gap-4 w-full pr-28">
                                     <Favicon 
                                         url={tool.link} 
                                         title={tool.name}
@@ -96,8 +97,8 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                                         fallbackClassName="rounded-lg text-xl"
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold truncate">{tool.name}</p>
-                                        <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate block" onClick={(e) => e.stopPropagation()}>{tool.link}</a>
+                                        <p className="font-semibold">{tool.name}</p>
+                                        <a href={tool.link} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline break-all" onClick={(e) => e.stopPropagation()}>{tool.link}</a>
                                         <div className="flex flex-wrap gap-1 mt-2">
                                             {tool.summary.tags.slice(0, 5).map(tag => (
                                                 <Badge key={tag} variant="secondary" className="font-normal">{tag}</Badge>
@@ -106,7 +107,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
                                     </div>
                                 </div>
                             </AccordionTrigger>
-                            <div className="flex-shrink-0 ml-4">
+                             <div className="absolute top-3 right-3">
                                 <Button
                                     size="sm"
                                     onClick={(e) => { e.stopPropagation(); handleAddTool(tool); }}
