@@ -62,7 +62,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                     />
                 </DialogHeader>
                 
-                <div className="flex-grow flex flex-col min-h-0 mt-2">
+                <div className="flex-grow flex flex-col min-h-0 mt-4">
                     <RichTextEditor
                         content={content}
                         onChange={setContent}

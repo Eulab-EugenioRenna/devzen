@@ -314,8 +314,8 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
     editorProps: {
       attributes: {
         class: cn(
-          'w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none h-full overflow-y-auto'
+          'w-full flex-grow rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none'
         ),
       },
     },
@@ -334,7 +334,7 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
   }, [content, editor]);
 
   return (
-    <div className={cn('flex flex-col flex-grow min-h-0', className)}>
+    <div className={cn('flex flex-col', className)}>
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
