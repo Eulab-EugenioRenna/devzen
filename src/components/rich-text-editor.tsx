@@ -139,8 +139,8 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
             onOpenChange={setIsPreviewOpen}
         />
     )}
-    <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1">
-      <DropdownMenu>
+    <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1 shrink-0">
+       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button size="sm" variant="ghost" disabled={isAiLoading}>
             {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -167,7 +167,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <Button
+       <Button
         type="button"
         size="icon"
         variant="ghost"
@@ -179,7 +179,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
 
       <div className="h-6 w-px bg-border mx-1"/>
 
-      <div className="flex items-center gap-1">
+       <div className="flex items-center gap-1">
         <Button
             type="button"
             size="icon"
@@ -314,8 +314,8 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
     editorProps: {
       attributes: {
         class: cn(
-          'w-full flex-grow rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none'
+          'w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none overflow-y-auto flex-grow'
         ),
       },
     },
@@ -334,7 +334,7 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
   }, [content, editor]);
 
   return (
-    <div className={cn('flex flex-col', className)}>
+    <div className={cn('flex flex-col flex-grow min-h-0', className)}>
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
