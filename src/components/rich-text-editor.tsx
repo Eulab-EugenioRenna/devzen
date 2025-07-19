@@ -1,10 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import { tiptapToMarkdown, markdownToTiptap } from 'tiptap-markdown';
+import { Markdown } from 'tiptap-markdown';
 import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Link2, Eraser
@@ -136,15 +137,20 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Disable extensions that we have custom controls for or don't need
         heading: { levels: [1, 2, 3] },
       }),
       Link.configure({
         openOnClick: false,
         autolink: true,
       }),
+      Markdown.configure({
+        html: false, // Disallow HTML input/output
+        tightLists: true,
+        tightListClass: "tight",
+        bulletListMarker: "*",
+      }),
     ],
-    content: markdownToTiptap(content),
+    content: content,
     editorProps: {
       attributes: {
         class: cn(
@@ -154,17 +160,15 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       },
     },
     onUpdate: ({ editor }) => {
-      const markdown = tiptapToMarkdown(editor.state.doc.toJSON());
-      onChange(markdown);
+      onChange(editor.storage.markdown.getMarkdown());
     },
   });
 
-  // Ensure editor content is updated when the 'content' prop changes from outside
   React.useEffect(() => {
-    if (editor) {
-      const isSame = tiptapToMarkdown(editor.state.doc.toJSON()) === content;
-      if (!isSame) {
-        editor.commands.setContent(markdownToTiptap(content), false);
+    if (editor && !editor.isDestroyed) {
+      const markdown = editor.storage.markdown.getMarkdown();
+      if (markdown !== content) {
+        editor.commands.setContent(content, false);
       }
     }
   }, [content, editor]);
