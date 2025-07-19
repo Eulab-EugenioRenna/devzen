@@ -133,26 +133,26 @@ const improveTextFlow = ai.defineFlow(
 const GenerateTextInputSchema = z.object({
   prompt: z.string().describe('The prompt to generate text from.'),
 });
-const GenerateTextOutputSchema = z.object({
-  generatedText: z.string().describe('The generated text.'),
-});
 export async function generateText(prompt: string): Promise<string> {
-    const result = await generateTextFlow({ prompt });
-    return result.generatedText;
+    return await generateTextFlow({ prompt });
 }
-const generateTextPrompt = ai.definePrompt({
-  name: 'generateTextPrompt',
-  input: { schema: GenerateTextInputSchema },
-  output: { schema: GenerateTextOutputSchema },
-  prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata all'interno di un oggetto JSON valido. La risposta (il valore del campo 'generatedText') DEVE essere in italiano, ma la chiave deve rimanere 'generatedText'.
+const generateTextPrompt = `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.
 
 Prompt:
-"{{prompt}}"`,
-});
+"{{prompt}}"`;
+
 const generateTextFlow = ai.defineFlow(
-  { name: 'generateTextFlow', inputSchema: GenerateTextInputSchema, outputSchema: GenerateTextOutputSchema },
+  { 
+    name: 'generateTextFlow', 
+    inputSchema: GenerateTextInputSchema, 
+    outputSchema: z.string() 
+  },
   async (input) => {
-    const { output } = await generateTextPrompt(input);
-    return output!;
+    const llmResponse = await ai.generate({
+      prompt: generateTextPrompt,
+      model: 'googleai/gemini-1.5-flash-latest',
+      variables: input, 
+    });
+    return llmResponse.text;
   }
 );
