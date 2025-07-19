@@ -169,18 +169,18 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                   <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                       <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Bookmark options</span>
+                      <span className="sr-only">Opzioni segnalibro</span>
                   </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-                  <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                  <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
+                  <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                       className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                       onClick={() => setIsDeleteDialogOpen(true)}
                   >
-                      Delete
+                      Elimina
                   </DropdownMenuItem>
                   </DropdownMenuContent>
               </DropdownMenu>
@@ -192,18 +192,18 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the bookmark for &quot;{bookmark.title}&quot;.
+              Questa azione non può essere annullata. Eliminerà permanentemente il segnalibro per &quot;{bookmark.title}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => onDeleted(bookmark.id, 'bookmark')}
             >
-              Delete
+              Elimina
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -256,18 +256,18 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Bookmark options</span>
+                        <span className="sr-only">Opzioni segnalibro</span>
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
                     >
-                        Delete
+                        Elimina
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -283,18 +283,18 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the bookmark for &quot;{bookmark.title}&quot;.
+               Questa azione non può essere annullata. Eliminerà permanentemente il segnalibro per &quot;{bookmark.title}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => onDeleted(bookmark.id, 'bookmark')}
             >
-              Delete
+              Elimina
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -31,8 +31,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const bookmarkSchema = z.object({
-  title: z.string().min(1, { message: 'Title is required.' }),
-  url: z.string().min(1, { message: 'URL is required.' }),
+  title: z.string().min(1, { message: 'Il titolo è obbligatorio.' }),
+  url: z.string().min(1, { message: 'L\'URL è obbligatorio.' }),
 });
 
 interface AddBookmarkDialogProps {
@@ -76,14 +76,14 @@ export function AddBookmarkDialog({
       form.reset();
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      if (errorMessage.includes('Invalid URL')) {
-        form.setError('url', { type: 'manual', message: 'Please enter a valid URL.' });
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+      if (errorMessage.includes('URL non valido')) {
+        form.setError('url', { type: 'manual', message: 'Inserisci un URL valido.' });
       } else {
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: `Failed to add bookmark: ${errorMessage}`,
+          title: 'Errore',
+          description: `Impossibile aggiungere il segnalibro: ${errorMessage}`,
         });
       }
     }
@@ -100,10 +100,9 @@ export function AddBookmarkDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Add New Bookmark</DialogTitle>
+          <DialogTitle className="font-headline">Aggiungi Nuovo Segnalibro</DialogTitle>
           <DialogDescription>
-            Enter the details for your new bookmark. An AI summary will be
-            generated automatically.
+            Inserisci i dettagli per il tuo nuovo segnalibro. Un riassunto AI verrà generato automaticamente.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -113,9 +112,9 @@ export function AddBookmarkDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Titolo</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Next.js Docs" {...field} />
+                    <Input placeholder="es. Documentazione Next.js" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,12 +143,12 @@ export function AddBookmarkDialog({
             <DialogFooter>
                <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Bookmark
+                Aggiungi Segnalibro
               </Button>
             </DialogFooter>
           </form>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -42,11 +41,11 @@ export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAd
     try {
       const newBookmark = await addBookmarkFromLibraryAction({ toolId: tool.id, spaceId: activeSpaceId });
       onBookmarkAdded(newBookmark);
-      toast({ title: 'Bookmark Imported', description: `Imported "${tool.name}" to your space.` });
+      toast({ title: 'Segnalibro Importato', description: `"${tool.name}" è stato importato nel tuo spazio.` });
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      toast({ variant: 'destructive', title: 'Error', description: `Failed to import bookmark: ${errorMessage}` });
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+      toast({ variant: 'destructive', title: 'Errore', description: `Impossibile importare il segnalibro: ${errorMessage}` });
     } finally {
       setIsAdding(null);
     }
@@ -66,14 +65,14 @@ export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAd
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="font-headline">Import from AI Tools Library</DialogTitle>
+          <DialogTitle className="font-headline">Importa dalla Libreria di Strumenti AI</DialogTitle>
           <DialogDescription>
-            Browse a curated list of AI tools and import them as bookmarks to your space.
+            Sfoglia un elenco curato di strumenti AI e importali come segnalibri nel tuo spazio.
           </DialogDescription>
         </DialogHeader>
         <div className="shrink-0">
           <Input
-            placeholder="Search tools by name, category, or tag..."
+            placeholder="Cerca strumenti per nome, categoria o tag..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -114,7 +113,7 @@ export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAd
                                     ) : (
                                         <Plus className="mr-2 h-4 w-4" />
                                     )}
-                                    Import
+                                    Importa
                                 </Button>
                             </div>
                         </div>
@@ -124,7 +123,7 @@ export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAd
                     </AccordionItem>
                     ))}
                 </Accordion>
-                {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">No tools found.</p>}
+                {filteredTools.length === 0 && <p className="text-center text-muted-foreground py-4">Nessun strumento trovato.</p>}
             </ScrollArea>
         </div>
       </DialogContent>

@@ -34,7 +34,7 @@ const customizeSchema = z.object({
   backgroundColor: z.string(),
   textColor: z.string(),
   icon: z.string().optional(),
-  iconUrl: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  iconUrl: z.string().url({ message: 'Inserisci un URL valido.' }).optional().or(z.literal('')),
   iconColor: z.string().optional(),
 });
 
@@ -79,11 +79,11 @@ export function CustomizeItemDialog({
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: `Failed to update customization: ${errorMessage}`,
+        title: 'Errore',
+        description: `Impossibile aggiornare la personalizzazione: ${errorMessage}`,
       });
     }
   };
@@ -94,9 +94,9 @@ export function CustomizeItemDialog({
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Customize &quot;{itemName}&quot;</DialogTitle>
+          <DialogTitle className="font-headline">Personalizza "{itemName}"</DialogTitle>
           <DialogDescription>
-            Change the appearance of your item.
+            Modifica l'aspetto del tuo elemento.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -106,7 +106,7 @@ export function CustomizeItemDialog({
               name="backgroundColor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Background Color</FormLabel>
+                  <FormLabel>Colore di Sfondo</FormLabel>
                   <FormControl>
                     <div className='flex items-center gap-2'>
                        <Input type="color" {...field} className='p-1 h-10 w-14' />
@@ -122,7 +122,7 @@ export function CustomizeItemDialog({
               name="textColor"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Text Color</FormLabel>
+                  <FormLabel>Colore del Testo</FormLabel>
                   <FormControl>
                      <div className='flex items-center gap-2'>
                        <Input type="color" {...field} className='p-1 h-10 w-14' />
@@ -140,12 +140,12 @@ export function CustomizeItemDialog({
                   name="iconUrl"
                   render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Custom Icon URL</FormLabel>
+                          <FormLabel>URL Icona Personalizzata</FormLabel>
                           <FormControl>
                               <Input placeholder="https://example.com/icon.png" {...field} value={field.value ?? ''}/>
                           </FormControl>
                           <FormDescription>
-                              Provide a direct URL to an image. This will override the Simple Icon and favicon.
+                              Fornisci un URL diretto a un'immagine. Questo sovrascriverà l'icona Semplice e la favicon.
                           </FormDescription>
                           <FormMessage />
                       </FormItem>
@@ -156,15 +156,15 @@ export function CustomizeItemDialog({
                   name="icon"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Custom Icon (from Simple Icons)</FormLabel>
+                      <FormLabel>Icona Personalizzata (da Simple Icons)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., nextdotjs" {...field} value={field.value ?? ''}/>
+                        <Input placeholder="es. nextdotjs" {...field} value={field.value ?? ''}/>
                       </FormControl>
                       <FormDescription>
-                        Enter a slug from{' '}
+                        Inserisci uno slug da{' '}
                         <a href="https://simpleicons.org/" target="_blank" rel="noopener noreferrer" className="underline text-primary">
                           Simple Icons
-                        </a>. Leave blank to use the website favicon.
+                        </a>. Lascia vuoto per usare la favicon del sito.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -175,7 +175,7 @@ export function CustomizeItemDialog({
                   name="iconColor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Icon Color</FormLabel>
+                      <FormLabel>Colore Icona</FormLabel>
                       <FormControl>
                           <div className='flex items-center gap-2'>
                           <Input type="color" {...field} className='p-1 h-10 w-14' value={field.value ?? '#000000'} />
@@ -183,7 +183,7 @@ export function CustomizeItemDialog({
                           </div>
                       </FormControl>
                       <FormDescription>
-                          Only applies to icons from Simple Icons.
+                          Si applica solo alle icone da Simple Icons.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -194,12 +194,12 @@ export function CustomizeItemDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                Salva Modifiche
               </Button>
             </DialogFooter>
           </form>

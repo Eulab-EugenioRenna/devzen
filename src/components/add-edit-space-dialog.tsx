@@ -36,8 +36,8 @@ import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 
 const spaceSchema = z.object({
-  name: z.string().min(1, { message: 'Space name is required.' }),
-  icon: z.string().min(1, { message: 'Icon is required.' }),
+  name: z.string().min(1, { message: 'Il nome dello spazio è obbligatorio.' }),
+  icon: z.string().min(1, { message: 'L\'icona è obbligatoria.' }),
 });
 
 interface AddEditSpaceDialogProps {
@@ -66,9 +66,9 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">{space ? 'Edit Space' : 'Add New Space'}</DialogTitle>
+          <DialogTitle className="font-headline">{space ? 'Modifica Spazio' : 'Aggiungi Nuovo Spazio'}</DialogTitle>
           <DialogDescription>
-            {space ? 'Update the details for your space.' : 'Enter the details for your new space.'}
+            {space ? 'Aggiorna i dettagli per il tuo spazio.' : 'Inserisci i dettagli per il tuo nuovo spazio.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -78,9 +78,9 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., My Awesome Project" {...field} />
+                    <Input placeholder="es. Il Mio Progetto Fantastico" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -91,11 +91,11 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
               name="icon"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Icon</FormLabel>
+                  <FormLabel>Icona</FormLabel>
                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select an icon" />
+                        <SelectValue placeholder="Seleziona un'icona" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -119,12 +119,12 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
             <DialogFooter>
                <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                Salva
               </Button>
             </DialogFooter>
           </form>

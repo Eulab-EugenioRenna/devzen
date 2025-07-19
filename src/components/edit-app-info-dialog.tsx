@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 
 const appInfoSchema = z.object({
-  title: z.string().min(1, { message: 'App name is required.' }),
+  title: z.string().min(1, { message: 'Il nome dell\'app è obbligatorio.' }),
   logo: z.any().optional(),
 });
 
@@ -67,16 +67,16 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Edit App Info</DialogTitle>
+          <DialogTitle className="font-headline">Modifica Info App</DialogTitle>
           <DialogDescription>
-            Update the name and icon for your application.
+            Aggiorna il nome e l'icona per la tua applicazione.
           </DialogDescription>
         </DialogHeader>
         
         <div className="flex items-center gap-2 pt-2">
-            <span className="text-sm font-medium text-muted-foreground">Current Logo:</span>
+            <span className="text-sm font-medium text-muted-foreground">Logo Attuale:</span>
             {isLogoUrl ? (
-                <img src={appInfo.logo} alt="current logo" className="h-10 w-10 rounded-md object-cover" />
+                <img src={appInfo.logo} alt="logo attuale" className="h-10 w-10 rounded-md object-cover" />
             ) : (
                 IconComponent && <IconComponent className="h-10 w-10" />
             )}
@@ -89,9 +89,9 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>App Name</FormLabel>
+                  <FormLabel>Nome App</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., DevZen" {...field} />
+                    <Input placeholder="es. DevZen" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -102,7 +102,7 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
               name="logo"
               render={({ field: { onChange, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel>Upload New Logo</FormLabel>
+                  <FormLabel>Carica Nuovo Logo</FormLabel>
                   <FormControl>
                     <Input 
                       type="file" 
@@ -112,7 +112,7 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
                      />
                   </FormControl>
                   <FormDescription>
-                    Leave blank to keep the current logo.
+                    Lascia vuoto per mantenere il logo attuale.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -121,12 +121,12 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
             <DialogFooter>
                <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save
+                Salva
               </Button>
             </DialogFooter>
           </form>

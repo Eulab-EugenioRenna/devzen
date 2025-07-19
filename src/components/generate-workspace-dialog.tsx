@@ -31,7 +31,7 @@ import { Loader2, Wand } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const workspaceSchema = z.object({
-  prompt: z.string().min(10, { message: 'Please provide a more detailed description.' }),
+  prompt: z.string().min(10, { message: 'Fornisci una descrizione più dettagliata.' }),
 });
 
 interface GenerateWorkspaceDialogProps {
@@ -54,26 +54,24 @@ export function GenerateWorkspaceDialog({
 
   const onSubmit = async (values: z.infer<typeof workspaceSchema>) => {
     try {
-      // Step 1: Generate the JSON structure from the prompt (or parse if it's already JSON)
       const workspaceJson = await generateWorkspaceAction(values.prompt);
       
-      // Step 2: Create the actual spaces, folders, and bookmarks
       const { newSpaces, newItems } = await createWorkspaceFromJsonAction(workspaceJson);
       
       onWorkspaceGenerated(newSpaces, newItems);
       onOpenChange(false);
       
       toast({
-        title: 'Workspace Generated!',
-        description: 'Your new spaces and items have been created.',
+        title: 'Spazio di Lavoro Generato!',
+        description: 'I tuoi nuovi spazi ed elementi sono stati creati.',
       });
 
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
       toast({
         variant: 'destructive',
-        title: 'Error Generating Workspace',
+        title: 'Errore nella Generazione dello Spazio di Lavoro',
         description: errorMessage,
       });
     }
@@ -87,38 +85,38 @@ export function GenerateWorkspaceDialog({
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="font-headline">Generate Workspace with AI</DialogTitle>
+          <DialogTitle className="font-headline">Genera Spazio di Lavoro con AI</DialogTitle>
           <DialogDescription>
-            Describe the kind of workspace you want to create, or paste a previously exported JSON. The AI will generate spaces, folders, and bookmarks for you.
+            Descrivi il tipo di spazio di lavoro che vuoi creare, o incolla un JSON precedentemente esportato. L'AI genererà spazi, cartelle e segnalibri per te.
           </DialogDescription>
         </DialogHeader>
         <Alert>
             <Wand className="h-4 w-4" />
-            <AlertTitle>Prompt Suggestions</AlertTitle>
+            <AlertTitle>Suggerimenti per il Prompt</AlertTitle>
             <AlertDescription>
                 <ul className="list-disc pl-5 mt-2 text-xs space-y-1">
                     <li>
-                        <button onClick={() => setPrompt("Create a space for social media marketing, including tools for analytics, scheduling, and content creation.")} className="text-left hover:underline text-primary">
-                            "Create a space for social media marketing..."
+                        <button onClick={() => setPrompt("Crea uno spazio per il social media marketing, includendo strumenti per analisi, pianificazione e creazione di contenuti.")} className="text-left hover:underline text-primary">
+                            "Crea uno spazio per il social media marketing..."
                         </button>
                     </li>
                     <li>
-                        <button onClick={() => setPrompt("Build a workspace for a front-end developer with links to React, TailwindCSS, and Vercel documentation.")} className="text-left hover:underline text-primary">
-                            "Build a workspace for a front-end developer..."
+                        <button onClick={() => setPrompt("Costruisci uno spazio di lavoro per uno sviluppatore front-end con link alla documentazione di React, TailwindCSS e Vercel.")} className="text-left hover:underline text-primary">
+                            "Costruisci uno spazio di lavoro per uno sviluppatore front-end..."
                         </button>
                     </li>
                     <li>
-                       <button onClick={() => setPrompt("Generate a space called 'AI Research' with bookmarks for research papers, top AI companies, and open-source models.")} className="text-left hover:underline text-primary">
-                           "Generate a space for 'AI Research'..."
+                       <button onClick={() => setPrompt("Genera uno spazio chiamato 'Ricerca AI' con segnalibri per articoli di ricerca, le principali aziende AI e modelli open-source.")} className="text-left hover:underline text-primary">
+                           "Genera uno spazio per 'Ricerca AI'..."
                        </button>
                     </li>
                      <li>
-                       <button onClick={() => setPrompt("Create two spaces: one for 'Personal Projects' with a code icon, and one for 'Client Work' with a briefcase icon.")} className="text-left hover:underline text-primary">
-                            "Create two spaces for personal and client work..."
+                       <button onClick={() => setPrompt("Crea due spazi: uno per 'Progetti Personali' con un'icona di codice, e uno per 'Lavoro Clienti' con un'icona di valigetta.")} className="text-left hover:underline text-primary">
+                            "Crea due spazi per progetti personali e lavoro clienti..."
                        </button>
                     </li>
                 </ul>
-                <p className='mt-2'>You can also paste a JSON object from a previous export to import a workspace.</p>
+                <p className='mt-2'>Puoi anche incollare un oggetto JSON da un'esportazione precedente per importare uno spazio di lavoro.</p>
             </AlertDescription>
         </Alert>
         <Form {...form}>
@@ -128,10 +126,10 @@ export function GenerateWorkspaceDialog({
               name="prompt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Prompt or JSON</FormLabel>
+                  <FormLabel>Il Tuo Prompt o JSON</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g., A space for learning Italian with links to dictionaries, news sites, and YouTube channels."
+                      placeholder="es. Uno spazio per imparare l'italiano con link a dizionari, siti di notizie e canali YouTube."
                       className="min-h-[150px] font-mono"
                       {...field}
                     />
@@ -143,12 +141,12 @@ export function GenerateWorkspaceDialog({
             <DialogFooter>
                <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Workspace
+                Genera Spazio di Lavoro
               </Button>
             </DialogFooter>
           </form>

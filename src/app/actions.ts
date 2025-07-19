@@ -19,14 +19,14 @@ export async function addBookmarkAction({
   parentId?: string | null;
 }): Promise<Bookmark> {
   if (!title || !url || !spaceId) {
-    throw new Error('Missing required fields');
+    throw new Error('Campi obbligatori mancanti');
   }
 
   let parsedUrl;
   try {
     parsedUrl = new URL(url);
   } catch (error) {
-    throw new Error('Invalid URL provided.');
+    throw new Error('URL fornito non valido.');
   }
 
   let summary: string;
@@ -34,8 +34,8 @@ export async function addBookmarkAction({
     const result = await summarizeBookmark({ url: parsedUrl.href });
     summary = result.summary;
   } catch (e) {
-    console.error('Failed to create bookmark with summary', e);
-    summary = 'Could not generate summary for this URL.';
+    console.error('Impossibile creare segnalibro con riassunto', e);
+    summary = 'Impossibile generare un riassunto per questo URL.';
   }
 
   const data = {
@@ -53,12 +53,12 @@ export async function addBookmarkAction({
     const record = await pb.collection(bookmarksCollectionName).create(data);
     const newBookmark = recordToSpaceItem(record);
     if (!newBookmark || newBookmark.type !== 'bookmark') {
-      throw new Error('Failed to create or map bookmark from new record.');
+      throw new Error('Impossibile creare o mappare il segnalibro dal nuovo record.');
     }
     return newBookmark as Bookmark;
   } catch (e) {
-    console.error('Failed to create bookmark in PocketBase', e);
-    throw new Error('Failed to save bookmark.');
+    console.error('Impossibile creare segnalibro in PocketBase', e);
+    throw new Error('Impossibile salvare il segnalibro.');
   }
 }
 
@@ -79,8 +79,8 @@ export async function updateBookmarkAction({
         const result = await summarizeBookmark({ url });
         summary = result.summary;
       } catch (e) {
-        console.error('Failed to update summary', e);
-        summary = 'Could not generate summary for this new URL.';
+        console.error('Impossibile aggiornare il riassunto', e);
+        summary = 'Impossibile generare un riassunto per questo nuovo URL.';
       }
   }
 
@@ -96,7 +96,7 @@ export async function updateBookmarkAction({
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   const updatedBookmark = recordToSpaceItem(updatedRecord);
   if (!updatedBookmark || updatedBookmark.type !== 'bookmark') {
-    throw new Error('Failed to update or map bookmark from record.');
+    throw new Error('Impossibile aggiornare o mappare il segnalibro dal record.');
   }
   return updatedBookmark as Bookmark;
 }
@@ -132,7 +132,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   const folderData = {
     tool: {
       type: 'folder',
-      name: 'New Folder',
+      name: 'Nuova Cartella',
       spaceId: spaceId,
       parentId: null,
     },
@@ -142,9 +142,8 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   const newFolderUnchecked = recordToSpaceItem(folderRecord);
 
   if (!newFolderUnchecked || newFolderUnchecked.type !== 'folder') {
-    // Attempt to clean up the invalid record that was just created
-    await pb.collection(bookmarksCollectionName).delete(folderRecord.id).catch(e => console.error("Failed to clean up invalid folder record after creation error.", e));
-    throw new Error('Failed to create or map new folder from record.');
+    await pb.collection(bookmarksCollectionName).delete(folderRecord.id).catch(e => console.error("Impossibile pulire il record della cartella non valido dopo l'errore di creazione.", e));
+    throw new Error('Impossibile creare o mappare la nuova cartella dal record.');
   }
   const newFolder = newFolderUnchecked as Folder;
 
@@ -168,7 +167,7 @@ export async function updateFolderNameAction({ id, name }: { id: string, name: s
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   const updatedFolder = recordToSpaceItem(updatedRecord);
   if (!updatedFolder || updatedFolder.type !== 'folder') {
-      throw new Error('Failed to update folder name or map record.');
+      throw new Error('Impossibile aggiornare il nome della cartella o mappare il record.');
   }
   return updatedFolder as Folder;
 }
@@ -180,7 +179,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
 
   if (newSpaceId) {
     tool.spaceId = newSpaceId;
-    tool.parentId = null; // moving space resets parent
+    tool.parentId = null; 
   }
   
   if (newParentId !== undefined) {
@@ -191,7 +190,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   const updatedItem = recordToSpaceItem(updatedRecord);
   if (!updatedItem) {
-    throw new Error('Failed to move or map item.');
+    throw new Error('Impossibile spostare o mappare l\'elemento.');
   }
   return updatedItem;
 }
@@ -214,12 +213,12 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
     const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
     const updatedItem = recordToSpaceItem(updatedRecord);
     if (!updatedItem) {
-        throw new Error('Failed to customize or map item.');
+        throw new Error('Impossibile personalizzare o mappare l\'elemento.');
     }
     return updatedItem;
 }
 
-// ===== Space Actions =====
+// ===== Azioni Spazio =====
 
 function recordToSpace(record: RecordModel): Space {
     return {
@@ -240,22 +239,19 @@ export async function updateSpaceAction({ id, data }: { id: string, data: { name
 }
 
 export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
-    // First, find all bookmarks and folders in this space
     const itemsInSpace = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.spaceId = "${id}"`,
     });
 
-    // Delete all of them
     const deletePromises = itemsInSpace.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
     await Promise.all(deletePromises);
 
-    // Finally, delete the space itself
     await pb.collection(spacesCollectionName).delete(id);
 
     return { success: true };
 }
 
-// ===== App Info Actions =====
+// ===== Azioni Info App =====
 
 function recordToAppInfo(record: RecordModel): AppInfo {
     const logoUrl = record.logo ? pb.files.getUrl(record, record.logo) : '';
@@ -272,14 +268,13 @@ export async function getAppInfoAction(): Promise<AppInfo> {
         return recordToAppInfo(record);
     } catch (e: any) {
         if (e.status === 404) {
-             console.warn(`App info record with ID "${menuRecordId}" not found in collection "${menuCollectionName}". Please ensure this record exists. Falling back to default values.`);
+             console.warn(`Record info app con ID "${menuRecordId}" non trovato nella collezione "${menuCollectionName}". Assicurati che questo record esista. Ritorno ai valori predefiniti.`);
         } else {
-             console.error('Failed to fetch app info:', e.response || e);
+             console.error('Impossibile recuperare le info dell\'app:', e.response || e);
              if (e?.originalError) {
-                console.error('Underlying connection error:', e.originalError);
+                console.error('Errore di connessione sottostante:', e.originalError);
            }
         }
-        // Return a static default to prevent crashing the app
         return { id: menuRecordId, title: 'DevZen', logo: 'Logo' };
     }
 }
@@ -289,7 +284,7 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
     return recordToAppInfo(record);
 }
 
-// ===== AI Tools Library Actions =====
+// ===== Azioni Libreria Strumenti AI =====
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
   try {
@@ -298,7 +293,7 @@ export async function getToolsAiAction(): Promise<ToolsAi[]> {
     });
     return records.map(recordToToolAi).filter((tool): tool is ToolsAi => tool !== null);
   } catch (error) {
-    console.error("Failed to fetch AI tools library on server:", error);
+    console.error("Impossibile recuperare la libreria di strumenti AI sul server:", error);
     return [];
   }
 }
@@ -311,14 +306,14 @@ export async function addBookmarkFromLibraryAction({
   spaceId: string;
 }): Promise<Bookmark> {
   if (!toolId || !spaceId) {
-    throw new Error('Missing required fields');
+    throw new Error('Campi obbligatori mancanti');
   }
 
   const toolRecord = await pb.collection(toolsAiCollectionName).getOne(toolId);
   
   const tool: ToolsAi | null = recordToToolAi(toolRecord);
   if (!tool) {
-    throw new Error('The selected library tool has invalid data.');
+    throw new Error('Lo strumento di libreria selezionato ha dati non validi.');
   }
 
   const data = {
@@ -326,7 +321,7 @@ export async function addBookmarkFromLibraryAction({
       type: 'bookmark',
       title: tool.name,
       url: tool.link,
-      summary: tool.summary.summary, // using the summary from the JSON
+      summary: tool.summary.summary,
       spaceId: spaceId,
       parentId: null,
     },
@@ -336,38 +331,36 @@ export async function addBookmarkFromLibraryAction({
     const record = await pb.collection(bookmarksCollectionName).create(data);
     const newBookmark = recordToSpaceItem(record);
     if (!newBookmark || newBookmark.type !== 'bookmark') {
-      throw new Error('Failed to create or map bookmark from library tool.');
+      throw new Error('Impossibile creare o mappare il segnalibro dallo strumento di libreria.');
     }
     return newBookmark as Bookmark;
   } catch (e) {
-    console.error('Failed to create bookmark from library in PocketBase', e);
-    throw new Error('Failed to save bookmark from library.');
+    console.error('Impossibile creare segnalibro dalla libreria in PocketBase', e);
+    throw new Error('Impossibile salvare il segnalibro dalla libreria.');
   }
 }
 
-// ===== AI Workspace Generation Actions =====
+// ===== Azioni Generazione Spazio di Lavoro AI =====
 
 export async function generateWorkspaceAction(prompt: string): Promise<AIWorkspace> {
     if (!prompt) {
-        throw new Error("Prompt cannot be empty.");
+        throw new Error("Il prompt non può essere vuoto.");
     }
-    // For JSON import, we parse it directly. Otherwise, we call the AI.
     try {
         const json = JSON.parse(prompt);
         if (json.spaces) {
-            // Basic validation to see if it looks like our workspace structure
             return json as AIWorkspace;
         }
     } catch (e) {
-        // Not a valid JSON, so we treat it as a text prompt for the AI
+        // Not a valid JSON
     }
 
     try {
         const result = await generateWorkspace({ prompt });
         return result;
     } catch (e) {
-        console.error("Failed to generate workspace from prompt", e);
-        throw new Error("The AI failed to generate a workspace. Please try a different prompt.");
+        console.error("Impossibile generare lo spazio di lavoro dal prompt", e);
+        throw new Error("L'IA non è riuscita a generare uno spazio di lavoro. Prova un prompt diverso.");
     }
 }
 
@@ -407,12 +400,12 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
 }
 
 async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, parentId: string | null): Promise<Bookmark> {
-    let summary = 'AI-generated bookmark.';
+    let summary = 'Segnalibro generato dall\'IA.';
     try {
         const result = await summarizeBookmark({ url: aiBookmark.url });
         summary = result.summary;
     } catch (e) {
-        console.warn(`Could not generate summary for ${aiBookmark.url}:`, e);
+        console.warn(`Impossibile generare il riassunto per ${aiBookmark.url}:`, e);
     }
 
     const bookmarkData = {
@@ -443,7 +436,6 @@ export async function exportWorkspaceAction(spaceIds: string[]): Promise<string>
         const items: AISpaceItem[] = [];
         const foldersMap = new Map<string, AIFolder>();
 
-        // Create folders first
         spaceItems.forEach(item => {
             if (item.tool.type === 'folder') {
                 const folder: AIFolder = {
@@ -456,7 +448,6 @@ export async function exportWorkspaceAction(spaceIds: string[]): Promise<string>
             }
         });
         
-        // Then add bookmarks to folders or root
         spaceItems.forEach(item => {
             if (item.tool.type === 'bookmark') {
                 const bookmark: AIBookmark = {

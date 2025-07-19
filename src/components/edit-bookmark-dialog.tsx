@@ -30,8 +30,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const bookmarkSchema = z.object({
-  title: z.string().min(1, { message: 'Title is required.' }),
-  url: z.string().min(1, { message: 'URL is required.' }),
+  title: z.string().min(1, { message: 'Il titolo è obbligatorio.' }),
+  url: z.string().min(1, { message: 'L\'URL è obbligatorio.' }),
 });
 
 interface EditBookmarkDialogProps {
@@ -71,19 +71,19 @@ export function EditBookmarkDialog({
       });
       onBookmarkUpdated(updatedBookmark);
       toast({
-        title: 'Bookmark updated!',
-        description: `"${updatedBookmark.title}" has been saved.`,
+        title: 'Segnalibro aggiornato!',
+        description: `"${updatedBookmark.title}" è stato salvato.`,
        });
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
-      if (errorMessage.includes('Invalid URL')) {
-        form.setError('url', { type: 'manual', message: 'Please enter a valid URL.' });
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+      if (errorMessage.includes('URL non valido')) {
+        form.setError('url', { type: 'manual', message: 'Inserisci un URL valido.' });
       } else {
         toast({
             variant: 'destructive',
-            title: 'Error',
-            description: `Failed to update bookmark: ${errorMessage}`,
+            title: 'Errore',
+            description: `Impossibile aggiornare il segnalibro: ${errorMessage}`,
         });
       }
     }
@@ -93,9 +93,9 @@ export function EditBookmarkDialog({
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Edit Bookmark</DialogTitle>
+          <DialogTitle className="font-headline">Modifica Segnalibro</DialogTitle>
           <DialogDescription>
-            Make changes to your bookmark here. Click save when you're done.
+            Apporta modifiche al tuo segnalibro qui. Clicca su Salva quando hai finito.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -105,9 +105,9 @@ export function EditBookmarkDialog({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Titolo</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Next.js Docs" {...field} />
+                    <Input placeholder="es. Documentazione Next.js" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,12 +136,12 @@ export function EditBookmarkDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">
-                  Cancel
+                  Annulla
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
+                Salva Modifiche
               </Button>
             </DialogFooter>
           </form>

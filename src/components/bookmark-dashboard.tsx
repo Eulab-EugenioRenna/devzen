@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -55,6 +54,7 @@ import { AddFromLibraryDialog } from './add-from-library-dialog';
 import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { recordToToolAi, recordToSpaceItem } from '@/lib/data-mappers';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
+import { Separator } from './ui/separator';
 
 function SidebarSpaceMenuItem({
   space,
@@ -96,13 +96,13 @@ function SidebarSpaceMenuItem({
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onEdit(space)}>Modifica Spazio</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
             onClick={() => onDelete(space)}
           >
-            Delete Space
+            Elimina Spazio
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -182,11 +182,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newItems[existingIndex] = item;
             return newItems;
           }
-          // Only add if it doesn't exist to avoid duplicates from optimistic updates
+          if (currentItems.some(i => i.id === item.id)) return currentItems;
           return [...currentItems, item];
         });
       } catch (error) {
-        console.error('Error processing real-time item update:', error);
+        console.error('Errore durante l\'elaborazione dell\'aggiornamento in tempo reale dell\'elemento:', error);
       }
     };
     
@@ -206,10 +206,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             return newSpaces;
           }
           // Only add if it doesn't exist to avoid duplicates from optimistic updates
+          if (currentSpaces.some(s => s.id === space.id)) return currentSpaces;
           return [...currentSpaces, space];
         });
       } catch (error) {
-        console.error('Error processing real-time space update:', error);
+        console.error('Errore durante l\'elaborazione dell\'aggiornamento in tempo reale dello spazio:', error);
       }
     };
 
@@ -232,7 +233,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           }
         });
       } catch (error) {
-        console.error("Error processing real-time tool update:", error);
+        console.error("Errore durante l'elaborazione dell'aggiornamento in tempo reale dello strumento:", error);
       }
     };
     
@@ -240,8 +241,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         try {
             return await subscribeFn();
         } catch (err: any) {
-            console.error(`Failed to subscribe to ${name} collection:`, err?.originalError || err);
-            // Don't toast on initial load failures for now, can be noisy.
+            console.error(`Impossibile iscriversi alla collezione ${name}:`, err?.originalError || err);
         }
     };
 
@@ -257,7 +257,6 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     };
   }, []);
   
-  // Set first space as active if the active one is deleted
   React.useEffect(() => {
     if (spaces.length > 0 && !spaces.find(s => s.id === activeSpaceId)) {
       setActiveSpaceId(spaces[0].id);
@@ -315,8 +314,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const handleAddBookmark = (newBookmark: Bookmark) => {
     setItems((prev) => [newBookmark, ...prev]);
     toast({
-      title: 'Bookmark added!',
-      description: `"${newBookmark.title}" has been saved.`,
+      title: 'Segnalibro aggiunto!',
+      description: `"${newBookmark.title}" è stato salvato.`,
     });
   };
   
@@ -331,39 +330,28 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const itemToDelete = items.find((i) => i.id === id);
     if (!itemToDelete) return;
 
-    // Optimistic update
     const originalItems = items;
-    setItems(currentItems => {
-        const itemsWithoutDeleted = currentItems.filter(i => i.id !== id);
-        if (type === 'folder') {
-            return itemsWithoutDeleted.map(i => {
-                if (i.parentId === id) {
-                    return { ...i, parentId: null };
-                }
-                return i;
-            });
-        }
-        return itemsWithoutDeleted;
-    });
+    const itemsWithoutDeleted = originalItems.filter(i => i.id !== id);
+    const updatedItemsWithMovedChildren = type === 'folder' 
+        ? itemsWithoutDeleted.map(i => i.parentId === id ? { ...i, parentId: null } : i)
+        : itemsWithoutDeleted;
+
+    setItems(updatedItemsWithMovedChildren);
     
     try {
-      const result = await deleteItemAction({ id });
-      // The optimistic update is usually sufficient. 
-      // If server-side logic changes more state (e.g. un-nesting),
-      // we might need to refresh state from the server response.
-      // For now, we rely on optimistic + real-time updates.
+      await deleteItemAction({ id });
       toast({
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
-        description: `Successfully removed.`,
+        title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
+        description: `Rimosso con successo.`,
       });
 
     } catch (error) {
-      setItems(originalItems); // Revert on error
-      console.error(`Failed to delete ${type}`, error);
+      setItems(originalItems);
+      console.error(`Impossibile eliminare ${type}`, error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: `Failed to delete ${type}.`,
+        title: 'Errore',
+        description: `Impossibile eliminare ${type}.`,
       });
     }
   };
@@ -375,7 +363,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       await updateFolderNameAction({ id, name });
     } catch (e) {
       if (originalFolder) setItems(prev => prev.map(i => i.id === id ? originalFolder : i));
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to rename folder.' });
+      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile rinominare la cartella.' });
     }
   }
 
@@ -398,7 +386,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         await moveItemAction({ id: String(active.id), newSpaceId: String(overId) });
       } catch (e) {
         setItems(prev => prev.map(i => i.id === active.id ? {...i, spaceId: activeItem.spaceId } : i));
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to move item.' });
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
       }
       return;
     }
@@ -414,7 +402,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         setItems(prev => [...prev.filter(i => !bookmarks.find(b => b.id === i.id)), folder, ...bookmarks]);
        } catch (e) {
          setItems(originalItems);
-         toast({ variant: 'destructive', title: 'Error', description: 'Failed to create folder.' });
+         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile creare la cartella.' });
        }
        return;
     }
@@ -425,32 +413,32 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             await moveItemAction({ id: String(active.id), newParentId: String(over.id) });
         } catch (e) {
             setItems(prev => prev.map(i => i.id === active.id ? {...i, parentId: activeItem.parentId } : i));
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to move item into folder.' });
+            toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento nella cartella.' });
         }
     }
   };
 
   const handleSpaceSave = async (spaceData: { name: string, icon: string }, id?: string) => {
-    if (id) { // Editing existing space
+    if (id) {
       const originalSpaces = spaces;
       setSpaces(prev => prev.map(s => s.id === id ? { ...s, ...spaceData } : s));
       setEditingSpace(null);
       try {
         await updateSpaceAction({ id, data: spaceData });
-        toast({ title: 'Space updated!', description: `"${spaceData.name}" has been saved.`});
+        toast({ title: 'Spazio aggiornato!', description: `"${spaceData.name}" è stato salvato.`});
       } catch (error) {
         setSpaces(originalSpaces);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update space.' });
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile aggiornare lo spazio.' });
       }
-    } else { // Adding new space
+    } else {
         setIsAddingSpace(false);
         try {
             const newSpace = await createSpaceAction(spaceData);
             setSpaces((prev) => [...prev, newSpace]);
             setActiveSpaceId(newSpace.id);
-            toast({ title: 'Space created!', description: `"${spaceData.name}" has been added.`});
+            toast({ title: 'Spazio creato!', description: `"${spaceData.name}" è stato aggiunto.`});
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to create space.' });
+            toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile creare lo spazio.' });
         }
     }
   };
@@ -467,11 +455,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
     try {
       await deleteSpaceAction({ id: spaceToDelete.id });
-      toast({ title: 'Space Deleted', description: `"${spaceToDelete.name}" and all its contents have been removed.` });
+      toast({ title: 'Spazio Eliminato', description: `"${spaceToDelete.name}" e tutti i suoi contenuti sono stati rimossi.` });
     } catch (error) {
       setSpaces(originalSpaces);
       setItems(originalItems);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete space.' });
+      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare lo spazio.' });
     }
   };
   
@@ -484,9 +472,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     try {
         const updatedInfo = await updateAppInfoAction(appInfo.id, formData);
         setAppInfo(updatedInfo);
-        toast({ title: 'App info updated!', description: 'Your application name and icon have been changed.'});
+        toast({ title: 'Info app aggiornate!', description: 'Il nome e l\'icona della tua applicazione sono stati cambiati.'});
     } catch (e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update app info.' });
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile aggiornare le info dell\'app.' });
     }
   }
 
@@ -510,10 +498,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            toast({ title: 'Export Successful', description: 'Your workspace has been downloaded as a JSON file.' });
+            toast({ title: 'Esportazione Riuscita', description: 'Il tuo spazio di lavoro è stato scaricato come file JSON.' });
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'Export Failed', description: 'Could not export your workspace.' });
+            toast({ variant: 'destructive', title: 'Esportazione Fallita', description: 'Impossibile esportare il tuo spazio di lavoro.' });
         }
     };
 
@@ -551,21 +539,21 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             <div className="flex rounded-md shadow-sm w-full">
                 <Button onClick={() => setIsAddingSpace(true)} className="rounded-r-none relative z-10 flex-1">
                     <Plus className="mr-2" />
-                    Add Space
+                    Aggiungi Spazio
                 </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button className="rounded-l-none border-l-0 px-2">
-                            <span className="sr-only">More settings</span>
+                            <span className="sr-only">Altre impostazioni</span>
                             <Settings className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" side="top">
                         <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>
-                            Edit Title & Logo
+                            Modifica Titolo & Logo
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleExport}>
-                            Export Workspace
+                            Esporta Spazio di Lavoro
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -582,7 +570,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             </div>
             <div className='flex-grow max-w-md'>
                  <Input 
-                    placeholder='Search in this space...'
+                    placeholder='Cerca in questo spazio...'
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -591,35 +579,35 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 <div className='flex items-center rounded-md bg-muted p-1'>
                     <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')}>
                         <LayoutGrid className='h-4 w-4' />
-                        <span className='sr-only'>Grid View</span>
+                        <span className='sr-only'>Vista Griglia</span>
                     </Button>
                     <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
                         <List className='h-4 w-4' />
-                        <span className='sr-only'>List View</span>
+                        <span className='sr-only'>Vista Elenco</span>
                     </Button>
                 </div>
                 <div className="flex rounded-md shadow-sm">
                     <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
                         <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
                             <PlusCircle className="mr-2" />
-                            Add Bookmark
+                            Aggiungi Segnalibro
                         </Button>
                     </AddBookmarkDialog>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button disabled={!activeSpaceId} className="rounded-l-none border-l-0 px-2">
-                                <span className="sr-only">More add options</span>
+                                <span className="sr-only">Altre opzioni di aggiunta</span>
                                 <ChevronDown className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setIsAddingFromLibrary(true)}>
                                 <Library className="mr-2 h-4 w-4" />
-                                Add from Library
+                                Aggiungi dalla Libreria
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setIsGeneratingWorkspace(true)}>
                                 <Bot className="mr-2 h-4 w-4" />
-                                Generate with AI
+                                Genera con AI
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -628,37 +616,61 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           </header>
           <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             {displayedItems.length > 0 ? (
-              <div className={cn(
-                  viewMode === 'grid' 
-                    ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                    : "flex flex-col gap-4"
-              )}>
-                {displayedItems.map(item => item.type === 'folder' ? (
-                  <FolderCard
-                    key={item.id}
-                    folder={item}
-                    onDeleted={handleDeleteItem}
-                    onView={() => setViewingFolder(item as Folder)}
-                    onNameUpdated={handleUpdateFolderName}
-                    onCustomize={() => setCustomizingItem(item)}
-                    viewMode={viewMode}
-                  />
-                ) : (
-                  <BookmarkCard
-                    key={item.id}
-                    bookmark={item}
-                    onEdit={() => setEditingBookmark(item)}
-                    onDeleted={handleDeleteItem}
-                    onCustomize={() => setCustomizingItem(item)}
-                    viewMode={viewMode}
-                  />
-                ))}
-              </div>
+                <div className="flex flex-col gap-8">
+                    {folders.length > 0 && (
+                        <div>
+                            <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Cartelle</h3>
+                            <div className={cn(
+                                viewMode === 'grid'
+                                ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "flex flex-col gap-4"
+                            )}>
+                                {folders.map(folder => (
+                                <FolderCard
+                                    key={folder.id}
+                                    folder={folder}
+                                    onDeleted={handleDeleteItem}
+                                    onView={() => setViewingFolder(folder)}
+                                    onNameUpdated={handleUpdateFolderName}
+                                    onCustomize={() => setCustomizingItem(folder)}
+                                    viewMode={viewMode}
+                                />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {folders.length > 0 && rootBookmarks.length > 0 && (
+                        <Separator />
+                    )}
+
+                    {rootBookmarks.length > 0 && (
+                        <div>
+                             <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Segnalibri</h3>
+                            <div className={cn(
+                                viewMode === 'grid'
+                                ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "flex flex-col gap-4"
+                            )}>
+                                {rootBookmarks.map(bookmark => (
+                                <BookmarkCard
+                                    key={bookmark.id}
+                                    bookmark={bookmark}
+                                    onEdit={() => setEditingBookmark(bookmark)}
+                                    onDeleted={handleDeleteItem}
+                                    onCustomize={() => setCustomizingItem(bookmark)}
+                                    viewMode={viewMode}
+                                />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center">
-                <h3 className="text-lg font-semibold font-headline">{searchTerm ? 'No results found' : (activeSpace ? 'This space is empty!' : 'No spaces yet!')}</h3>
+                <h3 className="text-lg font-semibold font-headline">{searchTerm ? 'Nessun risultato trovato' : (activeSpace ? 'Questo spazio è vuoto!' : 'Nessuno spazio ancora!')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {searchTerm ? `Your search for "${searchTerm}" did not match any items.` : (activeSpace ? `Add your first bookmark to '${activeSpace.name}' to get started.` : 'Create your first space using the [+] button in the sidebar.')}
+                  {searchTerm ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
                 </p>
               </div>
             )}
@@ -713,18 +725,18 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
          <AlertDialog open={!!deletingSpace} onOpenChange={(open) => !open && setDeletingSpace(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete &quot;{deletingSpace.name}&quot;?</AlertDialogTitle>
+                <AlertDialogTitle>Eliminare "{deletingSpace.name}"?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete this space and all of the bookmarks and folders within it. This action cannot be undone.
+                  Questo eliminerà permanentemente questo spazio e tutti i segnalibri e le cartelle al suo interno. Questa azione non può essere annullata.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Annulla</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive hover:bg-destructive/90"
                   onClick={handleConfirmDeleteSpace}
                 >
-                  Delete
+                  Elimina
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

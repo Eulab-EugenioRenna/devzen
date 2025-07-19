@@ -46,10 +46,10 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
     try {
       const movedItem = await moveItemAction({ id: bookmark.id, newParentId: null });
       onItemMove(movedItem);
-      toast({ title: 'Bookmark moved', description: `"${bookmark.title}" moved to space root.` });
+      toast({ title: 'Segnalibro spostato', description: `"${bookmark.title}" spostato alla radice dello spazio.` });
     } catch (e) {
       setBookmarks(originalBookmarks);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to move bookmark.' });
+      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare il segnalibro.' });
     }
   };
   
@@ -71,7 +71,7 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{folder.name}</DialogTitle>
           <DialogDescription>
-            Managing {bookmarks.length} bookmark(s) in this folder.
+            Gestione di {bookmarks.length} segnalibro/i in questa cartella.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto pr-4">
@@ -116,29 +116,29 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
                                 <div className='flex gap-1'>
                                     <Button size="icon" variant="ghost" className='h-8 w-8' onClick={() => handleRemoveFromFolder(bookmark)}>
                                         <ArrowUpRightFromSquare className='h-4 w-4' />
-                                        <span className="sr-only">Move to root</span>
+                                        <span className="sr-only">Sposta alla radice</span>
                                     </Button>
                                     <AlertDialog open={!!deletingBookmark && deletingBookmark.id === bookmark.id} onOpenChange={(open) => !open && setDeletingBookmark(null)}>
                                         <AlertDialogTrigger asChild>
                                              <Button size="icon" variant="ghost" className='h-8 w-8 text-destructive hover:text-destructive' onClick={() => setDeletingBookmark(bookmark)}>
                                                 <Trash2 className='h-4 w-4' />
-                                                <span className="sr-only">Delete</span>
+                                                <span className="sr-only">Elimina</span>
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                This action cannot be undone. This will permanently delete the bookmark for &quot;{deletingBookmark?.title}&quot;.
+                                                Questa azione non può essere annullata. Eliminerà permanentemente il segnalibro per "{deletingBookmark?.title}".
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogCancel>Annulla</AlertDialogCancel>
                                                 <AlertDialogAction
                                                 className="bg-destructive hover:bg-destructive/90"
                                                 onClick={handleConfirmDelete}
                                                 >
-                                                Delete
+                                                Elimina
                                                 </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
@@ -149,7 +149,7 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
                     })}
                 </ul>
             ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">This folder is empty.</p>
+                <p className="text-sm text-muted-foreground text-center py-8">Questa cartella è vuota.</p>
             )}
         </div>
       </DialogContent>

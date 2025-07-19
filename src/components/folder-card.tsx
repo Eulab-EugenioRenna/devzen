@@ -149,7 +149,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                   </CardTitle>
                 )}
                 <CardDescription className="mt-1 text-xs px-1">
-                    {folder.items.length} item(s)
+                    {folder.items.length} elemento/i
                 </CardDescription>
             </div>
              <div className="flex items-center ml-auto">
@@ -158,19 +158,19 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Folder options</span>
+                        <span className="sr-only">Opzioni cartella</span>
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={() => onView(folder)}>View</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Rename</DropdownMenuItem>
-                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onView(folder)}>Visualizza</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Rinomina</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
                     >
-                        Delete
+                        Elimina
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -182,18 +182,18 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the folder &quot;{folder.name}&quot; and move all bookmarks inside it to the root of the space.
+              Questa azione non può essere annullata. Eliminerà permanentemente la cartella "{folder.name}" e sposterà tutti i segnalibri al suo interno alla radice dello spazio.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => onDeleted(folder.id, 'folder')}
             >
-              Delete
+              Elimina
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -242,7 +242,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                 )}
               </div>
               <CardDescription className="mt-1 text-xs">
-                {folder.items.length} item(s)
+                {folder.items.length} elemento/i
               </CardDescription>
             </div>
              <div className="flex items-center">
@@ -251,17 +251,17 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Folder options</span>
+                        <span className="sr-only">Opzioni cartella</span>
                     </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={onCustomize}>Customize</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                         onClick={() => setIsDeleteDialogOpen(true)}
                     >
-                        Delete
+                        Elimina
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -309,7 +309,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
               })}
             </div>
           ) : (
-             <p className="text-sm text-muted-foreground">This folder is empty. Drag bookmarks here to add them.</p>
+             <p className="text-sm text-muted-foreground">Questa cartella è vuota. Trascina qui i segnalibri per aggiungerli.</p>
           )}
         </CardContent>
       </Card>
@@ -317,18 +317,18 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Sei sicuro?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the folder &quot;{folder.name}&quot; and move all bookmarks inside it to the root of the space.
+              Questa azione non può essere annullata. Eliminerà permanentemente la cartella "{folder.name}" e sposterà tutti i segnalibri al suo interno alla radice dello spazio.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => onDeleted(folder.id, 'folder')}
             >
-              Delete
+              Elimina
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
