@@ -561,6 +561,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     data: { type: 'space-content' },
   });
 
+  const DraggedSpaceIcon = React.useMemo(() => {
+    if (draggedItem && (draggedItem as any).type === 'space') {
+      return getIcon((draggedItem as Space).icon);
+    }
+    return null;
+  }, [draggedItem]);
+
 
   if (!isMounted) {
     return null; 
@@ -825,9 +832,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     onDuplicate={() => {}}
                     isOverlay
                 />
-            ) : (draggedItem as any).name && (draggedItem as any).icon ? (
+            ) : (draggedItem as any).type === 'space' && DraggedSpaceIcon ? (
                  <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
-                    {getIcon((draggedItem as Space).icon)({className: "size-6 shrink-0"})}
+                    <DraggedSpaceIcon className="size-6 shrink-0" />
                     <h1 className="text-base font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
                 </div>
             ) : null
@@ -925,3 +932,5 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
+
+    
