@@ -322,6 +322,12 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
   return newLink as SpaceLink;
 }
 
+export async function unlinkSpaceAction({ id, linkedSpaceId }: { id: string, linkedSpaceId: string }): Promise<{ success: boolean }> {
+    await pb.collection(bookmarksCollectionName).delete(id);
+    await pb.collection(spacesCollectionName).update(linkedSpaceId, { isLink: false });
+    return { success: true };
+}
+
 export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
   if (item.type === 'bookmark') {
     const newBookmarkData = {

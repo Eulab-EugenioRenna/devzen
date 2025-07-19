@@ -30,7 +30,8 @@ import {
   getSpacesAction,
   customizeItemAction,
   duplicateItemAction,
-  createSpaceLinkAction
+  createSpaceLinkAction,
+  unlinkSpaceAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -78,6 +79,7 @@ interface DashboardContextType {
   handleEditSpace: (space: Space | null) => void;
   handleNewSpaceClick: () => void;
   handleDeleteSpace: (space: Space) => void;
+  handleUnlinkSpace: (link: SpaceLink) => void;
   handleAppInfoSave: (formData: FormData) => void;
   handleEditAppInfo: () => void;
   handleExport: () => void;
@@ -317,7 +319,6 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const activeType = active.data.current?.type as string;
     const activeItem = active.data.current?.item;
     const overType = over.data.current?.type as string;
-    const overItem = over.data.current?.item;
     const overId = String(over.id);
   
     try {
@@ -330,17 +331,15 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         return;
       }
   
-      if ((activeType === 'bookmark' || activeType === 'folder') && overType === 'space-sidebar') {
-        const newSpaceId = overItem.id;
+      if ((activeType === 'bookmark' || activeType === 'folder') && overType.startsWith('space-sidebar-')) {
+        const newSpaceId = overType.replace('space-sidebar-', '');
         if (newSpaceId && activeItem.spaceId !== newSpaceId) {
           await moveItemAction({ id: activeItem.id, newSpaceId });
         }
-      }
-      else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-        await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, overItem.id] });
-      }
-      else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overItem.id) {
-        await moveItemAction({ id: activeItem.id, newParentId: overItem.id });
+      } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === active.data.current?.item.spaceId) {
+        await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, over.id as string] });
+      } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== over.id) {
+        await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
       }
   
       await refreshAllData();
@@ -365,6 +364,17 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         toast({ variant: "destructive", title: "Errore", description: "Impossibile creare il collegamento tra spazi." });
     } finally {
         setLinkingSpacesInfo(null);
+    }
+  };
+
+  const handleUnlinkSpace = async (link: SpaceLink) => {
+    try {
+      await unlinkSpaceAction({ id: link.id, linkedSpaceId: link.linkedSpaceId });
+      await refreshAllData();
+      toast({ title: 'Spazio Ripristinato', description: `Lo spazio "${link.name}" è ora di nuovo visibile nella sidebar.` });
+    } catch (error) {
+      console.error("Errore nel ripristino dello spazio:", error);
+      toast({ variant: "destructive", title: "Errore", description: "Impossibile ripristinare lo spazio." });
     }
   };
 
@@ -482,6 +492,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleEditSpace: setEditingSpace,
     handleNewSpaceClick,
     handleDeleteSpace: setDeletingSpace,
+    handleUnlinkSpace,
     handleAppInfoSave,
     handleEditAppInfo: () => setIsEditingAppInfo(true),
     handleExport,
@@ -518,7 +529,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
                 return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} isOverlay />;
               }
               if ((type === 'folder' || type === 'space-link') && draggedItem) {
-                return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} isOverlay />;
+                return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay />;
               }
               if (type === 'space' && draggedItem) {
                   const space = draggedItem as Space;

@@ -44,6 +44,7 @@ export function DashboardContent() {
     handleFolderView,
     handleUpdateFolderName,
     setActiveSpaceId,
+    handleUnlinkSpace,
   } = useDashboard();
 
   const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -234,6 +235,7 @@ export function DashboardContent() {
                                     onNameUpdated={handleUpdateFolderName}
                                     onCustomize={() => handleItemCustomize(folder)}
                                     onDuplicate={() => handleItemDuplicate(folder)}
+                                    onUnlink={() => {}}
                                     viewMode={viewMode}
                                 />
                                )
@@ -265,6 +267,7 @@ export function DashboardContent() {
                                         onNameUpdated={() => {}} // Cannot rename links
                                         onCustomize={() => handleItemCustomize(link)}
                                         onDuplicate={() => handleItemDuplicate(link)}
+                                        onUnlink={handleUnlinkSpace}
                                         viewMode={viewMode}
                                     />
                                 )

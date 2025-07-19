@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Folder, SpaceLink } from '@/lib/types';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { MoreHorizontal, FolderIcon, Link } from 'lucide-react';
+import { MoreHorizontal, FolderIcon, Link, Undo2 } from 'lucide-react';
 
 import {
   Card,
@@ -43,12 +43,13 @@ interface FolderCardProps {
   onNameUpdated: (id: string, name: string) => void;
   onCustomize: () => void;
   onDuplicate: () => void;
+  onUnlink: (link: SpaceLink) => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
 }
 
-export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, onDuplicate, isOverlay, viewMode = 'grid', isDragging }: FolderCardProps) {
+export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, onDuplicate, onUnlink, isOverlay, viewMode = 'grid', isDragging }: FolderCardProps) {
   const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
     id: folder.id,
     data: { type: folder.type, item: folder },
@@ -132,6 +133,12 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem onClick={() => onView(folder)}>Visualizza</DropdownMenuItem>
             {!isLink && <DropdownMenuItem onClick={() => setIsEditing(true)}>Rinomina</DropdownMenuItem>}
+             {isLink && (
+                <DropdownMenuItem onClick={() => onUnlink(folder as SpaceLink)}>
+                    <Undo2 className="mr-2 h-4 w-4" />
+                    Ripristina Spazio
+                </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onDuplicate}>Duplica</DropdownMenuItem>
             <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
             <DropdownMenuSeparator />
