@@ -78,7 +78,6 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
       
       const result = await action(textToProcess, ...args);
 
-      // If text was selected, replace it. Otherwise, replace the whole document.
       if (selectedText.trim().length > 0) {
         editor.chain().focus().insertContentAt({ from, to }, result).run();
       } else {
@@ -169,111 +168,125 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
       
       <Button
         type="button"
-        size="sm"
+        size="icon"
         variant="ghost"
         onClick={() => setIsPreviewOpen(true)}
         title="Anteprima"
       >
         <Eye className="h-4 w-4" />
-        <span className='ml-2'>Anteprima</span>
       </Button>
 
       <div className="h-6 w-px bg-border mx-1"/>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        disabled={!editor.can().chain().focus().toggleBold().run()}
-        title="Grassetto"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        disabled={!editor.can().chain().focus().toggleItalic().run()}
-        title="Corsivo"
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('strike') ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-        disabled={!editor.can().chain().focus().toggleStrike().run()}
-        title="Barrato"
-      >
-        <Strikethrough className="h-4 w-4" />
-      </Button>
+
+      <div className="flex items-center gap-1">
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            disabled={!editor.can().chain().focus().toggleBold().run()}
+            title="Grassetto"
+        >
+            <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            disabled={!editor.can().chain().focus().toggleItalic().run()}
+            title="Corsivo"
+        >
+            <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('strike') ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            disabled={!editor.can().chain().focus().toggleStrike().run()}
+            title="Barrato"
+        >
+            <Strikethrough className="h-4 w-4" />
+        </Button>
+      </div>
+      
       <div className="h-6 w-px bg-border mx-1"/>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        title="Titolo 1"
-      >
-        <Heading1 className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        title="Titolo 2"
-      >
-        <Heading2 className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        title="Titolo 3"
-      >
-        <Heading3 className="h-4 w-4" />
-      </Button>
+      
+      <div className="flex items-center gap-1">
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            title="Titolo 1"
+        >
+            <Heading1 className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            title="Titolo 2"
+        >
+            <Heading2 className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            title="Titolo 3"
+        >
+            <Heading3 className="h-4 w-4" />
+        </Button>
+      </div>
+
       <div className="h-6 w-px bg-border mx-1"/>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        title="Elenco Puntato"
-      >
-        <List className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        title="Elenco Numerato"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        size="icon"
-        variant={editor.isActive('link') ? 'secondary' : 'ghost'}
-        onClick={setLink}
-        title="Link"
-      >
-        <Link2 className="h-4 w-4" />
-      </Button>
-       <Button
-        type="button"
-        size="icon"
-        variant='ghost'
-        onClick={() => editor.chain().focus().unsetAllMarks().run()}
-        title="Rimuovi Formattazione"
-      >
-        <Eraser className="h-4 w-4" />
-      </Button>
+
+      <div className="flex items-center gap-1">
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            title="Elenco Puntato"
+        >
+            <List className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            title="Elenco Numerato"
+        >
+            <ListOrdered className="h-4 w-4" />
+        </Button>
+        <Button
+            type="button"
+            size="icon"
+            variant={editor.isActive('link') ? 'secondary' : 'ghost'}
+            onClick={setLink}
+            title="Link"
+        >
+            <Link2 className="h-4 w-4" />
+        </Button>
+       </div>
+       <div className="h-6 w-px bg-border mx-1"/>
+
+       <div className="flex items-center gap-1">
+        <Button
+            type="button"
+            size="icon"
+            variant='ghost'
+            onClick={() => editor.chain().focus().unsetAllMarks().run()}
+            title="Rimuovi Formattazione"
+        >
+            <Eraser className="h-4 w-4" />
+        </Button>
+       </div>
     </div>
     </>
   );
