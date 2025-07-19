@@ -105,7 +105,7 @@ export function DashboardSidebar() {
     showLinks,
     activeDragItem,
     setShowLinks,
-    handleSpaceSave,
+    handleEditSpace,
     handleEditAppInfo,
     handleExport,
   } = useDashboard();
@@ -143,7 +143,7 @@ export function DashboardSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="flex rounded-md shadow-sm w-full">
-            <Button onClick={() => handleSpaceSave({name: '', icon: ''}, undefined)} className="rounded-r-none relative z-10 flex-1">
+            <Button onClick={() => handleEditSpace(null)} className="rounded-r-none relative z-10 flex-1">
                 <Plus className="mr-2" />
                 Aggiungi Spazio
             </Button>
