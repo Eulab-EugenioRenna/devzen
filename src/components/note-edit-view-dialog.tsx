@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -89,9 +90,11 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                          onChange={setContent}
                        />
                     </TabsContent>
-                    <TabsContent value="preview" className="flex-grow mt-4 border rounded-md p-4 relative">
+                    <TabsContent value="preview" className="flex-grow mt-4 border rounded-md p-4 relative min-h-0">
                         <ScrollArea className="absolute inset-0 h-full w-full">
-                            {content ? <MarkdownContent content={content} /> : <p className='text-muted-foreground'>L'anteprima apparirà qui.</p>}
+                            <div className='p-1'>
+                                {content ? <MarkdownContent content={content} /> : <p className='text-muted-foreground'>L'anteprima apparirà qui.</p>}
+                            </div>
                         </ScrollArea>
                     </TabsContent>
                 </Tabs>
