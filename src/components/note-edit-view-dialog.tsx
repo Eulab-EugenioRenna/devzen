@@ -82,7 +82,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                     />
                 </DialogHeader>
                 
-                <Tabs defaultValue="editor" className="flex-grow flex flex-col min-h-0">
+                <Tabs defaultValue="editor" className="flex-grow flex flex-col min-h-0 mt-2">
                     <TabsList className="grid w-full grid-cols-2 shrink-0">
                         <TabsTrigger value="editor">Editor</TabsTrigger>
                         <TabsTrigger value="preview">Lettura</TabsTrigger>
@@ -93,8 +93,8 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                          onChange={setContent}
                        />
                     </TabsContent>
-                    <TabsContent value="preview" className="flex-grow relative min-h-0">
-                        <ScrollArea className="absolute inset-0 h-full w-full border rounded-b-md">
+                    <TabsContent value="preview" className="flex-grow min-h-0">
+                        <ScrollArea className="h-full w-full border rounded-b-md">
                             <div className='p-4'>
                                 {content ? <MarkdownContent content={content} /> : <p className='text-muted-foreground'>L'anteprima apparirà qui.</p>}
                             </div>
