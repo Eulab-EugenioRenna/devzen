@@ -37,7 +37,7 @@ interface RichTextEditorProps {
 const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const { toast } = useToast();
-
+  
   const setLink = React.useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
@@ -60,7 +60,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
   const handleAiAction = async (action: (text: string, ...args: any[]) => Promise<string>, ...args: any[]) => {
     setIsAiLoading(true);
     try {
-      const { from, to, content } = editor.state.selection;
+      const { from, to } = editor.state.selection;
       const selectedText = editor.state.doc.textBetween(from, to, ' ');
 
       const textToProcess = selectedText.trim().length > 0 ? selectedText : editor.storage.markdown.getMarkdown();
@@ -94,14 +94,32 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
       setIsAiLoading(false);
     }
   };
-
+  
   const handleGenerate = async () => {
-    const promptText = window.prompt("Descrivi cosa vuoi generare:");
+    let promptText: string | null = '';
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ');
+
+    if (selectedText.trim().length > 0) {
+      promptText = selectedText;
+    } else {
+      promptText = editor.storage.markdown.getMarkdown();
+    }
+    
+    if (!promptText.trim()) {
+      promptText = window.prompt("Descrivi cosa vuoi generare:");
+    }
+    
     if (!promptText) return;
+
     setIsAiLoading(true);
     try {
       const result = await generateTextAction(promptText);
-      editor.chain().focus().insertContent(result).run();
+       if (selectedText.trim().length > 0) {
+        editor.chain().focus().insertContentAt({ from, to }, result).run();
+      } else {
+        editor.chain().focus().selectAll().insertContent(result).run();
+      }
     } catch(e) {
        console.error("AI Generation failed:", e);
        toast({ variant: 'destructive', title: "Generazione Fallita" });
@@ -109,6 +127,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
       setIsAiLoading(false);
     }
   };
+
 
   return (
     <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1">

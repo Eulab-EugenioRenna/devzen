@@ -133,13 +133,10 @@ const improveTextFlow = ai.defineFlow(
 const GenerateTextInputSchema = z.object({
   prompt: z.string().describe('The prompt to generate text from.'),
 });
+
 export async function generateText(prompt: string): Promise<string> {
     return await generateTextFlow({ prompt });
 }
-const generateTextPrompt = `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.
-
-Prompt:
-"{{prompt}}"`;
 
 const generateTextFlow = ai.defineFlow(
   { 
@@ -149,9 +146,9 @@ const generateTextFlow = ai.defineFlow(
   },
   async (input) => {
     const llmResponse = await ai.generate({
-      prompt: generateTextPrompt,
+      prompt: `Continua, espandi o genera testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.\n\nPrompt:\n"{{prompt}}"`,
       model: 'googleai/gemini-1.5-flash-latest',
-      variables: input, 
+      variables: { prompt: input.prompt },
     });
     return llmResponse.text;
   }
