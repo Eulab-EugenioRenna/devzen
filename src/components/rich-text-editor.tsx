@@ -139,7 +139,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
             onOpenChange={setIsPreviewOpen}
         />
     )}
-    <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1 shrink-0">
+    <div className="border-b border-input p-1 flex flex-wrap items-center gap-1 shrink-0">
       <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -316,8 +316,9 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
     editorProps: {
       attributes: {
         class: cn(
-          'w-full rounded-b-md border border-t-0 border-input bg-transparent px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none'
+          'w-full bg-transparent px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none',
+          'flex-grow overflow-y-auto'
         ),
       },
     },
@@ -336,9 +337,9 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
   }, [content, editor]);
 
   return (
-    <div className={cn('flex flex-col', className)}>
+    <div className={cn('flex flex-col h-full rounded-md border border-input focus-within:ring-2 focus-within:ring-ring', className)}>
       <EditorToolbar editor={editor} />
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="flex-grow min-h-0" />
     </div>
   );
 };
