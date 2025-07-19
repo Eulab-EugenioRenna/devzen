@@ -140,42 +140,44 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
         />
     )}
     <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1 shrink-0">
-       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="ghost" disabled={isAiLoading}>
-            {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            <span className='ml-2'>Azioni AI</span>
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => handleAiAction(correctTextAction)}>
-            <Check className="mr-2 h-4 w-4"/> Correggi Testo
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleAiAction(summarizeTextAction)}>
-            <MessageSquareQuote className="mr-2 h-4 w-4"/> Riassumi
-          </DropdownMenuItem>
-           <DropdownMenuItem onClick={() => handleAiAction(improveTextAction)}>
-            <BrainCircuit className="mr-2 h-4 w-4"/> Migliora Scrittura
-          </DropdownMenuItem>
-           <DropdownMenuItem onClick={() => handleAiAction(translateTextAction, 'English')}>
-            <Languages className="mr-2 h-4 w-4"/> Traduci in Inglese
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleGenerate}>
-            <Pilcrow className="mr-2 h-4 w-4"/> Genera con AI...
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
-       <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        onClick={() => setIsPreviewOpen(true)}
-        title="Anteprima"
-      >
-        <Eye className="h-4 w-4" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost" disabled={isAiLoading}>
+              {isAiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              <span className='ml-2'>Azioni AI</span>
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => handleAiAction(correctTextAction)}>
+              <Check className="mr-2 h-4 w-4"/> Correggi Testo
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAiAction(summarizeTextAction)}>
+              <MessageSquareQuote className="mr-2 h-4 w-4"/> Riassumi
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAiAction(improveTextAction)}>
+              <BrainCircuit className="mr-2 h-4 w-4"/> Migliora Scrittura
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAiAction(translateTextAction, 'English')}>
+              <Languages className="mr-2 h-4 w-4"/> Traduci in Inglese
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleGenerate}>
+              <Pilcrow className="mr-2 h-4 w-4"/> Genera con AI...
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => setIsPreviewOpen(true)}
+          title="Anteprima"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
 
       <div className="h-6 w-px bg-border mx-1"/>
 
@@ -314,8 +316,8 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
     editorProps: {
       attributes: {
         class: cn(
-          'w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none overflow-y-auto flex-grow'
+          'w-full rounded-b-md border border-t-0 border-input bg-transparent px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none'
         ),
       },
     },
@@ -334,7 +336,7 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
   }, [content, editor]);
 
   return (
-    <div className={cn('flex flex-col flex-grow min-h-0', className)}>
+    <div className={cn('flex flex-col', className)}>
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>

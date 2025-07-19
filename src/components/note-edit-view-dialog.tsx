@@ -53,7 +53,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col p-6">
                 <DialogHeader className="shrink-0">
-                    <DialogTitle className='sr-only'>Modifica Nota</DialogTitle>
+                    <DialogTitle className="sr-only">Modifica Nota</DialogTitle>
                     <Input 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -62,11 +62,12 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                     />
                 </DialogHeader>
                 
-                <RichTextEditor
-                    content={content}
-                    onChange={setContent}
-                    className="flex flex-col flex-grow min-h-0"
-                />
+                <div className="flex-grow min-h-0 overflow-y-auto">
+                    <RichTextEditor
+                        content={content}
+                        onChange={setContent}
+                    />
+                </div>
 
                 <DialogFooter className='mt-4 shrink-0'>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Annulla</Button>
