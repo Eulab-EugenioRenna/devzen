@@ -27,19 +27,18 @@ CONTESTO DELLO SPAZIO (Segnalibri):
 
 CRONOLOGIA DELLA CHAT:
 {{#each history}}
-{{#if (eq this.role "user")}}Domanda: {{this.content}}{{/if}}
-{{#if (eq this.role "model")}}Risposta: {{this.content}}{{/if}}
+{{this.role}}: {{this.content}}
 ---
 {{/each}}
 
-NUOVA DOMANDA DELL'UTENTE:
+NUOVA DOMANDA DELL'UTENTE (ruolo: user):
 "{{question}}"
 
 Istruzioni:
 1.  Leggi la nuova domanda dell'utente.
 2.  Formula una risposta basandoti SOLO sul contesto dei segnalibri fornito sopra e sulla cronologia della chat.
 3.  Se la domanda non può essere risposta con il contesto, dillo gentilmente.
-4.  Restituisci la tua risposta come un singolo oggetto JSON.`,
+4.  Restituisci la tua risposta (ruolo: model) come un singolo oggetto JSON.`,
 });
 
 const chatInSpaceFlow = ai.defineFlow(
