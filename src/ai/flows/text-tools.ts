@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -28,7 +29,7 @@ const correctTextPrompt = ai.definePrompt({
   name: 'correctTextPrompt',
   input: { schema: CorrectTextInputSchema },
   output: { schema: CorrectTextOutputSchema },
-  prompt: `Correggi eventuali errori di ortografia e grammatica nel seguente testo. Restituisci solo il testo corretto, senza alcuna spiegazione. Il testo DEVE essere in italiano.
+  prompt: `Correggi eventuali errori di ortografia e grammatica nel seguente testo. Restituisci solo un oggetto JSON valido contenente il testo corretto, senza alcuna spiegazione. Il testo DEVE essere in italiano.
 
 Testo da correggere:
 "{{text}}"`,
@@ -54,7 +55,7 @@ const summarizeTextPrompt = ai.definePrompt({
   name: 'summarizeTextPrompt',
   input: { schema: SummarizeTextInputSchema },
   output: { schema: SummarizeTextOutputSchema },
-  prompt: `Riassumi il seguente testo in modo conciso. Il riassunto DEVE essere in italiano.
+  prompt: `Riassumi il seguente testo in modo conciso. Restituisci solo un oggetto JSON valido contenente il riassunto. Il riassunto DEVE essere in italiano.
 
 Testo da riassumere:
 "{{text}}"`,
@@ -80,7 +81,7 @@ const translateTextPrompt = ai.definePrompt({
   name: 'translateTextPrompt',
   input: { schema: TranslateTextInputSchema },
   output: { schema: TranslateTextOutputSchema },
-  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo il testo tradotto.
+  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido contenente il testo tradotto.
 
 Testo da tradurre:
 "{{text}}"`,
@@ -105,7 +106,7 @@ const improveTextPrompt = ai.definePrompt({
   name: 'improveTextPrompt',
   input: { schema: ImproveTextInputSchema },
   output: { schema: ImproveTextOutputSchema },
-  prompt: `Migliora lo stile, la chiarezza e il tono del seguente testo, rendendolo più professionale e scorrevole. Restituisci solo il testo migliorato. Il testo DEVE essere in italiano.
+  prompt: `Migliora lo stile, la chiarezza e il tono del seguente testo, rendendolo più professionale e scorrevole. Restituisci solo un oggetto JSON valido contenente il testo migliorato. Il testo DEVE essere in italiano.
 
 Testo da migliorare:
 "{{text}}"`,
@@ -131,7 +132,7 @@ const generateTextPrompt = ai.definePrompt({
   name: 'generateTextPrompt',
   input: { schema: GenerateTextInputSchema },
   output: { schema: GenerateTextOutputSchema },
-  prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata. La risposta DEVE essere in italiano.
+  prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata all'interno di un oggetto JSON valido. La risposta DEVE essere in italiano.
 
 Prompt:
 "{{prompt}}"`,
