@@ -223,8 +223,10 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
 
   if (newSpaceId) {
     tool.spaceId = newSpaceId;
+    // When moving to a new space, always reset the parent folder.
     tool.parentId = null; 
     
+    // If the item being moved is a folder, also move all its children.
     if (tool.type === 'folder') {
       const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.parentId = "${id}"`,

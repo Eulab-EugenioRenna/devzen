@@ -54,7 +54,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -103,17 +103,26 @@ function SidebarSpaceMenuItem({
         isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
       )}
     >
-        <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="w-full">
-            <SidebarMenuButton
-                onClick={() => onClick(space.id)}
-                isActive={isActive}
-                tooltip={space.name}
-                className="pr-8 w-full"
-            >
-                <Icon />
-                <span>{space.name}</span>
-            </SidebarMenuButton>
-        </div>
+      <div className='flex items-center w-full'>
+          <div 
+              ref={setDraggableNodeRef} 
+              {...listeners} 
+              {...attributes} 
+              className="p-2 cursor-grab touch-none"
+              onClick={(e) => e.stopPropagation()}
+          >
+              <GripVertical className="h-4 w-4 text-sidebar-foreground/50" />
+          </div>
+          <SidebarMenuButton
+              onClick={() => onClick(space.id)}
+              isActive={isActive}
+              tooltip={space.name}
+              className="pr-8 flex-1"
+          >
+              <Icon />
+              <span>{space.name}</span>
+          </SidebarMenuButton>
+      </div>
       <div className="absolute right-1 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -816,10 +825,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     onDuplicate={() => {}}
                     isOverlay
                 />
-            ) : (draggedItem as any).type === 'space' ? (
-                 <div className="flex items-center gap-2 overflow-hidden w-full bg-primary text-primary-foreground p-2 rounded-lg shadow-2xl">
-                    <AppIcon className="size-6 shrink-0" />
-                    <h1 className="text-lg font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
+            ) : (draggedItem as any).name && (draggedItem as any).icon ? (
+                 <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
+                    {getIcon((draggedItem as Space).icon)({className: "size-6 shrink-0"})}
+                    <h1 className="text-base font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
                 </div>
             ) : null
           ) : null}
@@ -916,4 +925,3 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
-
