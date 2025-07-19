@@ -10,6 +10,7 @@ import {
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
+  type Active,
 } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 import {
@@ -54,7 +55,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff, GripVertical, Link as LinkIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -76,12 +77,14 @@ function SidebarSpaceMenuItem({
   onClick,
   onEdit,
   onDelete,
+  isDragging,
 }: {
   space: Space;
   isActive: boolean;
   onClick: (id: string) => void;
   onEdit: (space: Space) => void;
   onDelete: (space: Space) => void;
+  isDragging: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `space-sidebar-${space.id}`,
@@ -89,18 +92,24 @@ function SidebarSpaceMenuItem({
   });
 
    const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
-    id: `space-drag-${space.id}`,
+    id: space.id,
     data: { type: 'space', item: space },
   });
 
   const Icon = getIcon(space.icon);
+
+  if (isDragging) {
+    return (
+      <div className="h-12 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 m-2" />
+    );
+  }
 
   return (
     <SidebarMenuItem
       ref={setNodeRef}
       className={cn(
         'group relative rounded-lg transition-colors',
-        isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+        isOver ? 'bg-sidebar-accent' : 'bg-transparent'
       )}
     >
       <div className='flex items-center w-full'>
@@ -111,7 +120,7 @@ function SidebarSpaceMenuItem({
               className="p-2 cursor-grab touch-none"
               onClick={(e) => e.stopPropagation()}
           >
-              <GripVertical className="h-4 w-4 text-sidebar-foreground/50" />
+              <GripVertical className="h-4 w-4 text-sidebar-foreground/50 group-hover:text-sidebar-foreground" />
           </div>
           <SidebarMenuButton
               onClick={() => onClick(space.id)}
@@ -153,12 +162,14 @@ function DroppableSidebarMenu({
   setActiveSpaceId,
   onEdit,
   onDelete,
+  activeDragItem,
 }: {
   spaces: Space[];
   activeSpaceId: string;
   setActiveSpaceId: (id: string) => void;
   onEdit: (space: Space) => void;
   onDelete: (space: Space) => void;
+  activeDragItem: Active | null;
 }) {
   return (
     <SidebarMenu className="p-2">
@@ -170,6 +181,7 @@ function DroppableSidebarMenu({
           onClick={setActiveSpaceId}
           onEdit={onEdit}
           onDelete={onDelete}
+          isDragging={activeDragItem?.id === space.id}
         />
       ))}
     </SidebarMenu>
@@ -181,7 +193,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
   const [editingBookmark, setEditingBookmark] = React.useState<Bookmark | null>(null);
-  const [draggedItem, setDraggedItem] = React.useState<SpaceItem | Space | null>(null);
+  const [activeDragItem, setActiveDragItem] = React.useState<Active | null>(null);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const [isAddingSpace, setIsAddingSpace] = React.useState(false);
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
@@ -425,11 +437,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   }
 
   const handleDragStart = (event: DragStartEvent) => {
-    setDraggedItem(event.active.data.current?.item ?? null);
+    setActiveDragItem(event.active);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    setDraggedItem(null);
+    setActiveDragItem(null);
     const { active, over } = event;
   
     if (!over || !active.id || active.id === over.id) return;
@@ -441,10 +453,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const overType = over.data.current?.type as string;
 
     try {
-      if (activeType === 'space' && overType === 'space-content') {
-        const targetSpaceId = overId.replace('space-content-', '');
+      if (activeType === 'space' && overId === 'space-link-droppable-area') {
+        const targetSpaceId = (over.data.current as any).spaceId;
         await createSpaceLinkAction(activeItem as Space, targetSpaceId);
-      } else if (overType.startsWith('space-sidebar')) {
+      } else if (overType === 'space-sidebar') {
         const newSpaceId = overItem.id;
         if (activeType === 'folder' || activeType === 'bookmark') {
           await moveItemAction({ id: String(active.id), newSpaceId });
@@ -554,17 +566,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const isLogoUrl = appInfo.logo?.startsWith('http');
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
 
-  const { setNodeRef: setSpaceContentRef, isOver: isOverSpaceContent } = useDroppable({
-    id: `space-content-${activeSpaceId}`,
-    data: { type: 'space-content' },
+  const { setNodeRef: setSpaceLinkDroppableRef, isOver: isOverSpaceLinkArea } = useDroppable({
+    id: `space-link-droppable-area`,
+    data: { spaceId: activeSpaceId },
   });
-
-  const DraggedSpaceIcon = React.useMemo(() => {
-    if (draggedItem && (draggedItem as any).type === 'space') {
-      return getIcon((draggedItem as Space).icon);
-    }
-    return null;
-  }, [draggedItem]);
 
 
   if (!isMounted) {
@@ -592,6 +597,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               setActiveSpaceId={setActiveSpaceId}
               onEdit={setEditingSpace}
               onDelete={setDeletingSpace}
+              activeDragItem={activeDragItem}
             />
           </SidebarContent>
           <SidebarFooter>
@@ -630,9 +636,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="lg:hidden" />
-              <h2 className="hidden text-xl font-bold font-headline truncate sm:block">
-                {activeSpace?.name ?? 'Dashboard'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="hidden text-xl font-bold font-headline truncate sm:block">
+                    {activeSpace?.name ?? 'Dashboard'}
+                </h2>
+              </div>
             </div>
             
             <div className="flex flex-1 justify-center px-4">
@@ -657,7 +665,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" className='shrink-0' onClick={handleAnalyzeSpace} disabled={isAnalyzing || !activeSpace}>
+                             <Button variant="outline" size="icon" className='shrink-0 h-9 w-9' onClick={handleAnalyzeSpace} disabled={isAnalyzing || !activeSpace}>
                                 {isAnalyzing ? <Loader2 className='h-4 w-4 animate-spin' /> : <Sparkles className='h-4 w-4' />}
                                 <span className='sr-only'>Analizza Spazio</span>
                             </Button>
@@ -691,15 +699,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 
                 <div className="flex rounded-md shadow-sm">
                      <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
-                         <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
-                            <PlusCircle className="mr-2 h-4 w-4 shrink-0" />
+                         <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10 h-9 px-3">
+                            <PlusCircle className="mr-0 sm:mr-2 h-4 w-4 shrink-0" />
                             <span className="hidden sm:inline">Aggiungi</span>
-                            <span className="sr-only sm:hidden">Aggiungi Segnalibro</span>
                         </Button>
                     </AddBookmarkDialog>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button disabled={!activeSpaceId} className="rounded-l-none border-l-0 px-2">
+                            <Button disabled={!activeSpaceId} className="rounded-l-none border-l-0 px-2 h-9">
                                 <span className="sr-only">Altre opzioni di aggiunta</span>
                                 <ChevronDown className="h-4 w-4" />
                             </Button>
@@ -718,7 +725,20 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 </div>
             </div>
           </header>
-          <main ref={setSpaceContentRef} className={cn("flex-1 overflow-y-auto p-4 sm:p-6", isOverSpaceContent && 'bg-primary/5')}>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
+            {activeDragItem?.data.current?.type === 'space' && activeDragItem?.id !== activeSpaceId && (
+              <div
+                ref={setSpaceLinkDroppableRef}
+                className={cn(
+                  "absolute inset-4 z-10 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 transition-colors",
+                  isOverSpaceLinkArea && "bg-primary/20 border-solid"
+                )}
+              >
+                  <LinkIcon className="h-10 w-10 text-primary mb-2" />
+                  <p className="text-lg font-semibold text-primary">Rilascia per creare un collegamento a questo spazio</p>
+              </div>
+            )}
+            
             {displayedItems.length > 0 ? (
                 <div className="flex flex-col gap-8">
                     {folders.length > 0 && (
@@ -739,6 +759,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                                     onCustomize={() => setCustomizingItem(folder)}
                                     onDuplicate={() => handleDuplicateItem(folder)}
                                     viewMode={viewMode}
+                                    isDragging={activeDragItem?.id === folder.id}
                                 />
                                 ))}
                             </div>
@@ -763,6 +784,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                                     onCustomize={() => setCustomizingItem(link)}
                                     onDuplicate={() => handleDuplicateItem(link)}
                                     viewMode={viewMode}
+                                    isDragging={activeDragItem?.id === link.id}
                                 />
                                 ))}
                             </div>
@@ -791,6 +813,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                                     onCustomize={() => setCustomizingItem(bookmark)}
                                     onDuplicate={() => handleDuplicateItem(bookmark)}
                                     viewMode={viewMode}
+                                    isDragging={activeDragItem?.id === bookmark.id}
                                 />
                                 ))}
                             </div>
@@ -810,33 +833,50 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       </SidebarProvider>
       {isMounted && createPortal(
         <DragOverlay>
-          {draggedItem ? (
-            (draggedItem as any).type === 'bookmark' ? (
+          {activeDragItem ? (() => {
+            const draggedItemData = activeDragItem.data.current?.item;
+            const type = activeDragItem.data.current?.type;
+
+            if (type === 'bookmark' && draggedItemData) {
+              return (
                 <BookmarkCard
-                    bookmark={draggedItem as Bookmark}
-                    onEdit={() => {}}
-                    onDeleted={() => {}}
-                    onCustomize={() => {}}
-                    onDuplicate={() => {}}
-                    isOverlay
+                  bookmark={draggedItemData as Bookmark}
+                  onEdit={() => {}}
+                  onDeleted={() => {}}
+                  onCustomize={() => {}}
+                  onDuplicate={() => {}}
+                  isOverlay
                 />
-            ) : (draggedItem as any).type === 'folder' || (draggedItem as any).type === 'space-link' ? (
+              );
+            }
+
+            if ((type === 'folder' || type === 'space-link') && draggedItemData) {
+              return (
                 <FolderCard
-                    folder={draggedItem as Folder}
-                    onDeleted={() => {}}
-                    onView={() => {}}
-                    onNameUpdated={() => {}}
-                    onCustomize={() => {}}
-                    onDuplicate={() => {}}
-                    isOverlay
+                  folder={draggedItemData as Folder}
+                  onDeleted={() => {}}
+                  onView={() => {}}
+                  onNameUpdated={() => {}}
+                  onCustomize={() => {}}
+                  onDuplicate={() => {}}
+                  isOverlay
                 />
-            ) : (draggedItem as any).type === 'space' && DraggedSpaceIcon ? (
-                 <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
-                    <DraggedSpaceIcon className="size-6 shrink-0" />
-                    <h1 className="text-base font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
+              );
+            }
+            
+            if (type === 'space' && draggedItemData) {
+              const space = draggedItemData as Space;
+              const Icon = getIcon(space.icon);
+              return (
+                <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
+                    <Icon className="size-6 shrink-0" />
+                    <h1 className="text-base font-semibold font-headline truncate">{space.name}</h1>
                 </div>
-            ) : null
-          ) : null}
+              );
+            }
+
+            return null;
+          })() : null}
         </DragOverlay>,
         document.body
       )}

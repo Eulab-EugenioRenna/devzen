@@ -43,6 +43,7 @@ interface BookmarkCardProps {
   onDuplicate: () => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
+  isDragging?: boolean;
 }
 
 function getDomain(url: string) {
@@ -53,8 +54,8 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, isOverlay, viewMode = 'grid' }: BookmarkCardProps) {
-  const { attributes, listeners, setNodeRef: setDraggableNodeRef, isDragging } = useDraggable({
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+  const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
   });
@@ -137,6 +138,13 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     </div>
   );
 
+  if (isDragging) {
+    return <div className={cn(
+      "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
+      viewMode === 'list' ? 'h-28' : 'h-52'
+    )} />;
+  }
+  
   if (isOverlay) {
     return (
         <Card
@@ -160,8 +168,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     <div
       ref={setDroppableNodeRef}
       className={cn(
-        'relative',
-        isDragging && 'opacity-50'
+        'relative'
       )}
     >
       <Card
@@ -229,8 +236,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     <div
       ref={setDroppableNodeRef}
       className={cn(
-        'relative',
-        isDragging && 'opacity-50'
+        'relative'
       )}
     >
       <Card

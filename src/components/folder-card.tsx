@@ -45,15 +45,16 @@ interface FolderCardProps {
   onDuplicate: () => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
+  isDragging?: boolean;
 }
 
-export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, onDuplicate, isOverlay, viewMode = 'grid' }: FolderCardProps) {
+export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, onDuplicate, isOverlay, viewMode = 'grid', isDragging }: FolderCardProps) {
   const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
     id: folder.id,
     data: { type: folder.type, item: folder },
   });
   
-   const { attributes, listeners, setNodeRef: setDraggableNodeRef, isDragging } = useDraggable({
+   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: folder.id,
     data: { type: folder.type, item: folder },
   });
@@ -150,6 +151,12 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     ? 'Collegamento a Spazio'
     : `${(folder as Folder).items.length} elemento/i`;
 
+  if (isDragging) {
+    return <div className={cn(
+      "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
+      viewMode === 'list' ? 'h-28' : 'h-52'
+    )} />;
+  }
   
   if (isOverlay) {
     return (
@@ -174,7 +181,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
      <div
       ref={setDroppableNodeRef}
       onDoubleClick={() => !isOverlay && onView(folder)}
-       className={cn(isDragging && 'opacity-50')}
+       className='relative'
     >
       <Card
         style={cardStyle}
@@ -241,7 +248,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     <div
       ref={setDroppableNodeRef}
       onDoubleClick={() => !isOverlay && onView(folder)}
-      className={cn(isDragging && 'opacity-50')}
+      className='relative'
     >
       <Card
         style={cardStyle}
@@ -354,4 +361,3 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     </div>
   );
 }
-
