@@ -70,12 +70,6 @@ function SidebarSpaceMenuItem({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: space.id });
   const Icon = getIcon(space.icon);
-  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
-
-  const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    setIsContextMenuOpen(true);
-  };
 
   return (
     <SidebarMenuItem
@@ -84,31 +78,30 @@ function SidebarSpaceMenuItem({
         'rounded-lg transition-colors',
         isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
       )}
-      onContextMenu={handleContextMenu}
     >
-      <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
-        <DropdownMenuTrigger asChild>
-          <span className="sr-only">Open context menu for {space.name}</span>
-        </DropdownMenuTrigger>
-        <SidebarMenuButton
-            onClick={() => onClick(space.id)}
-            isActive={isActive}
-            tooltip={space.name}
-        >
-            <Icon />
-            <span>{space.name}</span>
-        </SidebarMenuButton>
-        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-            onClick={() => onDelete(space)}
-          >
-            Delete Space
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                    onClick={() => onClick(space.id)}
+                    isActive={isActive}
+                    tooltip={space.name}
+                    className="w-full"
+                >
+                    <Icon />
+                    <span>{space.name}</span>
+                </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                onClick={() => onDelete(space)}
+            >
+                Delete Space
+            </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     </SidebarMenuItem>
   );
 }
@@ -207,10 +200,6 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newSpaces[existingIndex] = space;
             return newSpaces;
           } else {
-            // Check if it already exists to prevent duplication from optimistic updates
-            if (currentSpaces.some(s => s.id === space.id)) {
-                return currentSpaces;
-            }
             return [...currentSpaces, space];
           }
         });
@@ -349,14 +338,17 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     if (!itemToDelete) return;
 
     let originalItemsState = items; 
-    let newItems = items.filter(i => i.id !== id);
 
     try {
       const result = await deleteItemAction({ id });
+      
+      let newItems = items.filter(i => i.id !== id);
 
       if (result.success && type === 'folder' && result.updatedBookmarks) {
         const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
+        // Remove old versions of the bookmarks
         newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
+        // Add the updated bookmarks
         newItems.push(...result.updatedBookmarks);
       }
 
