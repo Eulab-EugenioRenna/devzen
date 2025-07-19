@@ -33,6 +33,7 @@ import {
   duplicateItemAction,
   createSpaceLinkAction,
   unlinkSpaceAction,
+  chatInSpaceAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +87,7 @@ interface DashboardContextType {
   handleExport: () => void;
   handleGenerateWorkspace: () => void;
   handleAnalyzeSpace: () => void;
-  handleAddBookmark: (values: {title: string, url: string, spaceId: string}) => void;
+  handleAddBookmark: (values: {title: string, url: string, spaceId: string}) => Promise<void>;
   handleAddFromLibrary: () => void;
   handleSearch: (e: React.FormEvent) => void;
   handleItemDelete: (id: string, type: 'bookmark' | 'folder' | 'space-link') => void;
@@ -220,6 +221,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleAnalyzeSpace = async () => {
     if (!activeSpace) return;
     setIsAnalyzing(true);
+    setAnalysisResult(null); // Reset previous result
     setAnalyzingSpace(activeSpace);
     try {
         const spaceBookmarks = items.filter(i => i.spaceId === activeSpaceId && i.type === 'bookmark') as Bookmark[];
@@ -232,7 +234,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     } catch (error) {
         console.error("Errore nell'analisi dello spazio:", error);
         toast({ variant: "destructive", title: "Errore di Analisi", description: "Impossibile analizzare lo spazio." });
-        setAnalyzingSpace(null);
+        setAnalyzingSpace(null); // Close dialog on error
     } finally {
         setIsAnalyzing(false);
     }
@@ -483,7 +485,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     searchTerm,
     isSearching,
     searchResultIds,
-    isAnalyzing,
+    isAnalyzing: isAnalyzing || (!!analyzingSpace && !analysisResult),
     setActiveSpaceId,
     setViewMode,
     setShowLinks,
@@ -570,7 +572,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}
         {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} />}
         {isGeneratingWorkspace && <GenerateWorkspaceDialog onOpenChange={setIsGeneratingWorkspace} onWorkspaceGenerated={handleWorkspaceGenerated} />}
-        {analyzingSpace && <AnalyzeSpaceDialog space={analyzingSpace} result={analysisResult} onOpenChange={(open) => { if (!open) { setAnalyzingSpace(null); setAnalysisResult(null); } }} />}
+        {analyzingSpace && <AnalyzeSpaceDialog 
+            space={analyzingSpace} 
+            spaceBookmarks={items.filter(i => i.spaceId === analyzingSpace.id && i.type === 'bookmark') as Bookmark[]}
+            analysisResult={analysisResult} 
+            isLoadingAnalysis={isAnalyzing}
+            onOpenChange={(open) => { if (!open) { setAnalyzingSpace(null); setAnalysisResult(null); } }} 
+        />}
         {linkingSpacesInfo && <AlertDialog open={!!linkingSpacesInfo} onOpenChange={(open) => !open && setLinkingSpacesInfo(null)}>
                   <AlertDialogContent>
                       <AlertDialogHeader>
@@ -592,5 +600,3 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
-
-    

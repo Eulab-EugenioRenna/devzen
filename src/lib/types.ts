@@ -170,4 +170,24 @@ export const SmartSearchOutputSchema = z.object({
 });
 export type SmartSearchOutput = z.infer<typeof SmartSearchOutputSchema>;
 
-    
+// Types for Chat in Space
+export const ChatMessageSchema = z.object({
+    role: z.enum(['user', 'model']),
+    content: z.string(),
+});
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+export const ChatInSpaceInputSchema = z.object({
+    history: z.array(ChatMessageSchema),
+    context: z.object({
+      spaceName: z.string(),
+      bookmarks: z.array(BookmarkSchemaForAnalysis)
+    }),
+    question: z.string(),
+});
+export type ChatInSpaceInput = z.infer<typeof ChatInSpaceInputSchema>;
+
+export const ChatInSpaceOutputSchema = z.object({
+    answer: z.string(),
+});
+export type ChatInSpaceOutput = z.infer<typeof ChatInSpaceOutputSchema>;

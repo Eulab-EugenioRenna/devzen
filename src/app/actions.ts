@@ -6,7 +6,8 @@ import { generateWorkspace } from '@/ai/flows/generate-workspace';
 import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink } from '@/lib/types';
+import { chatInSpace } from '@/ai/flows/chat-in-space';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
@@ -657,4 +658,7 @@ export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<Anal
     return result;
 }
 
-    
+export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatInSpaceOutput> {
+    const result = await chatInSpace(input);
+    return result;
+}
