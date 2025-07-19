@@ -6,10 +6,10 @@ import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpace
 import {
   DndContext,
   useDroppable,
+  useDraggable,
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 import {
@@ -675,11 +675,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 </div>
                 
                 <div className="flex rounded-md shadow-sm">
-                    <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
+                     <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
                          <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
                             <PlusCircle className="mr-2 h-4 w-4 shrink-0" />
-                            <span className="hidden lg:inline">Aggiungi</span>
-                            <span className="sr-only lg:hidden">Aggiungi Segnalibro</span>
+                            <span className="hidden sm:inline">Aggiungi</span>
+                            <span className="sr-only sm:hidden">Aggiungi Segnalibro</span>
                         </Button>
                     </AddBookmarkDialog>
                     <DropdownMenu>
