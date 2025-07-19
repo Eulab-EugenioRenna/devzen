@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from './ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import { RichTextEditor } from './rich-text-editor';
 
 interface NoteEditViewDialogProps {
   note: Bookmark;
@@ -24,6 +24,7 @@ interface NoteEditViewDialogProps {
 }
 
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
+    // A simple parser for demonstration. For production, a library like 'marked' or 'react-markdown' would be better.
     const htmlContent = content
       .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
       .replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mt-3 mb-1.5">$1</h2>')
@@ -32,9 +33,11 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
       .replace(/^(<li.*<\/li>)+/gms, (match) => `<ul class="list-disc pl-5 my-2">${match}</ul>`)
+      .replace(/`([^`]+)`/g, '<code class="bg-muted text-muted-foreground px-1 py-0.5 rounded-sm">$1</code>')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary underline">$1</a>')
       .replace(/\n/g, '<br />');
 
-  return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+  return <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: htmlContent.replace(/<br \/><br \/>/g, '<br />') }} />;
 };
 
 export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEditViewDialogProps) {
@@ -66,7 +69,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
 
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl h-[80vh] flex flex-col p-6">
+            <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col p-6">
                 <DialogHeader>
                     <Input 
                         value={title}
@@ -80,12 +83,10 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                         <TabsTrigger value="editor">Editor</TabsTrigger>
                         <TabsTrigger value="preview">Lettura</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="editor" className="flex-grow mt-4">
-                       <Textarea 
-                         value={content}
-                         onChange={(e) => setContent(e.target.value)}
-                         placeholder="Scrivi qui la tua nota in Markdown..."
-                         className="h-full resize-none"
+                    <TabsContent value="editor" className="flex-grow mt-4 flex flex-col min-h-0">
+                       <RichTextEditor
+                         content={content}
+                         onChange={setContent}
                        />
                     </TabsContent>
                     <TabsContent value="preview" className="flex-grow mt-4 border rounded-md p-4">
