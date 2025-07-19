@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -54,7 +55,7 @@ export function DashboardContent() {
     id: 'space-link-droppable-area',
   });
 
-  const { folders, rootBookmarks, spaceLinks } = React.useMemo(() => {
+  const { folders, regularBookmarks, chatNotes, spaceLinks } = React.useMemo(() => {
     const spaceItems = items.filter((item) => item.spaceId === activeSpaceId);
     
     let filteredItems = spaceItems;
@@ -82,24 +83,27 @@ export function DashboardContent() {
       allFolders.map((f) => [f.id, { ...f, items: [] }])
     );
     const rootBookmarks: Bookmark[] = [];
-
-    for (const bookmark of allBookmarks) {
+    
+    allBookmarks.forEach(bookmark => {
       if (bookmark.parentId && foldersById.has(bookmark.parentId)) {
         foldersById.get(bookmark.parentId)!.items.push(bookmark);
       } else {
         rootBookmarks.push(bookmark);
       }
-    }
+    });
     
     const populatedFolders = Array.from(foldersById.values()).map(folder => {
         const folderBookmarks = allBookmarks.filter(bm => bm.parentId === folder.id);
         return {...folder, items: folderBookmarks};
     });
 
-    return { folders: populatedFolders, rootBookmarks, spaceLinks: allSpaceLinks };
-  }, [items, activeSpaceId, searchResultIds]);
+    const chatNotes = rootBookmarks.filter(bm => bm.url.startsWith('devzen:note:'));
+    const regularBookmarks = rootBookmarks.filter(bm => !bm.url.startsWith('devzen:note:'));
 
-  const displayedItems: SpaceItem[] = [...folders, ...rootBookmarks, ...spaceLinks];
+    return { folders: populatedFolders, regularBookmarks, chatNotes, spaceLinks: allSpaceLinks };
+  }, [items, activeSpaceId, searchResultIds]);
+  
+  const hasContent = folders.length > 0 || regularBookmarks.length > 0 || chatNotes.length > 0 || spaceLinks.length > 0;
 
   return (
     <SidebarInset className="flex flex-col">
@@ -209,9 +213,9 @@ export function DashboardContent() {
           </div>
         )}
         
-        {displayedItems.length === 0 && activeDragItem?.id ? (
+        {!hasContent && activeDragItem?.id ? (
           <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center" />
-        ) : displayedItems.length > 0 ? (
+        ) : hasContent ? (
             <div className="flex flex-col gap-8">
                 {folders.length > 0 && (
                     <div>
@@ -277,11 +281,44 @@ export function DashboardContent() {
                     </div>
                 )}
 
-                {(folders.length > 0 || spaceLinks.length > 0) && rootBookmarks.length > 0 && (
+                {(folders.length > 0 || spaceLinks.length > 0) && (regularBookmarks.length > 0 || chatNotes.length > 0) && (
                     <Separator />
                 )}
 
-                {rootBookmarks.length > 0 && (
+                {chatNotes.length > 0 && (
+                    <div>
+                         <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Conversazioni</h3>
+                        <div className={cn(
+                            viewMode === 'grid'
+                            ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                            : "flex flex-col gap-4"
+                        )}>
+                            {chatNotes.map(bookmark => 
+                              activeDragItem?.id === bookmark.id ? (
+                                <div key={bookmark.id} className={cn(
+                                    "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
+                                    viewMode === 'list' ? 'h-28' : 'h-52'
+                                )}/>
+                               ) : (
+                                <BookmarkCard
+                                    key={bookmark.id}
+                                    bookmark={bookmark}
+                                    onEdit={handleItemEdit}
+                                    onDeleted={handleItemDelete}
+                                    onCustomize={() => handleItemCustomize(bookmark)}
+                                    onDuplicate={() => handleItemDuplicate(bookmark)}
+                                    onViewNote={handleNoteView}
+                                    viewMode={viewMode}
+                                />
+                               )
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {chatNotes.length > 0 && regularBookmarks.length > 0 && <Separator />}
+
+                {regularBookmarks.length > 0 && (
                     <div>
                          <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Segnalibri</h3>
                         <div className={cn(
@@ -289,7 +326,7 @@ export function DashboardContent() {
                             ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                             : "flex flex-col gap-4"
                         )}>
-                            {rootBookmarks.map(bookmark => 
+                            {regularBookmarks.map(bookmark => 
                               activeDragItem?.id === bookmark.id ? (
                                 <div key={bookmark.id} className={cn(
                                     "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
