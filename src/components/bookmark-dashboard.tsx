@@ -35,6 +35,7 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarTrigger,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { getIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -527,32 +528,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2 overflow-hidden">
-                 {isLogoUrl ? (
-                   <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
-                 ) : (
-                    AppIcon && <AppIcon className="size-6 shrink-0" />
-                 )}
-                 <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className='h-7 w-7 shrink-0'>
-                    <MoreVertical className="h-4 w-4"/>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>Edit Title & Logo</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsAddingSpace(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Space
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExport}>
-                        Export Workspace
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            <div className="flex items-center gap-2 overflow-hidden">
+                {isLogoUrl ? (
+                <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
+                ) : (
+                AppIcon && <AppIcon className="size-6 shrink-0" />
+                )}
+                <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -564,6 +546,30 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               onDelete={setDeletingSpace}
             />
           </SidebarContent>
+          <SidebarFooter>
+            <div className="flex rounded-md shadow-sm w-full">
+                <Button onClick={() => setIsAddingSpace(true)} className="rounded-r-none relative z-10 flex-1">
+                    <Plus className="mr-2" />
+                    Add Space
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button className="rounded-l-none border-l-0 px-2">
+                            <span className="sr-only">More settings</span>
+                            <Settings className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" side="top">
+                        <DropdownMenuItem onClick={() => setIsEditingAppInfo(true)}>
+                            Edit Title & Logo
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExport}>
+                            Export Workspace
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+          </SidebarFooter>
         </Sidebar>
         <SidebarInset className="flex flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
