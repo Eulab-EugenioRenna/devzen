@@ -439,17 +439,15 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const overId = String(over.id);
     const overItem = over.data.current?.item as SpaceItem | Space;
     const overType = over.data.current?.type as string;
-  
+
     try {
-      if (overType.startsWith('space-sidebar')) {
+      if (activeType === 'space' && overType === 'space-content') {
+        const targetSpaceId = overId.replace('space-content-', '');
+        await createSpaceLinkAction(activeItem as Space, targetSpaceId);
+      } else if (overType.startsWith('space-sidebar')) {
         const newSpaceId = overItem.id;
         if (activeType === 'folder' || activeType === 'bookmark') {
           await moveItemAction({ id: String(active.id), newSpaceId });
-        }
-      } else if (overType === 'space-content') {
-        const targetSpaceId = overId.replace('space-content-', '');
-        if (activeType === 'space') {
-          await createSpaceLinkAction(activeItem as Space, targetSpaceId);
         }
       } else {
         const overItemFromState = items.find(i => i.id === overId);
@@ -932,5 +930,3 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
-
-    

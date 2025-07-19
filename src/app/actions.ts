@@ -311,6 +311,7 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
       spaceId: targetSpaceId,
     },
   };
+  
   const record = await pb.collection(bookmarksCollectionName).create(linkData);
   await pb.collection(spacesCollectionName).update(space.id, { isLink: true });
 
