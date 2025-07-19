@@ -42,7 +42,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -159,6 +159,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [tools, setTools] = React.useState<ToolsAi[]>(initialTools);
   const [isMounted, setIsMounted] = React.useState(false);
   const [isGeneratingWorkspace, setIsGeneratingWorkspace] = React.useState(false);
+  const [isAddingFromLibrary, setIsAddingFromLibrary] = React.useState(false);
+
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -178,17 +180,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             const newItems = [...currentItems];
             newItems[existingIndex] = item;
             return newItems;
-          } else {
-             // Do not add if it doesn't exist, rely on optimistic updates for creation
-            return currentItems;
           }
+          return currentItems; // Do not add if it doesn't exist, rely on optimistic updates
         });
       } catch (error) {
         console.error('Error processing real-time item update:', error);
       }
     };
-    const unsubscribeItems = pb.collection(bookmarksCollectionName).subscribe('*', handleItemUpdate);
-
+    
     const handleSpaceUpdate = (e: { action: string; record: any }) => {
       try {
         const space: Space = { id: e.record.id, name: e.record.name, icon: e.record.icon };
@@ -203,16 +202,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             const newSpaces = [...currentSpaces];
             newSpaces[existingIndex] = space;
             return newSpaces;
-          } else {
-            // Do not add if it doesn't exist, rely on optimistic updates for creation
-            return currentSpaces;
           }
+          return currentSpaces; // Do not add if it doesn't exist, rely on optimistic updates
         });
       } catch (error) {
         console.error('Error processing real-time space update:', error);
       }
     };
-    const unsubscribeSpaces = pb.collection(spacesCollectionName).subscribe('*', handleSpaceUpdate);
 
     const handleToolUpdate = (e: { action: string; record: any }) => {
       try {
@@ -236,21 +232,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         console.error("Error processing real-time tool update:", error);
       }
     };
-    const unsubscribeTools = pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
-
+    
     const connectWithRetry = async (subscribeFn: () => Promise<() => void>, name: string) => {
         try {
             return await subscribeFn();
         } catch (err: any) {
             console.error(`Failed to subscribe to ${name} collection:`, err?.originalError || err);
-            toast({
-                variant: 'destructive',
-                title: 'Real-time Connection Failed',
-                description: `Could not connect for live updates on ${name}. Retrying...`,
-            });
-            // Simple retry logic
-            setTimeout(() => connectWithRetry(subscribeFn, name), 5000);
-            return () => {}; // Return a no-op unsub function
+            // Don't toast on initial load failures for now, can be noisy.
         }
     };
 
@@ -264,7 +252,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       pb.collection(spacesCollectionName).unsubscribe('*');
       pb.collection(toolsAiCollectionName).unsubscribe('*');
     };
-  }, [toast]);
+  }, []);
   
   // Set first space as active if the active one is deleted
   React.useEffect(() => {
@@ -340,19 +328,27 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const itemToDelete = items.find((i) => i.id === id);
     if (!itemToDelete) return;
 
-    let originalItemsState = items; 
+    // Optimistic update
+    const originalItems = items;
     let newItems = items.filter(i => i.id !== id);
-
+    if (type === 'folder' && (itemToDelete as Folder).items) {
+      const children = (itemToDelete as Folder).items;
+      const updatedChildren = children.map(c => ({...c, parentId: null}));
+      newItems.push(...updatedChildren);
+    }
+    setItems(newItems);
+    
     try {
       const result = await deleteItemAction({ id });
 
+      // If server returns different state (which it does), replace optimistic state
       if (result.success && type === 'folder' && result.updatedBookmarks) {
-        const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
-        newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
-        newItems.push(...result.updatedBookmarks);
+        setItems(currentItems => {
+            const withoutOldChildren = currentItems.filter(i => (i.parentId === id));
+            const withNewChildren = [...withoutOldChildren, ...result.updatedBookmarks!];
+            return withNewChildren;
+        });
       }
-
-      setItems(newItems);
 
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
@@ -360,7 +356,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       });
 
     } catch (error) {
-      setItems(originalItemsState);
+      setItems(originalItems); // Revert on error
       console.error(`Failed to delete ${type}`, error);
       toast({
         variant: 'destructive',
@@ -445,15 +441,15 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update space.' });
       }
     } else { // Adding new space
-      setIsAddingSpace(false);
-      try {
-        const newSpace = await createSpaceAction(spaceData);
-        setSpaces(prev => [...prev, newSpace]);
-        setActiveSpaceId(newSpace.id);
-        toast({ title: 'Space created!', description: `"${spaceData.name}" has been added.`});
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to create space.' });
-      }
+        setIsAddingSpace(false);
+        try {
+            const newSpace = await createSpaceAction(spaceData);
+            setSpaces((prev) => [...prev, newSpace]);
+            setActiveSpaceId(newSpace.id);
+            toast({ title: 'Space created!', description: `"${spaceData.name}" has been added.`});
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to create space.' });
+        }
     }
   };
 
@@ -595,22 +591,32 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                         <span className='sr-only'>List View</span>
                     </Button>
                 </div>
-                <Button variant="outline" onClick={() => setIsGeneratingWorkspace(true)}>
-                    <Bot className="mr-2 h-4 w-4" />
-                    Generate with AI
-                </Button>
-                <AddFromLibraryDialog tools={tools} activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
-                    <Button variant="outline" disabled={!activeSpaceId}>
-                        <Library className="mr-2" />
-                        Add from Library
-                    </Button>
-                </AddFromLibraryDialog>
-                <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
-                  <Button disabled={!activeSpaceId}>
-                    <PlusCircle className="mr-2" />
-                    Add Bookmark
-                  </Button>
-                </AddBookmarkDialog>
+                <div className="flex rounded-md shadow-sm">
+                    <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
+                        <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
+                            <PlusCircle className="mr-2" />
+                            Add Bookmark
+                        </Button>
+                    </AddBookmarkDialog>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button disabled={!activeSpaceId} className="rounded-l-none border-l-0 px-2">
+                                <span className="sr-only">More add options</span>
+                                <ChevronDown className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setIsAddingFromLibrary(true)}>
+                                <Library className="mr-2 h-4 w-4" />
+                                Add from Library
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setIsGeneratingWorkspace(true)}>
+                                <Bot className="mr-2 h-4 w-4" />
+                                Generate with AI
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
           </header>
           <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -737,6 +743,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             appInfo={appInfo}
             onSave={handleAppInfoSave}
             onOpenChange={setIsEditingAppInfo}
+        />
+      )}
+       {isAddingFromLibrary && (
+        <AddFromLibraryDialog 
+            tools={tools} 
+            activeSpaceId={activeSpaceId} 
+            onBookmarkAdded={handleAddBookmark}
+            onOpenChange={setIsAddingFromLibrary}
         />
       )}
       {isGeneratingWorkspace && (

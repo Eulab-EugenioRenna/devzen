@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,17 +24,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { cn } from '@/lib/utils';
 
 interface AddFromLibraryDialogProps {
-  children: React.ReactNode;
+  onOpenChange: (open: boolean) => void;
   activeSpaceId: string;
   onBookmarkAdded: (bookmark: Bookmark) => void;
   tools: ToolsAi[];
 }
 
-export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
-  const [isOpen, setIsOpen] = React.useState(false);
+export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isAdding, setIsAdding] = React.useState<string | null>(null);
   const { toast } = useToast();
@@ -66,8 +63,7 @@ export function AddFromLibraryDialog({ children, activeSpaceId, onBookmarkAdded,
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-headline">Import from AI Tools Library</DialogTitle>
