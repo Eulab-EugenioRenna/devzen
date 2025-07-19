@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from './ui/scroll-area';
 
 interface FullscreenPreviewDialogProps {
@@ -43,6 +43,9 @@ export function FullscreenPreviewDialog({ content, onOpenChange }: FullscreenPre
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-2 sm:p-4">
+        <DialogHeader className='sr-only'>
+            <DialogTitle>Anteprima Nota</DialogTitle>
+        </DialogHeader>
           <ScrollArea className="h-full w-full rounded-md border">
               <div className='p-6 sm:p-10'>
                   {content ? <MarkdownContent content={content} /> : <p className='text-muted-foreground'>L'anteprima apparirà qui.</p>}
