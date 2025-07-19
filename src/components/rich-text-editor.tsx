@@ -335,10 +335,10 @@ export const RichTextEditor = ({ content, onChange, className }: RichTextEditorP
   }, [content, editor]);
 
   return (
-    <div className={cn('flex flex-col flex-grow min-h-0 rounded-md border border-input focus-within:ring-2 focus-within:ring-ring', className)}>
+    <div className={cn('flex flex-col flex-grow min-h-0 rounded-md border border-input', className)}>
       <EditorToolbar editor={editor} />
-      <div className="flex-grow min-h-0 overflow-y-auto p-0.5">
-          <EditorContent editor={editor} />
+      <div className="p-0.5">
+        <EditorContent editor={editor} />
       </div>
     </div>
   );
