@@ -384,11 +384,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   };
   
   const handleItemUpdate = async (updatedItem: Partial<Bookmark>) => {
+    if (!editingBookmark) return;
     try {
-        await updateBookmarkAction({id: editingBookmark!.id, ...updatedItem});
+        await updateBookmarkAction({id: editingBookmark.id, ...updatedItem});
         await refreshItems();
         setEditingBookmark(null);
-        if (customizingItem) setCustomizingItem(null);
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
         toast({ variant: "destructive", title: "Errore di aggiornamento", description: errorMessage });
@@ -396,8 +396,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   };
 
   const handleCustomizeItem = async (customizationData: any) => {
+    if (!customizingItem) return;
     try {
-        await customizeItemAction({ id: customizingItem!.id, ...customizationData });
+        await customizeItemAction({ id: customizingItem.id, ...customizationData });
         await refreshItems();
         setCustomizingItem(null);
     } catch (error) {
@@ -415,7 +416,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     await deleteItemAction({ id });
     await refreshItems();
     toast({
-        title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
+        title: `${type === 'bookmark' ? 'Segnalibro' : type === 'folder' ? 'Cartella' : 'Collegamento'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
         description: `Rimosso con successo.`,
     });
   };
@@ -450,29 +451,33 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   
     if (!over || !active.id || active.id === over.id) return;
   
-    const activeItem = active.data.current?.item as SpaceItem | Space;
     const activeType = active.data.current?.type as string;
-    const overId = String(over.id);
-    const overItem = over.data.current?.item as SpaceItem | Space;
     const overType = over.data.current?.type as string;
+    const overId = String(over.id);
 
     try {
       if (activeType === 'space' && overId === `space-link-droppable-area` && activeSpace) {
-          const sourceSpace = activeItem as Space;
+          const sourceSpace = active.data.current?.item as Space;
           const targetSpace = activeSpace;
-          setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
+          if (sourceSpace && targetSpace && sourceSpace.id !== targetSpace.id) {
+              setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
+          }
       } else if (overType === 'space-sidebar') {
+        const overItem = over.data.current?.item as Space;
         const newSpaceId = overItem.id;
-        if (activeType === 'folder' || activeType === 'bookmark') {
+        if ((activeType === 'folder' || activeType === 'bookmark') && newSpaceId) {
           await moveItemAction({ id: String(active.id), newSpaceId });
         }
       } else {
-        const overItemFromState = items.find(i => i.id === overId);
-        if (!overItemFromState) return;
+        const overItem = items.find(i => i.id === overId);
+        if (!overItem) return;
   
-        if (activeType === 'bookmark' && overItemFromState.type === 'bookmark' && activeItem.spaceId === overItemFromState.spaceId) {
-          await createFolderAction({ spaceId: (activeItem as SpaceItem).spaceId!, initialBookmarkIds: [String(active.id), overId] });
-        } else if (activeType === 'bookmark' && overItemFromState.type === 'folder' && (activeItem as Bookmark).parentId !== overItemFromState.id) {
+        const activeItem = items.find(i => i.id === active.id);
+        if (!activeItem) return;
+
+        if (activeType === 'bookmark' && overItem.type === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+          await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [String(active.id), overId] });
+        } else if (activeType === 'bookmark' && overItem.type === 'folder' && (activeItem as Bookmark).parentId !== overItem.id) {
           await moveItemAction({ id: String(active.id), newParentId: overId });
         }
       }
@@ -591,7 +596,6 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const { setNodeRef: setSpaceLinkDroppableRef, isOver: isOverSpaceLinkArea } = useDroppable({
     id: `space-link-droppable-area`,
-    data: { spaceId: activeSpaceId },
   });
 
 
