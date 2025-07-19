@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput } from '@/lib/types';
 import {
   DndContext,
   useDroppable,
@@ -21,6 +21,8 @@ import {
   updateAppInfoAction,
   createWorkspaceFromJsonAction,
   exportWorkspaceAction,
+  smartSearchAction,
+  analyzeSpaceAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -42,7 +44,7 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -55,6 +57,8 @@ import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionNam
 import { recordToToolAi, recordToSpaceItem } from '@/lib/data-mappers';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { Separator } from './ui/separator';
+import { AnalyzeSpaceDialog } from './analyze-space-dialog';
+
 
 function SidebarSpaceMenuItem({
   space,
@@ -76,7 +80,7 @@ function SidebarSpaceMenuItem({
     <SidebarMenuItem
       ref={setNodeRef}
       className={cn(
-        'rounded-lg transition-colors',
+        'group relative rounded-lg transition-colors',
         isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
       )}
     >
@@ -89,23 +93,25 @@ function SidebarSpaceMenuItem({
           <Icon />
           <span>{space.name}</span>
       </SidebarMenuButton>
-       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 group-data-[collapsible=icon]:hidden">
-                <MoreVertical className="h-4 w-4" />
-            </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onClick={() => onEdit(space)}>Modifica Spazio</DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-            onClick={() => onDelete(space)}
-          >
-            Elimina Spazio
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="absolute right-1 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <MoreVertical className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => onEdit(space)}>Modifica Spazio</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                onClick={() => onDelete(space)}
+            >
+                Elimina Spazio
+            </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+       </div>
     </SidebarMenuItem>
   );
 }
@@ -151,7 +157,11 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
+  
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [searchResultIds, setSearchResultIds] = React.useState<Set<string> | null>(null);
+  
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   
   const [appInfo, setAppInfo] = React.useState<AppInfo>(initialAppInfo);
@@ -161,6 +171,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [isMounted, setIsMounted] = React.useState(false);
   const [isGeneratingWorkspace, setIsGeneratingWorkspace] = React.useState(false);
   const [isAddingFromLibrary, setIsAddingFromLibrary] = React.useState(false);
+
+  const [analyzingSpace, setAnalyzingSpace] = React.useState<Space | null>(null);
+  const [analysisResult, setAnalysisResult] = React.useState<AnalyzeSpaceOutput | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false);
 
   const { toast } = useToast();
 
@@ -265,23 +279,66 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     }
   }, [spaces, activeSpaceId]);
 
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchTerm) {
+        setSearchResultIds(null);
+        return;
+    }
+    setIsSearching(true);
+    try {
+        const spaceBookmarks = items.filter(i => i.spaceId === activeSpaceId && i.type === 'bookmark') as Bookmark[];
+        const ids = await smartSearchAction(searchTerm, spaceBookmarks);
+        setSearchResultIds(new Set(ids));
+    } catch (error) {
+        console.error("Errore nella ricerca intelligente:", error);
+        toast({ variant: "destructive", title: "Errore di Ricerca", description: "Impossibile eseguire la ricerca intelligente." });
+    } finally {
+        setIsSearching(false);
+    }
+  };
+
+  const handleAnalyzeSpace = async () => {
+    if (!activeSpace) return;
+    setIsAnalyzing(true);
+    setAnalyzingSpace(activeSpace);
+    try {
+        const spaceBookmarks = items.filter(i => i.spaceId === activeSpaceId && i.type === 'bookmark') as Bookmark[];
+        const input = {
+            spaceName: activeSpace.name,
+            bookmarks: spaceBookmarks.map(b => ({ title: b.title, summary: b.summary }))
+        };
+        const result = await analyzeSpaceAction(input);
+        setAnalysisResult(result);
+    } catch (error) {
+        console.error("Errore nell'analisi dello spazio:", error);
+        toast({ variant: "destructive", title: "Errore di Analisi", description: "Impossibile analizzare lo spazio." });
+        setAnalyzingSpace(null);
+    } finally {
+        setIsAnalyzing(false);
+    }
+  }
+
 
   const { folders, rootBookmarks } = React.useMemo(() => {
     const spaceItems = items.filter((item) => item.spaceId === activeSpaceId);
     
-    const filteredItems = spaceItems.filter(item => {
-        if (!searchTerm) return true;
-        const lowerCaseSearch = searchTerm.toLowerCase();
-        if (item.type === 'bookmark') {
-            return item.title.toLowerCase().includes(lowerCaseSearch) ||
-                   item.url.toLowerCase().includes(lowerCaseSearch) ||
-                   (item.summary ?? '').toLowerCase().includes(lowerCaseSearch);
-        }
-        if (item.type === 'folder') {
-            return item.name.toLowerCase().includes(lowerCaseSearch);
-        }
-        return false;
-    });
+    let filteredItems = spaceItems;
+
+    if (searchResultIds) {
+        const allFolderIds = new Set(spaceItems.filter(i => i.type === 'folder').map(f => f.id));
+        const bookmarksInResults = spaceItems.filter(i => searchResultIds.has(i.id));
+
+        const parentFolderIds = new Set<string>();
+        bookmarksInResults.forEach(b => {
+            if (b.parentId && allFolderIds.has(b.parentId)) {
+                parentFolderIds.add(b.parentId);
+            }
+        });
+        
+        filteredItems = spaceItems.filter(i => searchResultIds.has(i.id) || parentFolderIds.has(i.id));
+    }
+
 
     const allBookmarks = filteredItems.filter((i) => i.type === 'bookmark') as Bookmark[];
     const allFolders = filteredItems.filter((i) => i.type === 'folder') as Folder[];
@@ -305,7 +362,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     });
 
     return { folders: populatedFolders, rootBookmarks };
-  }, [items, activeSpaceId, searchTerm]);
+  }, [items, activeSpaceId, searchResultIds]);
 
   const displayedItems: SpaceItem[] = [...folders, ...rootBookmarks];
 
@@ -568,14 +625,26 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 {activeSpace?.name ?? 'Dashboard'}
               </h2>
             </div>
-            <div className='flex-grow max-w-md'>
-                 <Input 
-                    placeholder='Cerca in questo spazio...'
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+            <form onSubmit={handleSearch} className="w-full max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca con AI (es. 'strumenti per UI design')..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    if (!e.target.value) setSearchResultIds(null);
+                  }}
                 />
-            </div>
+                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+              </div>
+            </form>
             <div className='flex items-center gap-2'>
+                <Button variant="outline" size="sm" onClick={handleAnalyzeSpace} disabled={isAnalyzing || !activeSpace}>
+                    {isAnalyzing ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Sparkles className='mr-2 h-4 w-4' />}
+                    Analizza Spazio
+                </Button>
                 <div className='flex items-center rounded-md bg-muted p-1'>
                     <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')}>
                         <LayoutGrid className='h-4 w-4' />
@@ -587,7 +656,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     </Button>
                 </div>
                 <div className="flex rounded-md shadow-sm">
-                    <AddBookmarkDialog activeSpaceId={activeSpaceId} onBookmarkAdded={handleAddBookmark}>
+                    <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
                         <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
                             <PlusCircle className="mr-2" />
                             Aggiungi Segnalibro
@@ -668,9 +737,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center">
-                <h3 className="text-lg font-semibold font-headline">{searchTerm ? 'Nessun risultato trovato' : (activeSpace ? 'Questo spazio è vuoto!' : 'Nessuno spazio ancora!')}</h3>
+                <h3 className="text-lg font-semibold font-headline">{searchResultIds ? 'Nessun risultato trovato' : (activeSpace ? 'Questo spazio è vuoto!' : 'Nessuno spazio ancora!')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {searchTerm ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
+                  {searchResultIds ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
                 </p>
               </div>
             )}
@@ -778,6 +847,18 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             onWorkspaceGenerated={handleWorkspaceGenerated}
         />
       )}
+      {analyzingSpace && (
+        <AnalyzeSpaceDialog
+            space={analyzingSpace}
+            result={analysisResult}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setAnalyzingSpace(null);
+                    setAnalysisResult(null);
+                }
+            }}
+        />
+       )}
     </DndContext>
   );
 }

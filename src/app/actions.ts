@@ -2,7 +2,10 @@
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
 import { generateWorkspace } from '@/ai/flows/generate-workspace';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AISpace, AISpaceItem, AIBookmark } from '@/lib/types';
+import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
+import { smartSearch } from '@/ai/flows/smart-search';
+import { analyzeSpace } from '@/ai/flows/analyze-space';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AISpace, AISpaceItem, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
@@ -473,4 +476,25 @@ export async function exportWorkspaceAction(spaceIds: string[]): Promise<string>
     }
     
     return JSON.stringify(workspace, null, 2);
+}
+
+// ===== Nuove Azioni AI =====
+
+export async function suggestSpaceForUrlAction(url: string, spaces: Space[]): Promise<string> {
+  if (!url || spaces.length === 0) {
+    throw new Error('URL o spazi mancanti per la categorizzazione.');
+  }
+  const result = await categorizeBookmark({ url, spaces });
+  return result.spaceId;
+}
+
+export async function smartSearchAction(query: string, bookmarks: Bookmark[]): Promise<string[]> {
+    if (!query) return bookmarks.map(b => b.id);
+    const result = await smartSearch({ query, bookmarks });
+    return result.relevantBookmarkIds;
+}
+
+export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<AnalyzeSpaceOutput> {
+    const result = await analyzeSpace(input);
+    return result;
 }

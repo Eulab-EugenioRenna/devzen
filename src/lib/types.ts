@@ -83,3 +83,19 @@ export interface AISpace {
 export interface AIWorkspace {
     spaces: AISpace[];
 }
+
+
+// Types for Analyze Space
+const BookmarkSchemaForAnalysis = {
+  title: '',
+  summary: '',
+};
+export type AnalyzeSpaceInput = {
+    spaceName: string;
+    bookmarks: Array<typeof BookmarkSchemaForAnalysis>;
+};
+export type AnalyzeSpaceOutput = {
+    analysis: string;
+    keyThemes: string[];
+    suggestions: string[];
+};
