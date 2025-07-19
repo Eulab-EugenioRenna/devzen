@@ -794,6 +794,37 @@ export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: str
   }
 }
 
+export async function regenerateSummaryAction(id: string): Promise<Bookmark> {
+    const record = await pb.collection(bookmarksCollectionName).getOne(id);
+    if (!record || record.tool.type !== 'bookmark' || record.tool.url.startsWith('devzen:')) {
+        throw new Error("Elemento non valido o non è un segnalibro valido per la rigenerazione.");
+    }
+
+    let summary: string;
+    try {
+        const result = await summarizeBookmark({ url: record.tool.url });
+        summary = result.summary;
+    } catch (e) {
+        console.error('Impossibile rigenerare il riassunto', e);
+        throw new Error('Impossibile generare un nuovo riassunto per questo URL.');
+    }
+
+    const data = {
+        tool: {
+            ...record.tool,
+            summary: summary,
+        },
+    };
+
+    const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
+    const updatedBookmark = recordToSpaceItem(updatedRecord);
+    if (!updatedBookmark || updatedBookmark.type !== 'bookmark') {
+        throw new Error('Impossibile aggiornare o mappare il segnalibro dal record.');
+    }
+    return updatedBookmark as Bookmark;
+}
+
+
 // ===== Azioni AI per Editor di Testo =====
 export async function correctTextAction(text: string): Promise<string> {
     return await correctText(text);

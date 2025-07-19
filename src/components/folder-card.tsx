@@ -110,7 +110,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
 
 
   const folderIcon = (
-    <div className='h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0 p-2.5 flex items-center justify-center'>
+    <div className='h-12 w-12 rounded-full border-2 border-[--card-header-bg] bg-card flex-shrink-0 p-2.5 flex items-center justify-center'>
       {isLink ? <Link className="h-full w-full text-muted-foreground" /> : <FolderIcon className="h-full w-full text-muted-foreground" />}
     </div>
   );
@@ -213,7 +213,10 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
       >
-        <div className="h-10 bg-[--card-header-bg] text-[--card-text-color]"/>
+        <div 
+          className="h-10 bg-[--card-header-bg] text-[--card-text-color]"
+          style={{ clipPath: 'inset(0 0 -6px 0)' }}
+        />
         <div className="relative flex items-start gap-4 p-4 pt-0">
             <div className='-mt-6'>
               {DraggableIcon}
@@ -282,6 +285,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
       >
         <div 
           className="h-10 bg-[--card-header-bg] text-[--card-text-color]"
+          style={{ clipPath: 'inset(0 0 -6px 0)' }}
         />
         <div className="relative p-4 pt-0 flex-1 flex flex-col">
           <div className="absolute right-2 -top-8">

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen, RefreshCw } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen, RefreshCw, Loader2 } from 'lucide-react';
 
 import {
   Card,
@@ -44,6 +44,7 @@ interface BookmarkCardProps {
   onViewNote: (note: Bookmark) => void;
   onViewTextNote: (note: Bookmark) => void;
   onRegenerateSummary: (id: string) => void;
+  isRegenerating: boolean;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
@@ -57,7 +58,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, onRegenerateSummary, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, onRegenerateSummary, isRegenerating, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -123,14 +124,14 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     const commonClasses = "h-12 w-12 rounded-full border-2 border-[--card-header-bg] flex-shrink-0";
     if (isChatNote) {
         return (
-            <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
+            <div className={cn(commonClasses, "p-2.5 flex items-center justify-center bg-card")}>
                 <FileText className="text-muted-foreground" />
             </div>
         )
     }
     if (isTextNote) {
       return (
-          <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
+          <div className={cn(commonClasses, "p-2.5 flex items-center justify-center bg-card")}>
               <NotebookPen className="text-muted-foreground" />
           </div>
       )
@@ -140,14 +141,14 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
         <img
           src={bookmark.iconUrl}
           alt={bookmark.title}
-          className={cn(commonClasses, "object-cover p-1")}
+          className={cn(commonClasses, "object-cover p-1 bg-card")}
         />
       );
     }
     if (bookmark.icon) {
       return (
         <div
-          className={cn(commonClasses, "p-2.5 flex items-center justify-center")}
+          className={cn(commonClasses, "p-2.5 flex items-center justify-center bg-card")}
           style={{ color: bookmark.iconColor ?? 'currentColor' }}
         >
           <SimpleIcon slug={bookmark.icon} />
@@ -186,8 +187,8 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
                 {isNote ? 'Visualizza / Modifica' : 'Modifica'}
               </DropdownMenuItem>
               {!isNote && (
-                <DropdownMenuItem onClick={() => onRegenerateSummary(bookmark.id)}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={() => onRegenerateSummary(bookmark.id)} disabled={isRegenerating}>
+                   {isRegenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                   Rigenera Riepilogo
                 </DropdownMenuItem>
               )}
@@ -255,6 +256,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
       >
         <div 
           className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
+          style={{ clipPath: 'inset(0 0 -6px 0)' }}
         />
 
         <div className="relative flex items-start gap-4 p-4 pt-0">
@@ -323,6 +325,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
       >
         <div 
           className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
+          style={{ clipPath: 'inset(0 0 -6px 0)' }}
         />
         <div className="relative p-4 pt-0 flex-1 flex flex-col">
           <div className="absolute right-2 -top-8">

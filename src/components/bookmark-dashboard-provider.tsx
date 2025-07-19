@@ -34,7 +34,8 @@ import {
   duplicateItemAction,
   createSpaceLinkAction,
   unlinkSpaceAction,
-  chatInSpaceAction
+  chatInSpaceAction,
+  regenerateSummaryAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -71,6 +72,7 @@ interface DashboardContextType {
   isSearching: boolean;
   searchResultIds: Set<string> | null;
   isAnalyzing: boolean;
+  regeneratingSummaryId: string | null;
 
   // Setters
   setActiveSpaceId: (id: string) => void;
@@ -102,6 +104,7 @@ interface DashboardContextType {
   handleNoteView: (note: Bookmark) => void;
   handleTextNoteView: (note: Bookmark) => void;
   handleUpdateFolderName: (id: string, name: string) => void;
+  handleRegenerateSummary: (id: string) => void;
 }
 
 const DashboardContext = React.createContext<DashboardContextType | null>(null);
@@ -147,6 +150,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [analyzingSpace, setAnalyzingSpace] = React.useState<Space | null>(null);
   const [analysisResult, setAnalysisResult] = React.useState<AnalyzeSpaceOutput | null>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+
+  const [regeneratingSummaryId, setRegeneratingSummaryId] = React.useState<string | null>(null);
 
   const [linkingSpacesInfo, setLinkingSpacesInfo] = React.useState<{ source: Space; target: Space; } | null>(null);
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
@@ -327,6 +332,20 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     }
   }
 
+    const handleRegenerateSummary = async (id: string) => {
+        setRegeneratingSummaryId(id);
+        try {
+            await regenerateSummaryAction(id);
+            await refreshItems();
+            toast({ title: 'Riepilogo rigenerato!', description: 'Il riepilogo del segnalibro è stato aggiornato.' });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Impossibile rigenerare il riassunto.';
+            toast({ variant: 'destructive', title: 'Errore', description: message });
+        } finally {
+            setRegeneratingSummaryId(null);
+        }
+    };
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragItem(event.active);
   };
@@ -506,6 +525,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     isSearching,
     searchResultIds,
     isAnalyzing: isAnalyzing || (!!analyzingSpace && !analysisResult),
+    regeneratingSummaryId,
     setActiveSpaceId,
     setViewMode,
     setShowLinks,
@@ -533,6 +553,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleNoteView: setViewingNote,
     handleTextNoteView: setViewingTextNote,
     handleUpdateFolderName: handleUpdateFolderName,
+    handleRegenerateSummary,
   };
 
 
@@ -551,7 +572,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
               const type = activeDragItem.data.current?.type;
 
               if (type === 'bookmark' && draggedItem) {
-                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onViewNote={() => {}} onViewTextNote={() => {}} isOverlay isDragging={false} />;
+                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onViewNote={() => {}} onViewTextNote={() => {}} onRegenerateSummary={() => {}} isRegenerating={false} isOverlay isDragging={false} />;
               }
               if ((type === 'folder' || type === 'space-link') && draggedItem) {
                 return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay isDragging={false} />;

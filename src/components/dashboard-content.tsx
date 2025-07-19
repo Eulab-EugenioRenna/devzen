@@ -30,6 +30,7 @@ export function DashboardContent() {
     isSearching,
     searchResultIds,
     isAnalyzing,
+    regeneratingSummaryId,
     setViewMode,
     handleAnalyzeSpace,
     handleSearch,
@@ -48,6 +49,7 @@ export function DashboardContent() {
     handleUpdateFolderName,
     setActiveSpaceId,
     handleUnlinkSpace,
+    handleRegenerateSummary,
   } = useDashboard();
 
   const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -311,6 +313,8 @@ export function DashboardContent() {
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
+                                    onRegenerateSummary={handleRegenerateSummary}
+                                    isRegenerating={regeneratingSummaryId === bookmark.id}
                                     viewMode={viewMode}
                                 />
                                )
@@ -343,6 +347,8 @@ export function DashboardContent() {
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
+                                    onRegenerateSummary={handleRegenerateSummary}
+                                    isRegenerating={regeneratingSummaryId === bookmark.id}
                                     viewMode={viewMode}
                                 />
                                )
@@ -377,6 +383,8 @@ export function DashboardContent() {
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
+                                    onRegenerateSummary={handleRegenerateSummary}
+                                    isRegenerating={regeneratingSummaryId === bookmark.id}
                                     viewMode={viewMode}
                                 />
                                )
