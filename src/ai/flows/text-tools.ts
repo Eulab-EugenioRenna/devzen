@@ -28,8 +28,8 @@ export async function correctText(text: string): Promise<string> {
 const correctTextPrompt = ai.definePrompt({
   name: 'correctTextPrompt',
   input: { schema: CorrectTextInputSchema },
-  output: { format: 'json' },
-  prompt: `Correggi eventuali errori di ortografia e grammatica nel seguente testo. Restituisci solo un oggetto JSON valido contenente il testo corretto, senza alcuna spiegazione. Il testo DEVE essere in italiano.
+  output: { schema: CorrectTextOutputSchema },
+  prompt: `Correggi eventuali errori di ortografia e grammatica nel seguente testo. Restituisci solo un oggetto JSON valido. Il valore del campo 'correctedText' DEVE essere in italiano, ma la chiave deve rimanere 'correctedText'.
 
 Testo da correggere:
 "{{text}}"`,
@@ -37,8 +37,8 @@ Testo da correggere:
 const correctTextFlow = ai.defineFlow(
   { name: 'correctTextFlow', inputSchema: CorrectTextInputSchema, outputSchema: CorrectTextOutputSchema },
   async (input) => {
-    const llmResponse = await correctTextPrompt(input);
-    return JSON.parse(llmResponse.text);
+    const { output } = await correctTextPrompt(input);
+    return output!;
   }
 );
 
@@ -57,8 +57,8 @@ export async function summarizeText(text: string): Promise<string> {
 const summarizeTextPrompt = ai.definePrompt({
   name: 'summarizeTextPrompt',
   input: { schema: SummarizeTextInputSchema },
-  output: { format: 'json' },
-  prompt: `Riassumi il seguente testo in modo conciso. Restituisci solo un oggetto JSON valido contenente il riassunto. Il riassunto DEVE essere in italiano.
+  output: { schema: SummarizeTextOutputSchema },
+  prompt: `Riassumi il seguente testo in modo conciso. Restituisci solo un oggetto JSON valido. Il valore del campo 'summary' DEVE essere in italiano, ma la chiave deve rimanere 'summary'.
 
 Testo da riassumere:
 "{{text}}"`,
@@ -66,8 +66,8 @@ Testo da riassumere:
 const summarizeTextFlow = ai.defineFlow(
   { name: 'summarizeTextFlow', inputSchema: SummarizeTextInputSchema, outputSchema: SummarizeTextOutputSchema },
   async (input) => {
-    const llmResponse = await summarizeTextPrompt(input);
-    return JSON.parse(llmResponse.text);
+    const { output } = await summarizeTextPrompt(input);
+    return output!;
   }
 );
 
@@ -86,8 +86,8 @@ export async function translateText(text: string, targetLanguage: string): Promi
 const translateTextPrompt = ai.definePrompt({
   name: 'translateTextPrompt',
   input: { schema: TranslateTextInputSchema },
-  output: { format: 'json' },
-  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido contenente il testo tradotto.
+  output: { schema: TranslateTextOutputSchema },
+  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido con la chiave 'translatedText'.
 
 Testo da tradurre:
 "{{text}}"`,
@@ -95,8 +95,8 @@ Testo da tradurre:
 const translateTextFlow = ai.defineFlow(
   { name: 'translateTextFlow', inputSchema: TranslateTextInputSchema, outputSchema: TranslateTextOutputSchema },
   async (input) => {
-    const llmResponse = await translateTextPrompt(input);
-    return JSON.parse(llmResponse.text);
+    const { output } = await translateTextPrompt(input);
+    return output!;
   }
 );
 
@@ -114,8 +114,8 @@ export async function improveText(text: string): Promise<string> {
 const improveTextPrompt = ai.definePrompt({
   name: 'improveTextPrompt',
   input: { schema: ImproveTextInputSchema },
-  output: { format: 'json' },
-  prompt: `Migliora lo stile, la chiarezza e il tono del seguente testo, rendendolo più professionale e scorrevole. Restituisci solo un oggetto JSON valido contenente il testo migliorato. Il testo DEVE essere in italiano.
+  output: { schema: ImproveTextOutputSchema },
+  prompt: `Migliora lo stile, la chiarezza e il tono del seguente testo, rendendolo più professionale e scorrevole. Restituisci solo un oggetto JSON valido. Il valore del campo 'improvedText' DEVE essere in italiano, ma la chiave deve rimanere 'improvedText'.
 
 Testo da migliorare:
 "{{text}}"`,
@@ -123,8 +123,8 @@ Testo da migliorare:
 const improveTextFlow = ai.defineFlow(
   { name: 'improveTextFlow', inputSchema: ImproveTextInputSchema, outputSchema: ImproveTextOutputSchema },
   async (input) => {
-    const llmResponse = await improveTextPrompt(input);
-    return JSON.parse(llmResponse.text);
+    const { output } = await improveTextPrompt(input);
+    return output!;
   }
 );
 
@@ -143,8 +143,8 @@ export async function generateText(prompt: string): Promise<string> {
 const generateTextPrompt = ai.definePrompt({
   name: 'generateTextPrompt',
   input: { schema: GenerateTextInputSchema },
-  output: { format: 'json' },
-  prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata all'interno di un oggetto JSON valido. La risposta DEVE essere in italiano.
+  output: { schema: GenerateTextOutputSchema },
+  prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata all'interno di un oggetto JSON valido. La risposta (il valore del campo 'generatedText') DEVE essere in italiano, ma la chiave deve rimanere 'generatedText'.
 
 Prompt:
 "{{prompt}}"`,
@@ -152,7 +152,7 @@ Prompt:
 const generateTextFlow = ai.defineFlow(
   { name: 'generateTextFlow', inputSchema: GenerateTextInputSchema, outputSchema: GenerateTextOutputSchema },
   async (input) => {
-    const llmResponse = await generateTextPrompt(input);
-    return JSON.parse(llmResponse.text);
+    const { output } = await generateTextPrompt(input);
+    return output!;
   }
 );
