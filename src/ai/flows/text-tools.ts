@@ -87,7 +87,7 @@ const translateTextPrompt = ai.definePrompt({
   name: 'translateTextPrompt',
   input: { schema: TranslateTextInputSchema },
   output: { schema: TranslateTextOutputSchema },
-  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido con la chiave 'translatedText'.
+  prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido. Il valore del campo 'translatedText' DEVE essere in italiano, ma la chiave deve rimanere 'translatedText'.
 
 Testo da tradurre:
 "{{text}}"`,
@@ -146,9 +146,8 @@ const generateTextFlow = ai.defineFlow(
   },
   async (input) => {
     const llmResponse = await ai.generate({
-      prompt: `Continua, espandi o genera testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.\n\nPrompt:\n"{{prompt}}"`,
       model: 'googleai/gemini-1.5-flash-latest',
-      input: { prompt: input.prompt },
+      prompt: `Continua, espandi o genera testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.\n\nPrompt:\n"${input.prompt}"`,
     });
     return llmResponse.text;
   }
