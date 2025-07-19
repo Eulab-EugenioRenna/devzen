@@ -333,9 +333,9 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   }, [content, editor]);
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col flex-grow'>
       <EditorToolbar editor={editor} />
-      <div className="relative flex-grow h-full overflow-y-auto">
+      <div className="relative flex-grow overflow-y-auto">
         <EditorContent editor={editor} className="absolute inset-0" />
       </div>
     </div>
