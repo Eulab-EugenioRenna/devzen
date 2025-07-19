@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from './ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { RichTextEditor } from './rich-text-editor';
+import { cn } from '@/lib/utils';
 
 interface NoteEditViewDialogProps {
   note: Bookmark;
@@ -72,10 +73,12 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col p-6">
                 <DialogHeader>
+                     <DialogTitle className="sr-only">Modifica Nota: {title}</DialogTitle>
                     <Input 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         className="text-2xl font-headline font-bold h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                        aria-label="Titolo della nota"
                     />
                 </DialogHeader>
                 
