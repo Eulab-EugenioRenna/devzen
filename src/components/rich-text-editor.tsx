@@ -38,6 +38,21 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const { toast } = useToast();
 
+  const setLink = React.useCallback(() => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+
+    if (url === null) {
+      return;
+    }
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
@@ -94,20 +109,6 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
       setIsAiLoading(false);
     }
   };
-
-  const setLink = React.useCallback(() => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-
-    if (url === null) {
-      return;
-    }
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  }, [editor]);
 
   return (
     <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1">
