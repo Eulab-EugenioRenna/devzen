@@ -64,6 +64,7 @@ import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionNam
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { Separator } from './ui/separator';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 function SidebarSpaceMenuItem({
@@ -555,48 +556,73 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="flex flex-col">
-          <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-            <div className='flex items-center gap-2'>
-              <SidebarTrigger />
-              <h2 className="text-xl font-bold font-headline truncate">
+           <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="lg:hidden" />
+              <h2 className="hidden text-xl font-bold font-headline truncate sm:block">
                 {activeSpace?.name ?? 'Dashboard'}
               </h2>
             </div>
-            <form onSubmit={handleSearch} className="w-full max-w-md">
-              <div className="relative flex items-center">
-                <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca con AI (es. 'strumenti per UI design')..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    if (!e.target.value) setSearchResultIds(null);
-                  }}
-                />
-                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
-              </div>
-            </form>
-            <div className='flex items-center gap-2'>
-                <Button variant="outline" size="sm" onClick={handleAnalyzeSpace} disabled={isAnalyzing || !activeSpace}>
-                    {isAnalyzing ? <Loader2 className='mr-2 h-4 w-4 animate-spin' /> : <Sparkles className='mr-2 h-4 w-4' />}
-                    Analizza Spazio
-                </Button>
-                <div className='flex items-center rounded-md bg-muted p-1'>
-                    <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')}>
-                        <LayoutGrid className='h-4 w-4' />
-                        <span className='sr-only'>Vista Griglia</span>
-                    </Button>
-                    <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
-                        <List className='h-4 w-4' />
-                        <span className='sr-only'>Vista Elenco</span>
-                    </Button>
+            
+            <div className="flex-1">
+              <form onSubmit={handleSearch} className="w-full max-w-md mx-auto">
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cerca con AI (es. 'strumenti per UI design')..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      if (!e.target.value) setSearchResultIds(null);
+                    }}
+                  />
+                  {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
                 </div>
+              </form>
+            </div>
+
+            <div className='flex items-center gap-2'>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="outline" size="icon" className='shrink-0' onClick={handleAnalyzeSpace} disabled={isAnalyzing || !activeSpace}>
+                                {isAnalyzing ? <Loader2 className='h-4 w-4 animate-spin' /> : <Sparkles className='h-4 w-4' />}
+                                <span className='sr-only'>Analizza Spazio</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Analizza Spazio</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                <div className='hidden items-center rounded-md bg-muted p-1 md:flex'>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('grid')}>
+                                    <LayoutGrid className='h-4 w-4' />
+                                    <span className='sr-only'>Vista Griglia</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Vista Griglia</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')}>
+                                    <List className='h-4 w-4' />
+                                    <span className='sr-only'>Vista Elenco</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Vista Elenco</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                
                 <div className="flex rounded-md shadow-sm">
                     <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
-                        <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
-                            <PlusCircle className="mr-2" />
-                            Aggiungi Segnalibro
+                         <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            <span className="hidden lg:inline">Aggiungi Segnalibro</span>
                         </Button>
                     </AddBookmarkDialog>
                     <DropdownMenu>
@@ -676,7 +702,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center">
                 <h3 className="text-lg font-semibold font-headline">{searchResultIds ? 'Nessun risultato trovato' : (activeSpace ? 'Questo spazio è vuoto!' : 'Nessuno spazio ancora!')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {searchResultids ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
+                  {searchResultIds ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
                 </p>
               </div>
             )}
