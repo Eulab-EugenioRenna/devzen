@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -75,7 +76,7 @@ interface DashboardContextType {
   setSearchResultIds: (ids: Set<string> | null) => void;
 
   // Handlers
-  handleSpaceSave: (data: { name: string; icon: string; }, id?: string) => void;
+  handleSpaceSave: (data: { name: string; icon: string; category?: string }, id?: string) => void;
   handleEditSpace: (space: Space | null) => void;
   handleNewSpaceClick: () => void;
   handleDeleteSpace: (space: Space) => void;
@@ -378,7 +379,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     }
   };
 
-  const handleSpaceSave = async (spaceData: { name: string, icon: string }, id?: string) => {
+  const handleSpaceSave = async (spaceData: { name: string, icon: string, category?: string }, id?: string) => {
     try {
         if (id) {
             await updateSpaceAction({ id, data: spaceData });
@@ -526,10 +527,10 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
               const type = activeDragItem.data.current?.type;
 
               if (type === 'bookmark' && draggedItem) {
-                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} isOverlay />;
+                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} isOverlay isDragging={false} />;
               }
               if ((type === 'folder' || type === 'space-link') && draggedItem) {
-                return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay />;
+                return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay isDragging={false} />;
               }
               if (type === 'space' && draggedItem) {
                   const space = draggedItem as Space;
@@ -591,3 +592,5 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
+
+    

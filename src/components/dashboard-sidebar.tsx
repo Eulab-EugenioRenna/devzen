@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -13,21 +14,22 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Settings, GripVertical } from 'lucide-react';
+import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 function SidebarSpaceMenuItem({
   space,
   isActive,
-  isDragging,
 }: {
   space: any;
   isActive: boolean;
-  isDragging: boolean;
 }) {
-  const { setActiveSpaceId, handleEditSpace, handleDeleteSpace } = useDashboard();
+  const { setActiveSpaceId, handleEditSpace, handleDeleteSpace, activeDragItem } = useDashboard();
   const { setNodeRef, isOver } = useDroppable({
     id: `space-sidebar-${space.id}`,
     data: { type: 'space-sidebar', item: space },
@@ -40,7 +42,7 @@ function SidebarSpaceMenuItem({
 
   const Icon = getIcon(space.icon);
 
-  if (isDragging) {
+  if (activeDragItem?.id === space.id) {
     return (
       <div className="h-12 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 m-2" />
     );
@@ -103,7 +105,6 @@ export function DashboardSidebar() {
     activeSpaceId,
     appInfo,
     showLinks,
-    activeDragItem,
     setShowLinks,
     handleNewSpaceClick,
     handleEditAppInfo,
@@ -116,6 +117,17 @@ export function DashboardSidebar() {
   const sidebarSpaces = React.useMemo(() => {
     return showLinks ? spaces : spaces.filter(s => !s.isLink);
   }, [spaces, showLinks]);
+
+  const groupedSpaces = React.useMemo(() => {
+    return sidebarSpaces.reduce((acc, space) => {
+        const category = space.category || 'Generale';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(space);
+        return acc;
+    }, {} as Record<string, typeof sidebarSpaces>);
+  }, [sidebarSpaces]);
 
   return (
     <Sidebar>
@@ -130,16 +142,30 @@ export function DashboardSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="p-2">
-          {sidebarSpaces.map((space) => (
-            <SidebarSpaceMenuItem
-              key={space.id}
-              space={space}
-              isActive={activeSpaceId === space.id}
-              isDragging={activeDragItem?.id === space.id}
-            />
-          ))}
-        </SidebarMenu>
+        {Object.entries(groupedSpaces).map(([category, spacesInCategory]) => (
+          <Collapsible key={category} defaultOpen className="p-2 pt-0">
+             <div className='flex items-center justify-between'>
+                <h3 className='pl-2 text-sm font-semibold text-muted-foreground'>{category}</h3>
+                <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-9 p-0">
+                      <ChevronsUpDown className="h-4 w-4" />
+                      <span className="sr-only">Toggle</span>
+                    </Button>
+                </CollapsibleTrigger>
+             </div>
+            <CollapsibleContent>
+                <SidebarMenu className="pt-2">
+                {spacesInCategory.map((space) => (
+                    <SidebarSpaceMenuItem
+                    key={space.id}
+                    space={space}
+                    isActive={activeSpaceId === space.id}
+                    />
+                ))}
+                </SidebarMenu>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
       </SidebarContent>
       <SidebarFooter>
         <div className="flex rounded-md shadow-sm w-full">
@@ -175,3 +201,5 @@ export function DashboardSidebar() {
     </Sidebar>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -38,6 +39,7 @@ import { Loader2 } from 'lucide-react';
 const spaceSchema = z.object({
   name: z.string().min(1, { message: 'Il nome dello spazio è obbligatorio.' }),
   icon: z.string().min(1, { message: 'L\'icona è obbligatoria.' }),
+  category: z.string().optional(),
 });
 
 interface AddEditSpaceDialogProps {
@@ -52,6 +54,7 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
     defaultValues: {
       name: space?.name ?? '',
       icon: space?.icon ?? 'Briefcase',
+      category: space?.category ?? '',
     },
   });
   
@@ -116,6 +119,19 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
                 </FormItem>
               )}
             />
+             <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <FormControl>
+                    <Input placeholder="es. Lavoro (opzionale)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
                <DialogClose asChild>
                 <Button type="button" variant="ghost">
@@ -133,3 +149,5 @@ export function AddEditSpaceDialog({ space, onSave, onOpenChange }: AddEditSpace
     </Dialog>
   );
 }
+
+    

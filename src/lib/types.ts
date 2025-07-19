@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type SpaceItem = Bookmark | Folder | SpaceLink;
@@ -37,6 +38,7 @@ export interface Space {
   id:string;
   name: string;
   icon: string;
+  category?: string;
   isLink?: boolean;
 }
 
@@ -134,6 +136,7 @@ export const SpaceSchema = z.object({
   id: z.string(),
   name: z.string(),
   icon: z.string(),
+  category: z.string().optional(),
   isLink: z.boolean().optional(),
 });
 
@@ -166,3 +169,5 @@ export const SmartSearchOutputSchema = z.object({
   relevantBookmarkIds: z.array(z.string()).describe('Un array di ID dei segnalibri che corrispondono alla query.'),
 });
 export type SmartSearchOutput = z.infer<typeof SmartSearchOutputSchema>;
+
+    

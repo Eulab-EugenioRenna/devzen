@@ -1,3 +1,4 @@
+
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
@@ -17,6 +18,7 @@ function recordToSpace(record: RecordModel): Space {
         id: record.id,
         name: record.name,
         icon: record.icon,
+        category: record.category,
         isLink: record.isLink || false,
     };
 }
@@ -278,12 +280,12 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
 
 // ===== Azioni Spazio =====
 
-export async function createSpaceAction(data: { name: string, icon: string }): Promise<Space> {
+export async function createSpaceAction(data: { name: string, icon: string, category?: string }): Promise<Space> {
     const record = await pb.collection(spacesCollectionName).create(data);
     return recordToSpace(record);
 }
 
-export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string, isLink?: boolean } }): Promise<Space> {
+export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string, category?: string, isLink?: boolean } }): Promise<Space> {
     const record = await pb.collection(spacesCollectionName).update(id, data);
     return recordToSpace(record);
 }
@@ -621,3 +623,5 @@ export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<Anal
     const result = await analyzeSpace(input);
     return result;
 }
+
+    
