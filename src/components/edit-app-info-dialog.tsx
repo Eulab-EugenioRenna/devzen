@@ -45,7 +45,6 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
     resolver: zodResolver(appInfoSchema),
     defaultValues: {
       title: appInfo.title,
-      logo: null,
     },
   });
   
@@ -100,7 +99,7 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
             <FormField
               control={form.control}
               name="logo"
-              render={({ field: { onChange, ...fieldProps } }) => (
+              render={({ field: { onChange, onBlur, name, ref } }) => (
                 <FormItem>
                   <FormLabel>Carica Nuovo Logo</FormLabel>
                   <FormControl>
@@ -108,7 +107,9 @@ export function EditAppInfoDialog({ appInfo, onSave, onOpenChange }: EditAppInfo
                       type="file" 
                       accept="image/*"
                       onChange={(e) => onChange(e.target.files)}
-                      {...fieldProps}
+                      onBlur={onBlur}
+                      name={name}
+                      ref={ref}
                      />
                   </FormControl>
                   <FormDescription>
