@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Folder, SpaceLink } from '@/lib/types';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
-import { MoreHorizontal, FolderIcon, Link, Undo2 } from 'lucide-react';
+import { MoreHorizontal, FolderIcon, Link, Undo2, Eye, Pencil, Copy, Palette, Trash2 } from 'lucide-react';
 
 import {
   Card,
@@ -131,23 +131,38 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => onView(folder)}>Visualizza</DropdownMenuItem>
-            {!isLink && <DropdownMenuItem onClick={() => setIsEditing(true)}>Rinomina</DropdownMenuItem>}
-             {isLink && (
-                <DropdownMenuItem onClick={() => onUnlink(folder as SpaceLink)}>
-                    <Undo2 className="mr-2 h-4 w-4" />
-                    Ripristina Spazio
+              <DropdownMenuItem onClick={() => onView(folder)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Visualizza
+              </DropdownMenuItem>
+              {!isLink && (
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Rinomina
                 </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onDuplicate}>Duplica</DropdownMenuItem>
-            <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                onClick={() => setIsDeleteDialogOpen(true)}
-            >
-                Elimina
-            </DropdownMenuItem>
+              )}
+              {isLink && (
+                  <DropdownMenuItem onClick={() => onUnlink(folder as SpaceLink)}>
+                      <Undo2 className="mr-2 h-4 w-4" />
+                      Ripristina Spazio
+                  </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={onDuplicate}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCustomize}>
+                <Palette className="mr-2 h-4 w-4" />
+                Personalizza
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                  className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Elimina
+              </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
         </TooltipProvider>

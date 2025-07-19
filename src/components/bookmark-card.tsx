@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2 } from 'lucide-react';
 
 import {
   Card,
@@ -122,16 +122,26 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
-            <DropdownMenuItem onClick={onDuplicate}>Duplica</DropdownMenuItem>
-            <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Modifica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDuplicate}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCustomize}>
+                <Palette className="mr-2 h-4 w-4" />
+                Personalizza
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                 onClick={() => setIsDeleteDialogOpen(true)}
-            >
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
                 Elimina
-            </DropdownMenuItem>
+              </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
         </TooltipProvider>

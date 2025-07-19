@@ -15,11 +15,10 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown } from 'lucide-react';
+import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 function SidebarSpaceMenuItem({
@@ -84,12 +83,16 @@ function SidebarSpaceMenuItem({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => handleEditSpace(space)}>Modifica Spazio</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEditSpace(space)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Modifica Spazio
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
                 className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                 onClick={() => handleDeleteSpace(space)}
             >
+                <Trash2 className="mr-2 h-4 w-4" />
                 Elimina Spazio
             </DropdownMenuItem>
             </DropdownMenuContent>
@@ -182,9 +185,11 @@ export function DashboardSidebar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="top">
                     <DropdownMenuItem onClick={handleEditAppInfo}>
+                        <Edit className="mr-2 h-4 w-4" />
                         Modifica Titolo & Logo
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" />
                         Esporta Spazio di Lavoro
                     </DropdownMenuItem>
                      <DropdownMenuSeparator />
