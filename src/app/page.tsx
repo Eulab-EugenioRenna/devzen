@@ -1,6 +1,5 @@
-import type { AppInfo, Space, SpaceItem, ToolsAi } from '@/lib/types';
-import { BookmarkDashboard } from '@/components/bookmark-dashboard';
 import { getAppInfoAction, getToolsAiAction, getItemsAction, getSpacesAction } from './actions';
+import { BookmarkDashboardProvider } from '@/components/bookmark-dashboard-provider';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,5 +10,5 @@ export default async function HomePage() {
       getAppInfoAction(),
       getToolsAiAction(),
     ]);
-  return <BookmarkDashboard initialItems={items} initialSpaces={spaces} initialAppInfo={appInfo} initialTools={tools} />;
+  return <BookmarkDashboardProvider initialItems={items} initialSpaces={spaces} initialAppInfo={appInfo} initialTools={tools} />;
 }
