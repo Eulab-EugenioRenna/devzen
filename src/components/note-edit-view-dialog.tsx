@@ -6,9 +6,9 @@ import type { Bookmark } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogFooter,
-  DialogTitle
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -53,6 +53,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col p-6">
                 <DialogHeader className="shrink-0">
+                    <DialogTitle className='sr-only'>Modifica Nota</DialogTitle>
                     <Input 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -64,7 +65,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
                 <RichTextEditor
                     content={content}
                     onChange={setContent}
-                    className='mt-4'
+                    className="flex flex-col flex-grow min-h-0"
                 />
 
                 <DialogFooter className='mt-4 shrink-0'>
