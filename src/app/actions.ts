@@ -7,6 +7,7 @@ import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
 import { chatInSpace } from '@/ai/flows/chat-in-space';
+import { discernInput } from '@/ai/flows/discern-input';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
@@ -61,6 +62,95 @@ export async function getItemsAction(): Promise<SpaceItem[]> {
 
 
 // ===== Bookmark & Folder Actions =====
+export async function addBookmarkOrNoteAction({
+  text,
+  spaceId,
+  parentId,
+}: {
+  text: string;
+  spaceId: string;
+  parentId?: string | null;
+}): Promise<Bookmark> {
+  if (!text || !spaceId) {
+    throw new Error('Campi obbligatori mancanti');
+  }
+
+  const inputType = await discernInput(text);
+
+  if (inputType === 'url') {
+    // It's a URL, create a bookmark
+    let url = text;
+    if (!/^(https?:\/\/)/i.test(url)) {
+      url = `https://${url}`;
+    }
+
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (error) {
+      throw new Error('URL fornito non valido.');
+    }
+
+    let summary: string;
+    let title: string = '';
+    try {
+      const result = await summarizeBookmark({ url: parsedUrl.href });
+      // The model we are using for summarization can also extract the title
+      const pageInfo = await ai.generate({
+          prompt: `Estrai il titolo dalla pagina web a questo URL: ${parsedUrl.href}. Restituisci solo il testo del titolo.`,
+      });
+      title = pageInfo.text;
+      summary = result.summary;
+    } catch (e) {
+      console.error('Impossibile creare segnalibro con riassunto', e);
+      summary = 'Impossibile generare un riassunto per questo URL.';
+      title = parsedUrl.hostname; // Fallback title
+    }
+
+    const data = {
+      tool: {
+        type: 'bookmark',
+        title,
+        url: parsedUrl.href,
+        summary,
+        spaceId,
+        parentId: parentId ?? null,
+      },
+    };
+
+    const record = await pb.collection(bookmarksCollectionName).create(data);
+    const newBookmark = recordToSpaceItem(record);
+    if (!newBookmark || newBookmark.type !== 'bookmark') {
+      throw new Error('Impossibile creare o mappare il segnalibro dal nuovo record.');
+    }
+    return newBookmark as Bookmark;
+  } else {
+    // It's a Note, create a text note
+    const lines = text.trim().split('\n');
+    const title = lines[0];
+    const content = lines.slice(1).join('\n');
+    const url = `devzen:text-note:${Date.now()}`;
+
+    const data = {
+      tool: {
+        type: 'bookmark',
+        title: title,
+        url: url,
+        summary: content, // The markdown content is stored in the summary
+        spaceId: spaceId,
+        icon: 'NotebookPen',
+      },
+    };
+    
+    const record = await pb.collection(bookmarksCollectionName).create(data);
+    const newNote = recordToSpaceItem(record);
+    if (!newNote || newNote.type !== 'bookmark') {
+      throw new Error('Impossibile creare o mappare la nota dal nuovo record.');
+    }
+    return newNote as Bookmark;
+  }
+}
+
 
 export async function addBookmarkAction({
   title,
@@ -132,8 +222,7 @@ export async function updateBookmarkAction({
   
   let newSummary = summary ?? record.tool.summary;
   
-  // Only re-summarize if the URL changes and it's not a note
-  const isNote = record.tool.url.startsWith('devzen:note:');
+  const isNote = record.tool.url.startsWith('devzen:');
   if(!isNote && record.tool.url !== url) {
      try {
         const result = await summarizeBookmark({ url });
@@ -426,7 +515,7 @@ function recordToAppInfo(record: RecordModel): AppInfo {
     return {
         id: record.id,
         title: record.title,
-        logo: logoUrl,
+        logo: record.logo ? logoUrl : 'Logo', // Fallback to 'Logo' if no file is uploaded
     };
 }
 

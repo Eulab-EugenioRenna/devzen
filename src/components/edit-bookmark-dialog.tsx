@@ -45,7 +45,7 @@ export function EditBookmarkDialog({
   onBookmarkUpdated,
 }: EditBookmarkDialogProps) {
   const { toast } = useToast();
-  const isNote = bookmark.url.startsWith('devzen:note:');
+  const isNote = bookmark.url.startsWith('devzen:');
 
   const form = useForm<z.infer<typeof bookmarkSchema>>({
     resolver: zodResolver(bookmarkSchema),
@@ -87,11 +87,13 @@ export function EditBookmarkDialog({
     }
   };
 
+  if (isNote) return null;
+
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Modifica {isNote ? 'Nota' : 'Segnalibro'}</DialogTitle>
+          <DialogTitle className="font-headline">Modifica Segnalibro</DialogTitle>
           <DialogDescription>
             Apporta modifiche qui. Clicca su Salva quando hai finito.
           </DialogDescription>

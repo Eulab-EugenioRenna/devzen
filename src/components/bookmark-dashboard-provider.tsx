@@ -13,6 +13,7 @@ import {
 import { createPortal } from 'react-dom';
 import {
   addBookmarkAction,
+  addBookmarkOrNoteAction,
   updateBookmarkAction,
   deleteItemAction,
   moveItemAction,
@@ -54,6 +55,7 @@ import { AnalyzeSpaceDialog } from './analyze-space-dialog';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { DashboardContent } from './dashboard-content';
 import { NoteViewDialog } from './note-view-dialog';
+import { NoteEditViewDialog } from './note-edit-view-dialog';
 
 interface DashboardContextType {
   // State
@@ -88,7 +90,7 @@ interface DashboardContextType {
   handleExport: () => void;
   handleGenerateWorkspace: () => void;
   handleAnalyzeSpace: () => void;
-  handleAddBookmark: (values: {title: string, url: string, spaceId: string}) => Promise<void>;
+  handleAddBookmarkOrNote: (values: { text: string; spaceId: string; }) => Promise<void>;
   handleAddFromLibrary: () => void;
   handleSearch: (e: React.FormEvent) => void;
   handleItemDelete: (id: string, type: 'bookmark' | 'folder' | 'space-link') => void;
@@ -98,6 +100,7 @@ interface DashboardContextType {
   handleItemMove: (item: SpaceItem) => void;
   handleFolderView: (folder: Folder) => void;
   handleNoteView: (note: Bookmark) => void;
+  handleTextNoteView: (note: Bookmark) => void;
   handleUpdateFolderName: (id: string, name: string) => void;
 }
 
@@ -122,6 +125,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
   const [viewingNote, setViewingNote] = React.useState<Bookmark | null>(null);
+  const [viewingTextNote, setViewingTextNote] = React.useState<Bookmark | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
   
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -243,12 +247,12 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     }
   }
 
-  const handleAddBookmark = async (values: {title: string, url: string, spaceId: string}) => {
-    await addBookmarkAction(values);
+  const handleAddBookmarkOrNote = async (values: {text: string, spaceId: string}) => {
+    await addBookmarkOrNoteAction(values);
     await refreshItems();
     toast({
-        title: 'Segnalibro aggiunto!',
-        description: `"${values.title}" è stato salvato.`,
+        title: 'Elemento aggiunto!',
+        description: `Il tuo nuovo elemento è stato salvato.`,
     });
   };
   
@@ -517,7 +521,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleExport,
     handleGenerateWorkspace: () => setIsGeneratingWorkspace(true),
     handleAnalyzeSpace,
-    handleAddBookmark,
+    handleAddBookmarkOrNote,
     handleAddFromLibrary: () => setIsAddingFromLibrary(true),
     handleSearch,
     handleItemDelete: handleDeleteItem,
@@ -527,6 +531,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleItemMove: handleItemMove,
     handleFolderView: setViewingFolder,
     handleNoteView: setViewingNote,
+    handleTextNoteView: setViewingTextNote,
     handleUpdateFolderName: handleUpdateFolderName,
   };
 
@@ -546,7 +551,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
               const type = activeDragItem.data.current?.type;
 
               if (type === 'bookmark' && draggedItem) {
-                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onViewNote={() => {}} isOverlay isDragging={false} />;
+                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onViewNote={() => {}} onViewTextNote={() => {}} isOverlay isDragging={false} />;
               }
               if ((type === 'folder' || type === 'space-link') && draggedItem) {
                 return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay isDragging={false} />;
@@ -592,6 +597,11 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             libraryTools={tools}
             onOpenChange={(open) => !open && setViewingNote(null)}
             onNoteUpdated={handleNoteUpdate}
+        />}
+        {viewingTextNote && <NoteEditViewDialog
+          note={viewingTextNote}
+          onOpenChange={(open) => !open && setViewingTextNote(null)}
+          onNoteUpdated={handleNoteUpdate}
         />}
         {customizingItem && <CustomizeItemDialog item={customizingItem} onOpenChange={(open) => !open && setCustomizingItem(null)} onItemUpdated={handleCustomizeItem} />}
         {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}

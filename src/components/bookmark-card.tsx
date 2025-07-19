@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen } from 'lucide-react';
 
 import {
   Card,
@@ -42,6 +42,7 @@ interface BookmarkCardProps {
   onCustomize: () => void;
   onDuplicate: () => void;
   onViewNote: (note: Bookmark) => void;
+  onViewTextNote: (note: Bookmark) => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
@@ -55,7 +56,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -68,8 +69,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-  const isNote = bookmark.url.startsWith('devzen:note:');
-  const domain = isNote ? 'Nota salvata' : getDomain(bookmark.url);
+  const isChatNote = bookmark.url.startsWith('devzen:note:');
+  const isTextNote = bookmark.url.startsWith('devzen:text-note:');
+  const isNote = isChatNote || isTextNote;
+  
+  const domain = (() => {
+    if (isChatNote) return 'Conversazione Salvata';
+    if (isTextNote) return 'Nota di Testo';
+    return getDomain(bookmark.url);
+  })();
 
   const cardStyle = {
     '--card-header-bg': bookmark.backgroundColor ?? 'hsl(var(--primary))',
@@ -78,8 +86,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isNote) {
+    if (isChatNote) {
       onViewNote(bookmark);
+    } else if (isTextNote) {
+      onViewTextNote(bookmark);
     } else {
       window.open(bookmark.url, '_blank', 'noopener,noreferrer');
     }
@@ -88,33 +98,42 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isNote) {
         e.preventDefault();
-        onViewNote(bookmark);
+        handleCardClick(e);
     }
   };
     
   const getNoteSummaryPreview = (summary?: string): string => {
     if (!summary) return 'Nessun contenuto...';
-    try {
-      const messages = JSON.parse(summary);
-      if (Array.isArray(messages) && messages.length > 0) {
-        return messages.map(m => `${m.role === 'user' ? 'Tu' : 'AI'}: ${m.content}`).join(' ').substring(0, 150) + '...';
+    if (isChatNote) {
+      try {
+        const messages = JSON.parse(summary);
+        if (Array.isArray(messages) && messages.length > 0) {
+          return messages.map(m => `${m.role === 'user' ? 'Tu' : 'AI'}: ${m.content}`).join(' ').substring(0, 150) + '...';
+        }
+      } catch (e) {
+        return 'Contenuto della chat non valido.';
       }
-    } catch (e) {
-      // It's not a JSON, so it's a regular summary
-      return summary;
     }
-    return 'Nessun contenuto...';
+    // For text notes, summary is markdown content
+    return summary;
   };
 
   const iconContent = (() => {
     const commonClasses = "h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0";
-    if (isNote) {
+    if (isChatNote) {
         return (
             <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
                 <FileText className="text-muted-foreground" />
             </div>
         )
     }
+    if (isTextNote) {
+      return (
+          <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
+              <NotebookPen className="text-muted-foreground" />
+          </div>
+      )
+  }
     if (bookmark.iconUrl) {
       return (
         <img
@@ -161,9 +180,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => onEdit(bookmark)}>
+              <DropdownMenuItem onClick={handleCardClick}>
                 <Pencil className="mr-2 h-4 w-4" />
-                Modifica
+                {isNote ? 'Visualizza / Modifica' : 'Modifica'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onDuplicate}>
                 <Copy className="mr-2 h-4 w-4" />
@@ -322,7 +341,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
         
             <CardContent className="p-0 pt-4 flex-1">
                 <p className="text-sm text-muted-foreground line-clamp-3">
-                  {isNote ? getNoteSummaryPreview(bookmark.summary) : bookmark.summary}
+                  {getNoteSummaryPreview(bookmark.summary)}
                 </p>
             </CardContent>
         </div>
