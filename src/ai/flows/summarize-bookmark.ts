@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -17,7 +18,7 @@ const SummarizeBookmarkInputSchema = z.object({
 export type SummarizeBookmarkInput = z.infer<typeof SummarizeBookmarkInputSchema>;
 
 const SummarizeBookmarkOutputSchema = z.object({
-  summary: z.string().describe('A short summary of the content at the URL.'),
+  summary: z.string().describe("Un breve riassunto in italiano del contenuto all'URL."),
 });
 export type SummarizeBookmarkOutput = z.infer<typeof SummarizeBookmarkOutputSchema>;
 
@@ -29,7 +30,7 @@ const summarizeBookmarkPrompt = ai.definePrompt({
   name: 'summarizeBookmarkPrompt',
   input: {schema: SummarizeBookmarkInputSchema},
   output: {schema: SummarizeBookmarkOutputSchema},
-  prompt: `You are an expert web content summarizer.  You will be given a URL and you will summarize the content of the page at that URL in a single sentence.
+  prompt: `Sei un esperto riassuntore di contenuti web. Ti verrà fornito un URL e riassumerai il contenuto della pagina a quell'URL in una singola frase. La risposta DEVE essere in italiano.
 
 URL: {{{url}}}`,
 });
