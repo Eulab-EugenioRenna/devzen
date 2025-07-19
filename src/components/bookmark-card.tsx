@@ -67,26 +67,26 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
 
   const domain = getDomain(bookmark.url);
     
-  const cardStyle: React.CSSProperties = {
-    '--glow-color': bookmark.backgroundColor ?? 'hsl(var(--primary))',
-    backgroundColor: bookmark.backgroundColor,
-    color: bookmark.textColor,
+  const cardStyle = {
+    '--card-header-bg': bookmark.backgroundColor ?? 'hsl(var(--primary))',
+    '--card-text-color': bookmark.textColor ?? 'hsl(var(--primary-foreground))',
   } as React.CSSProperties;
 
   const iconContent = (() => {
+    const commonClasses = "h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0";
     if (bookmark.iconUrl) {
       return (
         <img
           src={bookmark.iconUrl}
           alt={bookmark.title}
-          className="h-8 w-8 flex-shrink-0 rounded-md border object-contain p-1 bg-white"
+          className={cn(commonClasses, "object-cover p-1")}
         />
       );
     }
     if (bookmark.icon) {
       return (
         <div
-          className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card"
+          className={cn(commonClasses, "p-2.5 flex items-center justify-center")}
           style={{ color: bookmark.iconColor ?? 'currentColor' }}
         >
           <SimpleIcon slug={bookmark.icon} />
@@ -97,12 +97,14 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       <Favicon
         url={bookmark.url}
         title={bookmark.title}
+        className={commonClasses}
+        fallbackClassName="text-xl"
       />
     );
   })();
   
   const DraggableIcon = (
-    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab -m-1 p-1">
+    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
         {iconContent}
     </div>
   );
@@ -129,25 +131,28 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
     return (
     <div
       ref={setDroppableNodeRef}
-      style={cardStyle}
       className={cn(
         'relative',
         isDragging && 'opacity-50'
       )}
     >
       <Card
+        style={cardStyle}
         className={cn(
-            "overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
-        style={{
-            backgroundColor: bookmark.backgroundColor ? `${bookmark.backgroundColor}A0` : undefined,
-        }}
       >
-        <div className="flex items-center p-3 gap-4">
-          {DraggableIcon}
+        <div 
+          className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
+        />
 
-          <div className="flex-1 overflow-hidden">
+        <div className="relative flex items-start gap-4 p-4 pt-0">
+          <div className="-mt-6">
+             {DraggableIcon}
+          </div>
+
+          <div className="flex-1 min-w-0 pt-2">
             <a
               href={bookmark.url}
               target="_blank"
@@ -163,7 +168,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
               {domain}
             </CardDescription>
           </div>
-          <div className="flex items-center ml-auto">
+          <div className="flex items-center ml-auto pt-2">
             <TooltipProvider>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -215,42 +220,22 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
   return (
     <div
       ref={setDroppableNodeRef}
-      style={cardStyle}
       className={cn(
         'relative',
         isDragging && 'opacity-50'
       )}
     >
       <Card
+        style={cardStyle}
         className={cn(
-            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            "group/card h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
-        style={{
-            backgroundColor: bookmark.backgroundColor ? `${bookmark.backgroundColor}A0` : undefined,
-        }}
       >
-        <CardHeader>
-          <div className="flex items-start gap-4">
-            {DraggableIcon}
-
-            <div className="flex-1 overflow-hidden">
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <CardTitle className="font-headline text-lg leading-tight hover:underline">
-                  {bookmark.title}
-                </CardTitle>
-              </a>
-              <CardDescription className="mt-1 truncate text-xs">
-                {domain}
-              </CardDescription>
-            </div>
-            <div className="flex items-center">
+        <div 
+          className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
+        >
+             <div className="absolute right-4 top-2">
               <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -271,12 +256,30 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
                     </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                </TooltipProvider>
+              </TooltipProvider>
             </div>
+        </div>
+        <div className="relative p-4 pt-0">
+          <div className="-mt-6 mb-4">
+             {DraggableIcon}
           </div>
-        </CardHeader>
+          <a
+            href={bookmark.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardTitle className="font-headline text-lg leading-tight hover:underline">
+              {bookmark.title}
+            </CardTitle>
+          </a>
+          <CardDescription className="mt-1 truncate text-xs">
+            {domain}
+          </CardDescription>
+        </div>
         <CardContent className="flex-1">
-          <p className="text-sm text-muted-foreground">{bookmark.summary}</p>
+          <p className="text-sm text-muted-foreground line-clamp-3">{bookmark.summary}</p>
         </CardContent>
       </Card>
       

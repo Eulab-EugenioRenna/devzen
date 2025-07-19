@@ -32,9 +32,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from './ui/input';
-import { SimpleIcon } from './simple-icon';
 import { Favicon } from './favicon';
 import { TooltipProvider } from './ui/tooltip';
+import { SimpleIcon } from './simple-icon';
 
 interface FolderCardProps {
   folder: Folder;
@@ -97,42 +97,48 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     setName(folder.name);
   }, [folder.name])
 
-  const cardStyle: React.CSSProperties = {
-    '--glow-color': folder.backgroundColor ?? 'hsl(var(--primary))',
-    backgroundColor: folder.backgroundColor,
-    color: folder.textColor,
+  const cardStyle = {
+    '--card-header-bg': folder.backgroundColor ?? 'hsl(var(--secondary))',
+    '--card-text-color': folder.textColor ?? 'hsl(var(--secondary-foreground))',
   } as React.CSSProperties;
 
   const setCombinedNodeRef = (node: HTMLElement | null) => {
     setDroppableNodeRef(node);
     setDraggableNodeRef(node);
   };
+
+  const folderIcon = (
+    <div className='h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0 p-2.5 flex items-center justify-center'>
+      <FolderIcon className="h-full w-full text-muted-foreground" />
+    </div>
+  );
+  
+  const DraggableIcon = (
+    <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
+        {folderIcon}
+    </div>
+  );
   
   if (viewMode === 'list') {
     return (
      <div
       ref={setDroppableNodeRef}
-      className={cn(
-        'transition-shadow duration-200 ease-in-out',
-        isOverlay && 'shadow-2xl'
-      )}
+      className={cn(isOverlay && 'shadow-2xl')}
       onDoubleClick={() => !isOverlay && onView(folder)}
-      style={cardStyle}
     >
       <Card
+        style={cardStyle}
         className={cn(
-            "overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
-        style={{
-            backgroundColor: folder.backgroundColor ? `${folder.backgroundColor}A0` : undefined,
-        }}
       >
-        <div className="flex items-center p-3 gap-4">
-            <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
-                <FolderIcon className="h-8 w-8 flex-shrink-0" />
+        <div className="h-10 bg-[--card-header-bg] text-[--card-text-color]"/>
+        <div className="relative flex items-start gap-4 p-4 pt-0">
+            <div className='-mt-6'>
+              {DraggableIcon}
             </div>
-            <div className="flex-1 overflow-hidden" onDoubleClick={handleTitleDoubleClick}>
+            <div className="flex-1 min-w-0 pt-2" onDoubleClick={handleTitleDoubleClick}>
                {isEditing ? (
                   <Input
                     ref={inputRef}
@@ -152,7 +158,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     {folder.items.length} elemento/i
                 </CardDescription>
             </div>
-             <div className="flex items-center ml-auto">
+             <div className="flex items-center ml-auto pt-2">
               <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -205,47 +211,20 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
   return (
     <div
       ref={setDroppableNodeRef}
-      className={cn(
-        'transition-shadow duration-200 ease-in-out',
-        isOverlay && 'shadow-2xl'
-      )}
+      className={cn( isOverlay && 'shadow-2xl' )}
       onDoubleClick={() => !isOverlay && onView(folder)}
-      style={cardStyle}
     >
       <Card
+        style={cardStyle}
         className={cn(
-            "flex h-full flex-col overflow-hidden bg-card/50 backdrop-blur-sm transition-all duration-200 hover:shadow-[0_0_8px_1px_var(--glow-color)]",
+            "group/card flex h-full flex-col overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
-        style={{
-            backgroundColor: folder.backgroundColor ? `${folder.backgroundColor}A0` : undefined,
-        }}
       >
-        <CardHeader>
-          <div className="flex items-start gap-4">
-            <div className="flex-1 overflow-hidden">
-              <div onDoubleClick={handleTitleDoubleClick} ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab">
-                {isEditing ? (
-                  <Input
-                    ref={inputRef}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    onBlur={handleInputBlur}
-                    onKeyDown={handleInputKeyDown}
-                    className="h-7 text-lg font-headline p-1"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <CardTitle className="font-headline text-lg leading-tight p-1 rounded-sm">
-                    {folder.name}
-                  </CardTitle>
-                )}
-              </div>
-              <CardDescription className="mt-1 text-xs">
-                {folder.items.length} elemento/i
-              </CardDescription>
-            </div>
-             <div className="flex items-center">
+        <div 
+          className="h-10 bg-[--card-header-bg] text-[--card-text-color]"
+        >
+             <div className="absolute right-4 top-2">
                <TooltipProvider>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -267,26 +246,53 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                 </DropdownMenu>
                 </TooltipProvider>
             </div>
+        </div>
+        <div className="relative p-4 pt-0">
+          <div className="-mt-6 mb-4">
+              <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab inline-block">
+                {folderIcon}
+              </div>
           </div>
-        </CardHeader>
+          <div onDoubleClick={handleTitleDoubleClick}>
+            {isEditing ? (
+              <Input
+                ref={inputRef}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={handleInputBlur}
+                onKeyDown={handleInputKeyDown}
+                className="h-7 text-lg font-headline p-1"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <CardTitle className="font-headline text-lg leading-tight p-1 rounded-sm">
+                {folder.name}
+              </CardTitle>
+            )}
+          </div>
+          <CardDescription className="mt-1 text-xs">
+            {folder.items.length} elemento/i
+          </CardDescription>
+        </div>
         <CardContent>
           {folder.items.length > 0 ? (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="flex flex-wrap gap-2">
               {folder.items.slice(0, 10).map((bookmark) => {
                 const iconContent = (() => {
+                  const commonClasses = "h-8 w-8 rounded-full border bg-card flex-shrink-0";
                   if (bookmark.iconUrl) {
                     return (
                       <img
                         src={bookmark.iconUrl}
                         alt={bookmark.title}
-                        className="h-8 w-8 flex-shrink-0 rounded-md border object-contain p-1 bg-white"
+                        className={cn(commonClasses, "object-cover p-0.5")}
                       />
                     );
                   }
                   if (bookmark.icon) {
                     return (
                       <div
-                        className="h-8 w-8 flex-shrink-0 rounded-md border p-1.5 flex items-center justify-center bg-card"
+                        className={cn(commonClasses, "p-1.5 flex items-center justify-center")}
                         style={{ color: bookmark.iconColor ?? 'currentColor' }}
                       >
                         <SimpleIcon slug={bookmark.icon} />
@@ -297,6 +303,8 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                     <Favicon
                       url={bookmark.url}
                       title={bookmark.title}
+                       className={commonClasses}
+                       fallbackClassName="text-xs"
                     />
                   );
                 })();
