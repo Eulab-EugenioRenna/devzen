@@ -139,16 +139,16 @@ export async function generateText(prompt: string): Promise<string> {
 }
 
 const generateTextFlow = ai.defineFlow(
-  { 
-    name: 'generateTextFlow', 
-    inputSchema: GenerateTextInputSchema, 
-    outputSchema: z.string() 
+  {
+    name: 'generateTextFlow',
+    inputSchema: GenerateTextInputSchema,
+    outputSchema: z.string()
   },
   async (input) => {
     const llmResponse = await ai.generate({
       prompt: `Continua, espandi o genera testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata in italiano.\n\nPrompt:\n"{{prompt}}"`,
       model: 'googleai/gemini-1.5-flash-latest',
-      variables: { prompt: input.prompt },
+      input: { prompt: input.prompt },
     });
     return llmResponse.text;
   }
