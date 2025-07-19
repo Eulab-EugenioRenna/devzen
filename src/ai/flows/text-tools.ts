@@ -22,13 +22,13 @@ const CorrectTextOutputSchema = z.object({
   correctedText: z.string().describe('The corrected text.'),
 });
 export async function correctText(text: string): Promise<string> {
-  const { output } = await correctTextFlow({ text });
-  return output!.correctedText;
+  const result = await correctTextFlow({ text });
+  return result.correctedText;
 }
 const correctTextPrompt = ai.definePrompt({
   name: 'correctTextPrompt',
   input: { schema: CorrectTextInputSchema },
-  output: { schema: CorrectTextOutputSchema },
+  output: { format: 'json' },
   prompt: `Correggi eventuali errori di ortografia e grammatica nel seguente testo. Restituisci solo un oggetto JSON valido contenente il testo corretto, senza alcuna spiegazione. Il testo DEVE essere in italiano.
 
 Testo da correggere:
@@ -36,7 +36,10 @@ Testo da correggere:
 });
 const correctTextFlow = ai.defineFlow(
   { name: 'correctTextFlow', inputSchema: CorrectTextInputSchema, outputSchema: CorrectTextOutputSchema },
-  async (input) => await correctTextPrompt(input)
+  async (input) => {
+    const llmResponse = await correctTextPrompt(input);
+    return JSON.parse(llmResponse.text);
+  }
 );
 
 
@@ -48,13 +51,13 @@ const SummarizeTextOutputSchema = z.object({
   summary: z.string().describe('The summarized text.'),
 });
 export async function summarizeText(text: string): Promise<string> {
-  const { output } = await summarizeTextFlow({ text });
-  return output!.summary;
+  const result = await summarizeTextFlow({ text });
+  return result.summary;
 }
 const summarizeTextPrompt = ai.definePrompt({
   name: 'summarizeTextPrompt',
   input: { schema: SummarizeTextInputSchema },
-  output: { schema: SummarizeTextOutputSchema },
+  output: { format: 'json' },
   prompt: `Riassumi il seguente testo in modo conciso. Restituisci solo un oggetto JSON valido contenente il riassunto. Il riassunto DEVE essere in italiano.
 
 Testo da riassumere:
@@ -62,7 +65,10 @@ Testo da riassumere:
 });
 const summarizeTextFlow = ai.defineFlow(
   { name: 'summarizeTextFlow', inputSchema: SummarizeTextInputSchema, outputSchema: SummarizeTextOutputSchema },
-  async (input) => await summarizeTextPrompt(input)
+  async (input) => {
+    const llmResponse = await summarizeTextPrompt(input);
+    return JSON.parse(llmResponse.text);
+  }
 );
 
 // Translate Text
@@ -74,13 +80,13 @@ const TranslateTextOutputSchema = z.object({
   translatedText: z.string().describe('The translated text.'),
 });
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
-    const { output } = await translateTextFlow({ text, targetLanguage });
-    return output!.translatedText;
+    const result = await translateTextFlow({ text, targetLanguage });
+    return result.translatedText;
 }
 const translateTextPrompt = ai.definePrompt({
   name: 'translateTextPrompt',
   input: { schema: TranslateTextInputSchema },
-  output: { schema: TranslateTextOutputSchema },
+  output: { format: 'json' },
   prompt: `Traduci il seguente testo in {{targetLanguage}}. Restituisci solo un oggetto JSON valido contenente il testo tradotto.
 
 Testo da tradurre:
@@ -88,7 +94,10 @@ Testo da tradurre:
 });
 const translateTextFlow = ai.defineFlow(
   { name: 'translateTextFlow', inputSchema: TranslateTextInputSchema, outputSchema: TranslateTextOutputSchema },
-  async (input) => await translateTextPrompt(input)
+  async (input) => {
+    const llmResponse = await translateTextPrompt(input);
+    return JSON.parse(llmResponse.text);
+  }
 );
 
 // Improve Text
@@ -99,13 +108,13 @@ const ImproveTextOutputSchema = z.object({
   improvedText: z.string().describe('The improved text.'),
 });
 export async function improveText(text: string): Promise<string> {
-    const { output } = await improveTextFlow({ text });
-    return output!.improvedText;
+    const result = await improveTextFlow({ text });
+    return result.improvedText;
 }
 const improveTextPrompt = ai.definePrompt({
   name: 'improveTextPrompt',
   input: { schema: ImproveTextInputSchema },
-  output: { schema: ImproveTextOutputSchema },
+  output: { format: 'json' },
   prompt: `Migliora lo stile, la chiarezza e il tono del seguente testo, rendendolo più professionale e scorrevole. Restituisci solo un oggetto JSON valido contenente il testo migliorato. Il testo DEVE essere in italiano.
 
 Testo da migliorare:
@@ -113,7 +122,10 @@ Testo da migliorare:
 });
 const improveTextFlow = ai.defineFlow(
   { name: 'improveTextFlow', inputSchema: ImproveTextInputSchema, outputSchema: ImproveTextOutputSchema },
-  async (input) => await improveTextPrompt(input)
+  async (input) => {
+    const llmResponse = await improveTextPrompt(input);
+    return JSON.parse(llmResponse.text);
+  }
 );
 
 
@@ -125,13 +137,13 @@ const GenerateTextOutputSchema = z.object({
   generatedText: z.string().describe('The generated text.'),
 });
 export async function generateText(prompt: string): Promise<string> {
-    const { output } = await generateTextFlow({ prompt });
-    return output!.generatedText;
+    const result = await generateTextFlow({ prompt });
+    return result.generatedText;
 }
 const generateTextPrompt = ai.definePrompt({
   name: 'generateTextPrompt',
   input: { schema: GenerateTextInputSchema },
-  output: { schema: GenerateTextOutputSchema },
+  output: { format: 'json' },
   prompt: `Genera del testo basato sul seguente prompt. Fornisci una risposta completa e ben formattata all'interno di un oggetto JSON valido. La risposta DEVE essere in italiano.
 
 Prompt:
@@ -139,5 +151,8 @@ Prompt:
 });
 const generateTextFlow = ai.defineFlow(
   { name: 'generateTextFlow', inputSchema: GenerateTextInputSchema, outputSchema: GenerateTextOutputSchema },
-  async (input) => await generateTextPrompt(input)
+  async (input) => {
+    const llmResponse = await generateTextPrompt(input);
+    return JSON.parse(llmResponse.text);
+  }
 );
