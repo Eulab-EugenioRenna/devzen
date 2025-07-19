@@ -75,7 +75,8 @@ interface DashboardContextType {
 
   // Handlers
   handleSpaceSave: (data: { name: string; icon: string; }, id?: string) => void;
-  handleEditSpace: (space: Space) => void;
+  handleEditSpace: (space: Space | null) => void;
+  handleNewSpaceClick: () => void;
   handleDeleteSpace: (space: Space) => void;
   handleAppInfoSave: (formData: FormData) => void;
   handleEditAppInfo: () => void;
@@ -326,7 +327,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         if (sourceSpace && targetSpace && sourceSpace.id !== targetSpace.id) {
             setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
         }
-        return; // Important: Stop further processing
+        return;
       }
   
       if ((activeType === 'bookmark' || activeType === 'folder') && overType === 'space-sidebar') {
@@ -449,6 +450,11 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
           toast({ variant: 'destructive', title: 'Errore', description: `Impossibile importare il segnalibro: ${errorMessage}` });
       }
   };
+  
+  const handleNewSpaceClick = () => {
+    setEditingSpace(null);
+    setIsAddingSpace(true);
+  };
 
   if (!isMounted) {
     return null; 
@@ -474,6 +480,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     setSearchResultIds,
     handleSpaceSave,
     handleEditSpace: setEditingSpace,
+    handleNewSpaceClick,
     handleDeleteSpace: setDeletingSpace,
     handleAppInfoSave,
     handleEditAppInfo: () => setIsEditingAppInfo(true),
