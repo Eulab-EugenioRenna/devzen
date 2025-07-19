@@ -291,13 +291,21 @@ export async function updateSpaceAction({ id, data }: { id: string, data: { name
 }
 
 export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
+    // 1. Find and delete any space-links pointing to this space
+    const linkedItems = await pb.collection(bookmarksCollectionName).getFullList({
+        filter: `tool.type = "space-link" && tool.linkedSpaceId = "${id}"`,
+    });
+    const deleteLinkedItemsPromises = linkedItems.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
+    await Promise.all(deleteLinkedItemsPromises);
+
+    // 2. Find and delete all items within this space
     const itemsInSpace = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.spaceId = "${id}"`,
     });
+    const deleteItemsInSpacePromises = itemsInSpace.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
+    await Promise.all(deleteItemsInSpacePromises);
 
-    const deletePromises = itemsInSpace.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
-    await Promise.all(deletePromises);
-
+    // 3. Delete the space itself
     await pb.collection(spacesCollectionName).delete(id);
 
     return { success: true };
