@@ -156,8 +156,10 @@ export async function updateBookmarkAction({
 
 export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean }> {
   const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id);
+  const toolData = itemToDelete.tool as any;
 
-  if (itemToDelete.tool.type === 'folder') {
+  if (toolData.type === 'folder') {
+    // If it's a folder, find all children and move them to the root of the space
     const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
       filter: `tool.parentId = "${id}"`,
     });
@@ -168,8 +170,17 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
     });
     
     await Promise.all(updatePromises);
+  } else if (toolData.type === 'space-link' && toolData.linkedSpaceId) {
+    // If it's a space link, update the original space to no longer be a link
+    try {
+        await pb.collection(spacesCollectionName).update(toolData.linkedSpaceId, { isLink: false });
+    } catch (e) {
+        console.error(`Failed to update original space ${toolData.linkedSpaceId} when deleting link ${id}. It might already be deleted.`, e);
+        // We can continue to delete the link itself even if the original space is gone.
+    }
   }
   
+  // Finally, delete the item itself
   await pb.collection(bookmarksCollectionName).delete(id);
   return { success: true };
 }
@@ -352,7 +363,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
     return recordToSpaceItem(record)!;
   }
 
-  if (item.type === 'folder') {
+  if (item.type === 'folder' || item.type === 'space-link') {
     const newFolderData = {
       tool: {
         ...item,
@@ -362,6 +373,12 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
     };
     delete newFolderData.tool.id;
     
+    // For space-links, duplication just creates another link, it doesn't duplicate the space.
+    if (newFolderData.tool.type === 'space-link') {
+        const record = await pb.collection(bookmarksCollectionName).create(newFolderData);
+        return recordToSpaceItem(record)!;
+    }
+
     const folderRecord = await pb.collection(bookmarksCollectionName).create(newFolderData);
     const newFolder = recordToSpaceItem(folderRecord) as Folder;
 

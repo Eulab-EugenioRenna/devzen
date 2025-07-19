@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -171,8 +172,8 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
 
   const cardDescriptionText = isLink
     ? 'Collegamento a Spazio'
-    : `${(folder as Folder).items.length} elemento/i`;
-
+    : `${(folder as Folder).items?.length ?? 0} elemento/i`;
+    
   if (isDragging) {
     return <div className={cn(
       "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
@@ -234,7 +235,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                   </CardTitle>
                 )}
                 <CardDescription className="mt-1 text-xs px-1">
-                  {isLink ? "Collegamento a Spazio" : `${(folder as Folder).items.length} elemento/i`}
+                  {cardDescriptionText}
                 </CardDescription>
             </div>
              <div className="flex items-center ml-auto pt-2">
@@ -309,11 +310,11 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             )}
           </div>
           <CardDescription className="mt-1 text-xs">
-            {isLink ? "Collegamento a Spazio" : `${(folder as Folder).items.length} elemento/i`}
+            {cardDescriptionText}
           </CardDescription>
         
             <CardContent className="p-0 pt-4 flex-1">
-            {!isLink && (folder as Folder).items.length > 0 ? (
+            {!isLink && (folder as Folder).items?.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                 {(folder as Folder).items.slice(0, 10).map((bookmark) => {
                     const iconContent = (() => {

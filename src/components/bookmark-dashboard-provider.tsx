@@ -278,7 +278,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder' | 'space-link') => {
     await deleteItemAction({ id });
-    await refreshItems();
+    await refreshAllData(); // Refresh all data to ensure spaces list is also updated
     toast({
         title: `${type === 'bookmark' ? 'Segnalibro' : type === 'folder' ? 'Cartella' : 'Collegamento'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
         description: `Rimosso con successo.`,
@@ -312,42 +312,42 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
-  
+
     if (!over || !active.id || active.id === over.id) {
-      return;
+        return;
     }
-  
+
     const activeType = active.data.current?.type as string;
     const activeItem = active.data.current?.item;
     const overType = over.data.current?.type as string;
     const overId = String(over.id);
-  
-    try {
-      if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
+
+    // Scenario: Dragging a Space from sidebar to the main content area to create a link
+    if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
         const sourceSpace = activeItem as Space;
-        const targetSpace = activeSpace;
-        if (sourceSpace && targetSpace && sourceSpace.id !== targetSpace.id) {
-            setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
+        if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
+            setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
         }
-        return;
-      }
-  
-      if ((activeType === 'bookmark' || activeType === 'folder') && overType.startsWith('space-sidebar-')) {
-        const newSpaceId = overType.replace('space-sidebar-', '');
-        if (newSpaceId && activeItem.spaceId !== newSpaceId) {
-          await moveItemAction({ id: activeItem.id, newSpaceId });
+        return; // Stop further processing
+    }
+
+    // Handle all other drag-and-drop scenarios
+    try {
+        if ((activeType === 'bookmark' || activeType === 'folder') && overType.startsWith('space-sidebar-')) {
+            const newSpaceId = overId.replace('space-sidebar-', '');
+            if (newSpaceId && activeItem.spaceId !== newSpaceId) {
+                await moveItemAction({ id: activeItem.id, newSpaceId });
+            }
+        } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === over.data.current?.item.spaceId) {
+            await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, overId] });
+        } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
+            await moveItemAction({ id: activeItem.id, newParentId: overId });
         }
-      } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === active.data.current?.item.spaceId) {
-        await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, over.id as string] });
-      } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== over.id) {
-        await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
-      }
-  
-      await refreshAllData();
+        await refreshAllData();
     } catch (e) {
-      console.error("Drag end error:", e);
-      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-      await refreshAllData();
+        console.error("Drag end error:", e);
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
+        await refreshAllData(); // Refresh on error to revert optimistic updates if any
     }
   };
 
