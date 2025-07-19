@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen, RefreshCw } from 'lucide-react';
 
 import {
   Card,
@@ -43,6 +43,7 @@ interface BookmarkCardProps {
   onDuplicate: () => void;
   onViewNote: (note: Bookmark) => void;
   onViewTextNote: (note: Bookmark) => void;
+  onRegenerateSummary: (id: string) => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
@@ -56,7 +57,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, onRegenerateSummary, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -119,7 +120,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   };
 
   const iconContent = (() => {
-    const commonClasses = "h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0";
+    const commonClasses = "h-12 w-12 rounded-full border-2 border-[--card-header-bg] flex-shrink-0";
     if (isChatNote) {
         return (
             <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
@@ -184,6 +185,12 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
                 <Pencil className="mr-2 h-4 w-4" />
                 {isNote ? 'Visualizza / Modifica' : 'Modifica'}
               </DropdownMenuItem>
+              {!isNote && (
+                <DropdownMenuItem onClick={() => onRegenerateSummary(bookmark.id)}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Rigenera Riepilogo
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onDuplicate}>
                 <Copy className="mr-2 h-4 w-4" />
                 Duplica
