@@ -182,7 +182,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newItems[existingIndex] = item;
             return newItems;
           }
-          return currentItems; // Do not add if it doesn't exist, rely on optimistic updates
+          // Only add if it doesn't exist to avoid duplicates from optimistic updates
+          return [...currentItems, item];
         });
       } catch (error) {
         console.error('Error processing real-time item update:', error);
@@ -204,7 +205,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newSpaces[existingIndex] = space;
             return newSpaces;
           }
-          return currentSpaces; // Do not add if it doesn't exist, rely on optimistic updates
+          // Only add if it doesn't exist to avoid duplicates from optimistic updates
+          return [...currentSpaces, space];
         });
       } catch (error) {
         console.error('Error processing real-time space update:', error);
@@ -331,26 +333,25 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
     // Optimistic update
     const originalItems = items;
-    let newItems = items.filter(i => i.id !== id);
-    if (type === 'folder' && (itemToDelete as Folder).items) {
-      const children = (itemToDelete as Folder).items;
-      const updatedChildren = children.map(c => ({...c, parentId: null}));
-      newItems.push(...updatedChildren);
-    }
-    setItems(newItems);
+    setItems(currentItems => {
+        const itemsWithoutDeleted = currentItems.filter(i => i.id !== id);
+        if (type === 'folder') {
+            return itemsWithoutDeleted.map(i => {
+                if (i.parentId === id) {
+                    return { ...i, parentId: null };
+                }
+                return i;
+            });
+        }
+        return itemsWithoutDeleted;
+    });
     
     try {
       const result = await deleteItemAction({ id });
-
-      // If server returns different state (which it does), replace optimistic state
-      if (result.success && type === 'folder' && result.updatedBookmarks) {
-        setItems(currentItems => {
-            const withoutOldChildren = currentItems.filter(i => (i.parentId === id));
-            const withNewChildren = [...withoutOldChildren, ...result.updatedBookmarks!];
-            return withNewChildren;
-        });
-      }
-
+      // The optimistic update is usually sufficient. 
+      // If server-side logic changes more state (e.g. un-nesting),
+      // we might need to refresh state from the server response.
+      // For now, we rely on optimistic + real-time updates.
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} deleted`,
         description: `Successfully removed.`,
@@ -528,7 +529,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex items-center gap-2 overflow-hidden w-full">
                 {isLogoUrl ? (
                 <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
                 ) : (
