@@ -2,13 +2,14 @@
 'use client';
 
 import * as React from 'react';
-import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput, SpaceLink } from '@/lib/types';
 import {
   DndContext,
   useDroppable,
   DragOverlay,
   type DragEndEvent,
   type DragStartEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 import {
@@ -30,6 +31,8 @@ import {
   getItemsAction,
   getSpacesAction,
   customizeItemAction,
+  duplicateItemAction,
+  createSpaceLinkAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -51,8 +54,8 @@ import { BookmarkCard } from '@/components/bookmark-card';
 import { FolderCard } from '@/components/folder-card';
 import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
-import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
@@ -80,7 +83,16 @@ function SidebarSpaceMenuItem({
   onEdit: (space: Space) => void;
   onDelete: (space: Space) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: space.id });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `space-sidebar-${space.id}`,
+    data: { type: 'space-sidebar', item: space },
+  });
+
+   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
+    id: space.id,
+    data: { type: 'space', item: space },
+  });
+
   const Icon = getIcon(space.icon);
 
   return (
@@ -91,15 +103,17 @@ function SidebarSpaceMenuItem({
         isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
       )}
     >
-      <SidebarMenuButton
-          onClick={() => onClick(space.id)}
-          isActive={isActive}
-          tooltip={space.name}
-          className="pr-8"
-      >
-          <Icon />
-          <span>{space.name}</span>
-      </SidebarMenuButton>
+        <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="w-full">
+            <SidebarMenuButton
+                onClick={() => onClick(space.id)}
+                isActive={isActive}
+                tooltip={space.name}
+                className="pr-8 w-full"
+            >
+                <Icon />
+                <span>{space.name}</span>
+            </SidebarMenuButton>
+        </div>
       <div className="absolute right-1 top-1/2 -translate-y-1/2 group-data-[collapsible=icon]:hidden">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -158,7 +172,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
   const [editingBookmark, setEditingBookmark] = React.useState<Bookmark | null>(null);
-  const [draggedItem, setDraggedItem] = React.useState<SpaceItem | null>(null);
+  const [draggedItem, setDraggedItem] = React.useState<SpaceItem | Space | null>(null);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const [isAddingSpace, setIsAddingSpace] = React.useState(false);
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
@@ -173,6 +187,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   
   const [appInfo, setAppInfo] = React.useState<AppInfo>(initialAppInfo);
   const [isEditingAppInfo, setIsEditingAppInfo] = React.useState(false);
+  
+  const [showLinks, setShowLinks] = React.useState(false);
 
   const [tools, setTools] = React.useState<ToolsAi[]>(initialTools);
   const [isMounted, setIsMounted] = React.useState(false);
@@ -280,7 +296,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   }
 
 
-  const { folders, rootBookmarks } = React.useMemo(() => {
+  const { folders, rootBookmarks, spaceLinks } = React.useMemo(() => {
     const spaceItems = items.filter((item) => item.spaceId === activeSpaceId);
     
     let filteredItems = spaceItems;
@@ -291,7 +307,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
         const parentFolderIds = new Set<string>();
         bookmarksInResults.forEach(b => {
-            if (b.parentId && allFolderIds.has(b.parentId)) {
+            if (b.type === 'bookmark' && b.parentId && allFolderIds.has(b.parentId)) {
                 parentFolderIds.add(b.parentId);
             }
         });
@@ -302,6 +318,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
     const allBookmarks = filteredItems.filter((i) => i.type === 'bookmark') as Bookmark[];
     const allFolders = filteredItems.filter((i) => i.type === 'folder') as Folder[];
+    const allSpaceLinks = filteredItems.filter((i) => i.type === 'space-link') as SpaceLink[];
 
     const foldersById = new Map<string, Folder>(
       allFolders.map((f) => [f.id, { ...f, items: [] }])
@@ -321,10 +338,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         return {...folder, items: folderBookmarks};
     });
 
-    return { folders: populatedFolders, rootBookmarks };
+    return { folders: populatedFolders, rootBookmarks, spaceLinks: allSpaceLinks };
   }, [items, activeSpaceId, searchResultIds]);
 
-  const displayedItems: SpaceItem[] = [...folders, ...rootBookmarks];
+  const displayedItems: SpaceItem[] = [...folders, ...rootBookmarks, ...spaceLinks];
+  
+  const sidebarSpaces = React.useMemo(() => {
+    return showLinks ? spaces : spaces.filter(s => !s.isLink);
+  }, [spaces, showLinks]);
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
@@ -365,7 +386,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     }
   };
 
-  const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
+  const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder' | 'space-link') => {
     await deleteItemAction({ id });
     await refreshItems();
     toast({
@@ -382,6 +403,17 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile rinominare la cartella.' });
     }
   }
+  
+  const handleDuplicateItem = async (item: SpaceItem) => {
+    try {
+        await duplicateItemAction(item);
+        await refreshItems();
+        toast({ title: 'Elemento duplicato!', description: 'La copia è stata creata con successo.'});
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Impossibile duplicare l\'elemento.';
+        toast({ variant: 'destructive', title: 'Errore', description: message });
+    }
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     setDraggedItem(event.active.data.current?.item ?? null);
@@ -391,28 +423,39 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     setDraggedItem(null);
     const { active, over } = event;
     if (!over || !active.id || active.id === over.id) return;
-
-    const activeItem = active.data.current?.item as SpaceItem;
-    const overId = over.id;
-    
+  
+    const activeItem = active.data.current?.item as SpaceItem | Space;
+    const activeType = active.data.current?.type as string;
+    const overId = String(over.id);
+    const overType = over.data.current?.type as string;
+    const overItem = over.data.current?.item as SpaceItem | Space;
+  
     try {
-        const overIsSpace = spaces.some(s => s.id === overId);
-        if (overIsSpace && activeItem.spaceId !== overId) {
-            await moveItemAction({ id: String(active.id), newSpaceId: String(overId) });
-        } else {
-            const overItem = items.find(i => i.id === over.id);
-            if (!overItem) return;
-
-            if (activeItem.type === 'bookmark' && overItem.type === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-                await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [String(active.id), String(over.id)] });
-            } else if (activeItem.type === 'bookmark' && overItem.type === 'folder' && activeItem.parentId !== overItem.id) {
-                await moveItemAction({ id: String(active.id), newParentId: String(over.id) });
-            }
+      if (overType.startsWith('space-sidebar')) {
+        const newSpaceId = overItem.id;
+        if (activeType === 'folder' || activeType === 'bookmark') {
+          await moveItemAction({ id: String(active.id), newSpaceId });
         }
-        await refreshItems(); 
+      } else {
+        const overItemFromState = items.find(i => i.id === overId);
+        if (!overItemFromState) {
+          if(activeType === 'space' && overType === 'space-content') {
+            await createSpaceLinkAction(activeItem as Space, activeSpaceId);
+          }
+          await refreshAllData();
+          return;
+        }
+  
+        if (activeType === 'bookmark' && overItemFromState.type === 'bookmark' && activeItem.spaceId === overItemFromState.spaceId) {
+          await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [String(active.id), overId] });
+        } else if (activeType === 'bookmark' && overItemFromState.type === 'folder' && (activeItem as Bookmark).parentId !== overItemFromState.id) {
+          await moveItemAction({ id: String(active.id), newParentId: overId });
+        }
+      }
+      await refreshAllData(); 
     } catch (e) {
-        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-        await refreshItems();
+      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
+      await refreshAllData();
     }
   };
 
@@ -503,6 +546,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const isLogoUrl = appInfo.logo?.startsWith('http');
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
 
+  const { setNodeRef: setSpaceContentRef, isOver: isOverSpaceContent } = useDroppable({
+    id: `space-content-${activeSpaceId}`,
+    data: { type: 'space-content' },
+  });
+
+
   if (!isMounted) {
     return null; 
   }
@@ -523,7 +572,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           </SidebarHeader>
           <SidebarContent>
             <DroppableSidebarMenu
-              spaces={spaces}
+              spaces={sidebarSpaces}
               activeSpaceId={activeSpaceId}
               setActiveSpaceId={setActiveSpaceId}
               onEdit={setEditingSpace}
@@ -550,6 +599,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                         <DropdownMenuItem onClick={handleExport}>
                             Esporta Spazio di Lavoro
                         </DropdownMenuItem>
+                         <DropdownMenuSeparator />
+                        <DropdownMenuCheckboxItem
+                            checked={showLinks}
+                            onCheckedChange={setShowLinks}
+                        >
+                            Mostra Spazi Collegati
+                        </DropdownMenuCheckboxItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -564,8 +620,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               </h2>
             </div>
             
-            <div className="flex-1">
-              <form onSubmit={handleSearch} className="w-full max-w-md mx-auto">
+            <div className="flex flex-1 justify-center px-4">
+              <form onSubmit={handleSearch} className="w-full max-w-md">
                 <div className="relative flex items-center">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -621,8 +677,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 <div className="flex rounded-md shadow-sm">
                     <AddBookmarkDialog activeSpaceId={activeSpaceId} spaces={spaces} onBookmarkAdded={handleAddBookmark}>
                          <Button disabled={!activeSpaceId} className="rounded-r-none relative z-10">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            <span className="hidden lg:inline">Aggiungi Segnalibro</span>
+                            <PlusCircle className="mr-2 h-4 w-4 shrink-0" />
+                            <span className="hidden lg:inline">Aggiungi</span>
+                            <span className="sr-only lg:hidden">Aggiungi Segnalibro</span>
                         </Button>
                     </AddBookmarkDialog>
                     <DropdownMenu>
@@ -646,7 +703,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 </div>
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <main ref={setSpaceContentRef} className={cn("flex-1 overflow-y-auto p-4 sm:p-6", isOverSpaceContent && 'bg-primary/5')}>
             {displayedItems.length > 0 ? (
                 <div className="flex flex-col gap-8">
                     {folders.length > 0 && (
@@ -665,6 +722,31 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                                     onView={() => setViewingFolder(folder)}
                                     onNameUpdated={handleUpdateFolderName}
                                     onCustomize={() => setCustomizingItem(folder)}
+                                    onDuplicate={() => handleDuplicateItem(folder)}
+                                    viewMode={viewMode}
+                                />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                     {spaceLinks.length > 0 && (
+                        <div>
+                            <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Collegamenti Spazio</h3>
+                            <div className={cn(
+                                viewMode === 'grid'
+                                ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                                : "flex flex-col gap-4"
+                            )}>
+                                {spaceLinks.map(link => (
+                                <FolderCard
+                                    key={link.id}
+                                    folder={link}
+                                    onDeleted={handleDeleteItem}
+                                    onView={() => setActiveSpaceId(link.linkedSpaceId)}
+                                    onNameUpdated={() => {}} // Cannot rename links
+                                    onCustomize={() => setCustomizingItem(link)}
+                                    onDuplicate={() => handleDuplicateItem(link)}
                                     viewMode={viewMode}
                                 />
                                 ))}
@@ -672,7 +754,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                         </div>
                     )}
 
-                    {folders.length > 0 && rootBookmarks.length > 0 && (
+
+                    {(folders.length > 0 || spaceLinks.length > 0) && rootBookmarks.length > 0 && (
                         <Separator />
                     )}
 
@@ -691,6 +774,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                                     onEdit={() => setEditingBookmark(bookmark)}
                                     onDeleted={handleDeleteItem}
                                     onCustomize={() => setCustomizingItem(bookmark)}
+                                    onDuplicate={() => handleDuplicateItem(bookmark)}
                                     viewMode={viewMode}
                                 />
                                 ))}
@@ -718,18 +802,25 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     onEdit={() => {}}
                     onDeleted={() => {}}
                     onCustomize={() => {}}
+                    onDuplicate={() => {}}
                     isOverlay
                 />
-            ) : (
+            ) : draggedItem.type === 'folder' || draggedItem.type === 'space-link' ? (
                 <FolderCard
                     folder={draggedItem as Folder}
                     onDeleted={() => {}}
                     onView={() => {}}
                     onNameUpdated={() => {}}
                     onCustomize={() => {}}
+                    onDuplicate={() => {}}
                     isOverlay
                 />
-            )
+            ) : draggedItem.type === 'space' ? (
+                 <div className="flex items-center gap-2 overflow-hidden w-full bg-primary text-primary-foreground p-2 rounded-lg shadow-2xl">
+                    <AppIcon className="size-6 shrink-0" />
+                    <h1 className="text-lg font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
+                </div>
+            ) : null
           ) : null}
         </DragOverlay>,
         document.body
@@ -824,5 +915,3 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
-
-    

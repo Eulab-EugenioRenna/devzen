@@ -40,6 +40,7 @@ interface BookmarkCardProps {
   onEdit: () => void;
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   onCustomize: () => void;
+  onDuplicate: () => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
 }
@@ -52,7 +53,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverlay, viewMode = 'grid' }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, isOverlay, viewMode = 'grid' }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef, isDragging } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -121,6 +122,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
+            <DropdownMenuItem onClick={onDuplicate}>Duplica</DropdownMenuItem>
             <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -242,7 +244,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
           className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
         />
         <div className="relative p-4 pt-0 flex-1 flex flex-col">
+          <div className="absolute right-2 -top-8">
             {OptionsMenu}
+          </div>
           <div className="-mt-6 mb-4">
              {DraggableIcon}
           </div>

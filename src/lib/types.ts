@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type SpaceItem = Bookmark | Folder;
+export type SpaceItem = Bookmark | Folder | SpaceLink;
 
 interface BaseItem {
   id: string;
@@ -26,10 +26,18 @@ export interface Folder extends BaseItem {
   items: Bookmark[];
 }
 
+export interface SpaceLink extends BaseItem {
+    type: 'space-link';
+    name: string;
+    icon: string;
+    linkedSpaceId: string;
+}
+
 export interface Space {
   id:string;
   name: string;
   icon: string;
+  isLink?: boolean;
 }
 
 export interface AppInfo {
@@ -126,6 +134,7 @@ export const SpaceSchema = z.object({
   id: z.string(),
   name: z.string(),
   icon: z.string(),
+  isLink: z.boolean().optional(),
 });
 
 export const CategorizeBookmarkInputSchema = z.object({

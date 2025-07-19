@@ -5,7 +5,7 @@ import { generateWorkspace } from '@/ai/flows/generate-workspace';
 import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem } from '@/lib/types';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
@@ -17,6 +17,7 @@ function recordToSpace(record: RecordModel): Space {
         id: record.id,
         name: record.name,
         icon: record.icon,
+        isLink: record.isLink || false,
     };
 }
 
@@ -223,6 +224,18 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   if (newSpaceId) {
     tool.spaceId = newSpaceId;
     tool.parentId = null; 
+    
+    if (tool.type === 'folder') {
+      const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
+        filter: `tool.parentId = "${id}"`,
+      });
+
+      const updatePromises = childBookmarks.map(bm => {
+        const data = { tool: { ...bm.tool, spaceId: newSpaceId } };
+        return pb.collection(bookmarksCollectionName).update(bm.id, data);
+      });
+      await Promise.all(updatePromises);
+    }
   }
   
   if (newParentId !== undefined) {
@@ -268,7 +281,7 @@ export async function createSpaceAction(data: { name: string, icon: string }): P
     return recordToSpace(record);
 }
 
-export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string } }): Promise<Space> {
+export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string, isLink?: boolean } }): Promise<Space> {
     const record = await pb.collection(spacesCollectionName).update(id, data);
     return recordToSpace(record);
 }
@@ -285,6 +298,75 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 
     return { success: true };
 }
+
+export async function createSpaceLinkAction(space: Space, targetSpaceId: string): Promise<SpaceLink> {
+  const linkData = {
+    tool: {
+      type: 'space-link',
+      name: space.name,
+      icon: space.icon,
+      linkedSpaceId: space.id,
+      spaceId: targetSpaceId,
+    },
+  };
+  const record = await pb.collection(bookmarksCollectionName).create(linkData);
+  await pb.collection(spacesCollectionName).update(space.id, { isLink: true });
+
+  const newLink = recordToSpaceItem(record);
+  if (!newLink || newLink.type !== 'space-link') {
+    throw new Error('Failed to create space link.');
+  }
+  return newLink as SpaceLink;
+}
+
+export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
+  if (item.type === 'bookmark') {
+    const newBookmarkData = {
+      tool: {
+        ...item,
+        title: `${item.title} (Copia)`,
+        id: undefined, // Let PB generate new ID
+      },
+    };
+    delete newBookmarkData.tool.id;
+    const record = await pb.collection(bookmarksCollectionName).create(newBookmarkData);
+    return recordToSpaceItem(record)!;
+  }
+
+  if (item.type === 'folder') {
+    const newFolderData = {
+      tool: {
+        ...item,
+        name: `${item.name} (Copia)`,
+        id: undefined,
+      },
+    };
+    delete newFolderData.tool.id;
+    
+    const folderRecord = await pb.collection(bookmarksCollectionName).create(newFolderData);
+    const newFolder = recordToSpaceItem(folderRecord) as Folder;
+
+    const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
+      filter: `tool.parentId = "${item.id}"`,
+    });
+
+    for (const bookmark of childBookmarks) {
+      const newBookmarkData = {
+        tool: {
+          ...bookmark.tool,
+          title: bookmark.tool.title,
+          parentId: newFolder.id,
+        },
+      };
+      await pb.collection(bookmarksCollectionName).create(newBookmarkData);
+    }
+    
+    return newFolder;
+  }
+  
+  throw new Error("Tipo di elemento non supportato per la duplicazione");
+}
+
 
 // ===== Azioni Info App =====
 

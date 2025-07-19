@@ -1,5 +1,5 @@
 import type { RecordModel } from 'pocketbase';
-import type { SpaceItem, ToolsAi, ToolsAiSummary, Bookmark, Folder } from '@/lib/types';
+import type { SpaceItem, ToolsAi, ToolsAiSummary, Bookmark, Folder, SpaceLink } from '@/lib/types';
 
 export function recordToSpaceItem(record: RecordModel): SpaceItem | null {
   try {
@@ -49,6 +49,22 @@ export function recordToSpaceItem(record: RecordModel): SpaceItem | null {
       };
       return bookmark;
     }
+    
+    if (toolData.type === 'space-link') {
+      if (typeof toolData.name !== 'string' || typeof toolData.linkedSpaceId !== 'string') {
+        console.warn(`Skipping space-link with invalid data. Record ID: ${record.id}`);
+        return null;
+      }
+      const spaceLink: SpaceLink = {
+        ...baseItem,
+        type: 'space-link',
+        name: toolData.name,
+        icon: toolData.icon,
+        linkedSpaceId: toolData.linkedSpaceId
+      };
+      return spaceLink;
+    }
+
 
     console.warn(`Skipping item with unknown type "${toolData.type}". Record ID: ${record.id}`);
     return null;
