@@ -109,8 +109,7 @@ function SidebarSpaceMenuItem({
       ref={setNodeRef}
       className={cn(
         'group relative rounded-lg transition-colors',
-        isOver ? 'bg-sidebar-accent' : 'bg-transparent',
-        isActive && 'bg-sidebar-accent'
+        isOver && "bg-sidebar-accent"
       )}
     >
       <div className='flex items-center w-full'>
@@ -449,38 +448,43 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const { active, over } = event;
     setActiveDragItem(null);
   
-    if (!over || !active.id || active.id === over.id) return;
+    if (!over || !active.id || active.id === over.id) {
+      return;
+    }
   
     const activeType = active.data.current?.type as string;
+    const activeItem = active.data.current?.item;
     const overType = over.data.current?.type as string;
+    const overItem = over.data.current?.item;
     const overId = String(over.id);
-
-    try {
-      if (activeType === 'space' && overId === `space-link-droppable-area` && activeSpace) {
-          const sourceSpace = active.data.current?.item as Space;
-          const targetSpace = activeSpace;
-          if (sourceSpace && targetSpace && sourceSpace.id !== targetSpace.id) {
-              setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
-          }
-      } else if (overType === 'space-sidebar') {
-        const overItem = over.data.current?.item as Space;
-        const newSpaceId = overItem.id;
-        if ((activeType === 'folder' || activeType === 'bookmark') && newSpaceId) {
-          await moveItemAction({ id: String(active.id), newSpaceId });
-        }
-      } else {
-        const overItem = items.find(i => i.id === overId);
-        if (!overItem) return;
   
-        const activeItem = items.find(i => i.id === active.id);
-        if (!activeItem) return;
-
-        if (activeType === 'bookmark' && overItem.type === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-          await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [String(active.id), overId] });
-        } else if (activeType === 'bookmark' && overItem.type === 'folder' && (activeItem as Bookmark).parentId !== overItem.id) {
-          await moveItemAction({ id: String(active.id), newParentId: overId });
+    try {
+      // Scenario 1: Dragging a space to create a link
+      if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
+        const sourceSpace = activeItem as Space;
+        const targetSpace = activeSpace;
+        if (sourceSpace && targetSpace && sourceSpace.id !== targetSpace.id) {
+          setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
+        }
+        return; // Stop further processing
+      }
+  
+      // Scenario 2: Moving a bookmark or folder to another space in the sidebar
+      if ((activeType === 'bookmark' || activeType === 'folder') && overType === 'space-sidebar') {
+        const newSpaceId = overItem.id;
+        if (newSpaceId && activeItem.spaceId !== newSpaceId) {
+          await moveItemAction({ id: activeItem.id, newSpaceId });
         }
       }
+      // Scenario 3: Creating a folder by dropping a bookmark on another bookmark
+      else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+        await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, overItem.id] });
+      }
+      // Scenario 4: Moving a bookmark into a folder
+      else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overItem.id) {
+        await moveItemAction({ id: activeItem.id, newParentId: overItem.id });
+      }
+  
       await refreshAllData();
     } catch (e) {
       console.error("Drag end error:", e);
