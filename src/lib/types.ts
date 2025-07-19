@@ -48,27 +48,29 @@ export interface AppInfo {
   logo: string;
 }
 
-export interface ToolsAiSummary {
-  apiAvailable: boolean;
-  category: string;
-  concepts: string[];
-  derivedLink: string;
-  name: string;
-  summary: string;
-  tags: string[];
-  useCases: string[];
-}
+export const ToolsAiSummarySchema = z.object({
+    apiAvailable: z.boolean(),
+    category: z.string(),
+    concepts: z.array(z.string()),
+    derivedLink: z.string(),
+    name: z.string(),
+    summary: z.string(),
+    tags: z.array(z.string()),
+    useCases: z.array(z.string()),
+});
+export type ToolsAiSummary = z.infer<typeof ToolsAiSummarySchema>;
 
-export interface ToolsAi {
-  id: string;
-  name: string;
-  link: string;
-  category: string;
-  source: string;
-  summary: ToolsAiSummary;
-  deleted: boolean;
-  brand: string;
-}
+export const ToolsAiSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  link: z.string(),
+  category: z.string(),
+  source: z.string(),
+  summary: ToolsAiSummarySchema,
+  deleted: z.boolean(),
+  brand: z.string(),
+});
+export type ToolsAi = z.infer<typeof ToolsAiSchema>;
 
 // Types for AI Workspace Generation
 export const AIBookmarkSchema = z.object({
@@ -183,6 +185,7 @@ export const ChatInSpaceInputSchema = z.object({
       spaceName: z.string(),
       bookmarks: z.array(BookmarkSchemaForAnalysis)
     }),
+    libraryTools: z.array(ToolsAiSchema),
     question: z.string(),
 });
 export type ChatInSpaceInput = z.infer<typeof ChatInSpaceInputSchema>;

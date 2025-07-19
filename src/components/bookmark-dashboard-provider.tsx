@@ -589,6 +589,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             note={viewingNote}
             space={spaces.find(s => s.id === viewingNote.spaceId)!}
             spaceBookmarks={items.filter(i => i.spaceId === viewingNote.spaceId && i.type === 'bookmark') as Bookmark[]}
+            libraryTools={tools}
             onOpenChange={(open) => !open && setViewingNote(null)}
             onNoteUpdated={handleNoteUpdate}
         />}
@@ -599,6 +600,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         {analyzingSpace && <AnalyzeSpaceDialog 
             space={analyzingSpace} 
             spaceBookmarks={items.filter(i => i.spaceId === analyzingSpace.id && i.type === 'bookmark') as Bookmark[]}
+            libraryTools={tools}
             analysisResult={analysisResult} 
             isLoadingAnalysis={isAnalyzing}
             onOpenChange={(open) => { if (!open) { setAnalyzingSpace(null); setAnalysisResult(null); } }} 

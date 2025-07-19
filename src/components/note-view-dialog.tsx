@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Bookmark, Space, ChatMessage } from '@/lib/types';
+import type { Bookmark, Space, ChatMessage, ToolsAi } from '@/lib/types';
 import { chatInSpaceAction } from '@/app/actions';
 import {
   Dialog,
@@ -21,6 +21,7 @@ interface NoteViewDialogProps {
   note: Bookmark;
   space: Space;
   spaceBookmarks: Bookmark[];
+  libraryTools: ToolsAi[];
   onOpenChange: (open: boolean) => void;
   onNoteUpdated: (id: string, title: string, summary: string) => void;
 }
@@ -69,7 +70,7 @@ const ChatMessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
     );
 };
 
-export function NoteViewDialog({ note, space, spaceBookmarks, onOpenChange, onNoteUpdated }: NoteViewDialogProps) {
+export function NoteViewDialog({ note, space, spaceBookmarks, libraryTools, onOpenChange, onNoteUpdated }: NoteViewDialogProps) {
     const [messages, setMessages] = React.useState<ChatMessage[]>([]);
     const [input, setInput] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
@@ -130,6 +131,7 @@ export function NoteViewDialog({ note, space, spaceBookmarks, onOpenChange, onNo
                     spaceName: space.name,
                     bookmarks: spaceBookmarks.map(b => ({ title: b.title, summary: b.summary }))
                 },
+                libraryTools,
                 question: input,
             });
             const finalMessages = [...newMessages, { role: 'model', content: result.answer }];

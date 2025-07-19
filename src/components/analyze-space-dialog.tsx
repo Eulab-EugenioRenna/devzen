@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Space, AnalyzeSpaceOutput, ChatMessage, Bookmark } from '@/lib/types';
+import type { Space, AnalyzeSpaceOutput, ChatMessage, Bookmark, ToolsAi } from '@/lib/types';
 import { chatInSpaceAction, saveChatAsNoteAction } from '@/app/actions';
 import {
   Dialog,
@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 interface AnalyzeSpaceDialogProps {
   space: Space;
   spaceBookmarks: Bookmark[];
+  libraryTools: ToolsAi[];
   analysisResult: AnalyzeSpaceOutput | null;
   onOpenChange: (open: boolean) => void;
   isLoadingAnalysis: boolean;
@@ -74,7 +75,7 @@ const ChatMessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
 };
 
 
-const ChatInterface: React.FC<{ space: Space; spaceBookmarks: Bookmark[]; initialAnalysis: AnalyzeSpaceOutput; onNoteSaved: () => void; }> = ({ space, spaceBookmarks, initialAnalysis, onNoteSaved }) => {
+const ChatInterface: React.FC<{ space: Space; spaceBookmarks: Bookmark[]; libraryTools: ToolsAi[]; initialAnalysis: AnalyzeSpaceOutput; onNoteSaved: () => void; }> = ({ space, spaceBookmarks, libraryTools, initialAnalysis, onNoteSaved }) => {
     const [messages, setMessages] = React.useState<ChatMessage[]>([
         { role: 'model', content: "Ecco un'analisi del tuo spazio. Chiedimi qualsiasi cosa sul suo contenuto!" }
     ]);
@@ -105,6 +106,7 @@ const ChatInterface: React.FC<{ space: Space; spaceBookmarks: Bookmark[]; initia
                     spaceName: space.name,
                     bookmarks: spaceBookmarks.map(b => ({ title: b.title, summary: b.summary }))
                 },
+                libraryTools,
                 question: input,
             });
             setMessages(prev => [...prev, { role: 'model', content: result.answer }]);
@@ -230,7 +232,7 @@ const ChatInterface: React.FC<{ space: Space; spaceBookmarks: Bookmark[]; initia
 };
 
 
-export function AnalyzeSpaceDialog({ space, spaceBookmarks, analysisResult, onOpenChange, isLoadingAnalysis, onNoteSaved }: AnalyzeSpaceDialogProps) {
+export function AnalyzeSpaceDialog({ space, spaceBookmarks, libraryTools, analysisResult, onOpenChange, isLoadingAnalysis, onNoteSaved }: AnalyzeSpaceDialogProps) {
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl h-[80vh] flex flex-col p-6">
@@ -250,7 +252,7 @@ export function AnalyzeSpaceDialog({ space, spaceBookmarks, analysisResult, onOp
             </div>
             </>
           ) : analysisResult ? (
-            <ChatInterface space={space} spaceBookmarks={spaceBookmarks} initialAnalysis={analysisResult} onNoteSaved={onNoteSaved} />
+            <ChatInterface space={space} spaceBookmarks={spaceBookmarks} libraryTools={libraryTools} initialAnalysis={analysisResult} onNoteSaved={onNoteSaved} />
           ) : (
              <>
             <DialogHeader>
