@@ -4,8 +4,8 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { addBookmarkAction, suggestSpaceForUrlAction } from '@/app/actions';
-import type { Bookmark, Space } from '@/lib/types';
+import { suggestSpaceForUrlAction } from '@/app/actions';
+import type { Space } from '@/lib/types';
 
 import {
   Dialog,
@@ -35,7 +35,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wand2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const bookmarkSchema = z.object({
   title: z.string().min(1, { message: 'Il titolo è obbligatorio.' }),
@@ -47,7 +47,7 @@ interface AddBookmarkDialogProps {
   children: React.ReactNode;
   activeSpaceId: string;
   spaces: Space[];
-  onBookmarkAdded: (bookmark: Bookmark) => void;
+  onBookmarkAdded: (values: {title: string, url: string, spaceId: string}) => Promise<void>;
 }
 
 export function AddBookmarkDialog({
@@ -110,11 +110,11 @@ export function AddBookmarkDialog({
         url = `https://${url}`;
       }
       
-      const newBookmark = await addBookmarkAction({
+      await onBookmarkAdded({
         ...values,
         url,
       });
-      onBookmarkAdded(newBookmark);
+
       setIsOpen(false);
       form.reset();
     } catch (error) {

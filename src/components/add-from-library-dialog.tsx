@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { addBookmarkFromLibraryAction } from '@/app/actions';
-import type { ToolsAi, Bookmark } from '@/lib/types';
+import type { ToolsAi } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
@@ -26,29 +24,18 @@ import {
 
 interface AddFromLibraryDialogProps {
   onOpenChange: (open: boolean) => void;
-  activeSpaceId: string;
-  onBookmarkAdded: (bookmark: Bookmark) => void;
+  onBookmarkAdded: (tool: ToolsAi) => void;
   tools: ToolsAi[];
 }
 
-export function AddFromLibraryDialog({ onOpenChange, activeSpaceId, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
+export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isAdding, setIsAdding] = React.useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleAddTool = async (tool: ToolsAi) => {
     setIsAdding(tool.id);
-    try {
-      const newBookmark = await addBookmarkFromLibraryAction({ toolId: tool.id, spaceId: activeSpaceId });
-      onBookmarkAdded(newBookmark);
-      toast({ title: 'Segnalibro Importato', description: `"${tool.name}" è stato importato nel tuo spazio.` });
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
-      toast({ variant: 'destructive', title: 'Errore', description: `Impossibile importare il segnalibro: ${errorMessage}` });
-    } finally {
-      setIsAdding(null);
-    }
+    await onBookmarkAdded(tool);
+    setIsAdding(null);
   };
 
   const filteredTools = tools.filter(tool => {

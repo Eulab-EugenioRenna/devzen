@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import type { Bookmark, SpaceItem } from '@/lib/types';
-import { customizeItemAction } from '@/app/actions';
 
 import {
   Dialog,
@@ -27,7 +26,6 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const customizeSchema = z.object({
@@ -41,7 +39,7 @@ const customizeSchema = z.object({
 interface CustomizeItemDialogProps {
   item: SpaceItem;
   onOpenChange: (open: boolean) => void;
-  onItemUpdated: (item: SpaceItem) => void;
+  onItemUpdated: (data: z.infer<typeof customizeSchema>) => void;
 }
 
 export function CustomizeItemDialog({
@@ -49,7 +47,6 @@ export function CustomizeItemDialog({
   onOpenChange,
   onItemUpdated,
 }: CustomizeItemDialogProps) {
-  const { toast } = useToast();
   const isBookmark = item.type === 'bookmark';
 
   const form = useForm<z.infer<typeof customizeSchema>>({
@@ -66,26 +63,16 @@ export function CustomizeItemDialog({
   const { isSubmitting } = form.formState;
 
   const onSubmit = async (values: z.infer<typeof customizeSchema>) => {
-    try {
-      const updatedItem = await customizeItemAction({
-        id: item.id,
-        backgroundColor: values.backgroundColor,
-        textColor: values.textColor,
-        icon: isBookmark ? values.icon : undefined,
-        iconUrl: isBookmark ? values.iconUrl : undefined,
-        iconColor: isBookmark ? values.iconColor : undefined,
-      });
-      onItemUpdated(updatedItem);
-      onOpenChange(false);
-    } catch (error) {
-      console.error(error);
-      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
-      toast({
-        variant: 'destructive',
-        title: 'Errore',
-        description: `Impossibile aggiornare la personalizzazione: ${errorMessage}`,
-      });
+    const dataToSubmit: any = {
+      backgroundColor: values.backgroundColor,
+      textColor: values.textColor,
+    };
+    if (isBookmark) {
+        dataToSubmit.icon = values.icon;
+        dataToSubmit.iconUrl = values.iconUrl;
+        dataToSubmit.iconColor = values.iconColor;
     }
+    await onItemUpdated(dataToSubmit);
   };
 
   const itemName = item.type === 'bookmark' ? item.title : item.name;

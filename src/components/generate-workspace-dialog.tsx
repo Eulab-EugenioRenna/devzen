@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { generateWorkspaceAction, createWorkspaceFromJsonAction } from '@/app/actions';
-import type { Space, SpaceItem } from '@/lib/types';
-
 import {
   Dialog,
   DialogContent,
@@ -36,7 +34,7 @@ const workspaceSchema = z.object({
 
 interface GenerateWorkspaceDialogProps {
   onOpenChange: (open: boolean) => void;
-  onWorkspaceGenerated: (newSpaces: Space[], newItems: SpaceItem[]) => void;
+  onWorkspaceGenerated: () => void;
 }
 
 export function GenerateWorkspaceDialog({
@@ -55,10 +53,9 @@ export function GenerateWorkspaceDialog({
   const onSubmit = async (values: z.infer<typeof workspaceSchema>) => {
     try {
       const workspaceJson = await generateWorkspaceAction(values.prompt);
+      await createWorkspaceFromJsonAction(workspaceJson);
       
-      const { newSpaces, newItems } = await createWorkspaceFromJsonAction(workspaceJson);
-      
-      onWorkspaceGenerated(newSpaces, newItems);
+      onWorkspaceGenerated();
       onOpenChange(false);
       
       toast({

@@ -4,7 +4,6 @@ import * as React from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { updateBookmarkAction } from '@/app/actions';
 import type { Bookmark } from '@/lib/types';
 
 import {
@@ -37,7 +36,7 @@ const bookmarkSchema = z.object({
 interface EditBookmarkDialogProps {
   bookmark: Bookmark;
   onOpenChange: (open: boolean) => void;
-  onBookmarkUpdated: (bookmark: Bookmark) => void;
+  onBookmarkUpdated: (bookmark: Partial<Bookmark>) => void;
 }
 
 export function EditBookmarkDialog({
@@ -64,15 +63,13 @@ export function EditBookmarkDialog({
         url = `https://${url}`;
       }
 
-      const updatedBookmark = await updateBookmarkAction({
-        id: bookmark.id,
+      await onBookmarkUpdated({
         title: values.title,
         url,
       });
-      onBookmarkUpdated(updatedBookmark);
       toast({
         title: 'Segnalibro aggiornato!',
-        description: `"${updatedBookmark.title}" è stato salvato.`,
+        description: `"${values.title}" è stato salvato.`,
        });
     } catch (error) {
       console.error(error);

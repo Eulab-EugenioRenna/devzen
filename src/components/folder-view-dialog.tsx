@@ -40,15 +40,16 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
   const [bookmarks, setBookmarks] = React.useState(folder.items);
   const [deletingBookmark, setDeletingBookmark] = React.useState<Bookmark | null>(null);
 
+  React.useEffect(() => {
+    setBookmarks(folder.items)
+  }, [folder.items])
+
   const handleRemoveFromFolder = async (bookmark: Bookmark) => {
-    const originalBookmarks = bookmarks;
-    setBookmarks(prev => prev.filter(b => b.id !== bookmark.id));
     try {
       const movedItem = await moveItemAction({ id: bookmark.id, newParentId: null });
       onItemMove(movedItem);
       toast({ title: 'Segnalibro spostato', description: `"${bookmark.title}" spostato alla radice dello spazio.` });
     } catch (e) {
-      setBookmarks(originalBookmarks);
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare il segnalibro.' });
     }
   };
@@ -57,7 +58,6 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
     if (!deletingBookmark) return;
     const bookmarkToDelete = deletingBookmark;
     setDeletingBookmark(null);
-    setBookmarks(prev => prev.filter(b => b.id !== bookmarkToDelete.id));
     try {
         await onItemDelete(bookmarkToDelete.id, 'bookmark');
     } catch(e) {

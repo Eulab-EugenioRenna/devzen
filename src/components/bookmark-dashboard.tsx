@@ -11,6 +11,8 @@ import {
 } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 import {
+  addBookmarkAction,
+  updateBookmarkAction,
   deleteItemAction,
   moveItemAction,
   createFolderAction,
@@ -19,11 +21,14 @@ import {
   deleteSpaceAction,
   updateFolderNameAction,
   updateAppInfoAction,
+  addBookmarkFromLibraryAction,
   createWorkspaceFromJsonAction,
   exportWorkspaceAction,
   smartSearchAction,
   analyzeSpaceAction,
   suggestSpaceForUrlAction,
+  getItemsAction,
+  getSpacesAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -55,7 +60,7 @@ import { Input } from './ui/input';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
 import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
-import { recordToToolAi, recordToSpaceItem } from '@/lib/data-mappers';
+import { recordToToolAi } from '@/lib/data-mappers';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { Separator } from './ui/separator';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
@@ -179,90 +184,44 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const { toast } = useToast();
 
+  const refreshAllData = React.useCallback(async () => {
+    const [refreshedSpaces, refreshedItems] = await Promise.all([
+      getSpacesAction(),
+      getItemsAction()
+    ]);
+    setSpaces(refreshedSpaces);
+    setItems(refreshedItems);
+  }, []);
+
+  const refreshItems = React.useCallback(async () => {
+    setItems(await getItemsAction());
+  }, []);
+
+  const refreshSpaces = React.useCallback(async () => {
+    setSpaces(await getSpacesAction());
+  }, []);
+
+
   React.useEffect(() => {
     setIsMounted(true);
     // Real-time subscriptions are only set up on the client
-    const handleItemUpdate = (e: { action: string; record: any }) => {
-      try {
-        const item = recordToSpaceItem(e.record);
-        if (!item) return;
-
-        setItems((currentItems) => {
-          if (e.action === 'delete') {
-            return currentItems.filter((i) => i.id !== item.id);
-          }
-          const existingIndex = currentItems.findIndex((i) => i.id === item.id);
-          if (existingIndex > -1) {
-            const newItems = [...currentItems];
-            newItems[existingIndex] = item;
-            return newItems;
-          }
-          if (currentItems.some(i => i.id === item.id)) return currentItems;
-          return [...currentItems, item];
-        });
-      } catch (error) {
-        console.error('Errore durante l\'elaborazione dell\'aggiornamento in tempo reale dell\'elemento:', error);
-      }
+    
+    const handleSubscriptionChange = () => {
+        // Simple refetch on any change.
+        refreshAllData();
     };
     
-    const handleSpaceUpdate = (e: { action: string; record: any }) => {
-      try {
-        const space: Space = { id: e.record.id, name: e.record.name, icon: e.record.icon };
-        if (!space) return;
-
-        setSpaces((currentSpaces) => {
-          if (e.action === 'delete') {
-            return currentSpaces.filter((s) => s.id !== space.id);
-          }
-          const existingIndex = currentSpaces.findIndex((s) => s.id === space.id);
-          if (existingIndex > -1) {
-            const newSpaces = [...currentSpaces];
-            newSpaces[existingIndex] = space;
-            return newSpaces;
-          }
-          // Only add if it doesn't exist to avoid duplicates from optimistic updates
-          if (currentSpaces.some(s => s.id === space.id)) return currentSpaces;
-          return [...currentSpaces, space];
-        });
-      } catch (error) {
-        console.error('Errore durante l\'elaborazione dell\'aggiornamento in tempo reale dello spazio:', error);
-      }
-    };
-
-    const handleToolUpdate = (e: { action: string; record: any }) => {
-      try {
-        const tool = recordToToolAi(e.record);
-        if (!tool) return;
-
-        setTools((currentTools) => {
-          if (e.action === 'delete' || tool.deleted) {
-            return currentTools.filter((t) => t.id !== tool.id);
-          }
-          const existingIndex = currentTools.findIndex((t) => t.id === tool.id);
-          if (existingIndex > -1) {
-            const newTools = [...currentTools];
-            newTools[existingIndex] = tool;
-            return newTools;
-          } else {
-            return [tool, ...currentTools];
-          }
-        });
-      } catch (error) {
-        console.error("Errore durante l'elaborazione dell'aggiornamento in tempo reale dello strumento:", error);
-      }
-    };
-    
-    const connectWithRetry = async (subscribeFn: () => Promise<() => void>, name: string) => {
+    const connectWithRetry = async (collectionName: string) => {
         try {
-            return await subscribeFn();
+            return await pb.collection(collectionName).subscribe('*', handleSubscriptionChange);
         } catch (err: any) {
-            console.error(`Impossibile iscriversi alla collezione ${name}:`, err?.originalError || err);
+            console.error(`Impossibile iscriversi alla collezione ${collectionName}:`, err?.originalError || err);
         }
     };
 
-    connectWithRetry(() => pb.collection(bookmarksCollectionName).subscribe('*', handleItemUpdate), 'bookmarks');
-    connectWithRetry(() => pb.collection(spacesCollectionName).subscribe('*', handleSpaceUpdate), 'spaces');
-    connectWithRetry(() => pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate), 'tools');
+    connectWithRetry(bookmarksCollectionName);
+    connectWithRetry(spacesCollectionName);
+    connectWithRetry(toolsAiCollectionName);
 
 
     return () => {
@@ -270,7 +229,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       pb.collection(spacesCollectionName).unsubscribe('*');
       pb.collection(toolsAiCollectionName).unsubscribe('*');
     };
-  }, []);
+  }, [refreshAllData]);
   
   React.useEffect(() => {
     if (spaces.length > 0 && !spaces.find(s => s.id === activeSpaceId)) {
@@ -369,56 +328,57 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
-  const handleAddBookmark = (newBookmark: Bookmark) => {
-    setItems((prev) => [newBookmark, ...prev]);
-    toast({
-      title: 'Segnalibro aggiunto!',
-      description: `"${newBookmark.title}" è stato salvato.`,
-    });
+  const handleAddBookmark = async (values: {title: string, url: string, spaceId: string}) => {
+    try {
+        await addBookmarkAction(values);
+        await refreshItems();
+        toast({
+            title: 'Segnalibro aggiunto!',
+            description: `"${values.title}" è stato salvato.`,
+        });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+        throw error;
+    }
   };
   
-  const handleItemUpdate = (updatedItem: SpaceItem) => {
-    setItems((prev) => prev.map((i) => (i.id === updatedItem.id ? updatedItem : i)));
-    if (editingBookmark && editingBookmark.id === updatedItem.id) setEditingBookmark(null);
-    if (customizingItem && customizingItem.id === updatedItem.id) setCustomizingItem(null);
+  const handleItemUpdate = async (updatedItem: Partial<Bookmark>) => {
+    try {
+        await updateBookmarkAction({id: editingBookmark!.id, ...updatedItem});
+        await refreshItems();
+        setEditingBookmark(null);
+        if (customizingItem) setCustomizingItem(null);
+    } catch(e) {
+        const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
+        toast({ variant: "destructive", title: "Errore di aggiornamento", description: errorMessage });
+    }
+  };
+
+  const handleCustomizeItem = async (customizationData: any) => {
+    try {
+        await customizeItemAction({ id: customizingItem!.id, ...customizationData });
+        await refreshItems();
+        setCustomizingItem(null);
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+        toast({
+          variant: 'destructive',
+          title: 'Errore',
+          description: `Impossibile aggiornare la personalizzazione: ${errorMessage}`,
+        });
+    }
   };
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
-    const originalItems = [...items];
-    const itemToDelete = originalItems.find((i) => i.id === id);
-    if (!itemToDelete) return;
-  
-    setItems((currentItems) => {
-      let newItems = currentItems.filter((i) => i.id !== id);
-      if (type === 'folder') {
-        newItems = newItems.map((i) => {
-          if (i.parentId === id) {
-            return { ...i, parentId: null };
-          }
-          return i;
-        });
-      }
-      return newItems;
-    });
-  
     try {
-      const result = await deleteItemAction({ id });
-  
-      if (result.success && result.updatedBookmarks) {
-        setItems((currentItems) => {
-          const updatedMap = new Map(result.updatedBookmarks?.map(b => [b.id, b]));
-          return currentItems
-            .filter(i => i.id !== id) // Ensure folder is removed
-            .map(i => updatedMap.get(i.id) || i); // Replace with updated bookmarks
+        await deleteItemAction({ id });
+        await refreshItems();
+        toast({
+            title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
+            description: `Rimosso con successo.`,
         });
-      }
-  
-      toast({
-        title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
-        description: `Rimosso con successo.`,
-      });
     } catch (error) {
-      setItems(originalItems); // Revert on error
       console.error(`Impossibile eliminare ${type}`, error);
       toast({
         variant: 'destructive',
@@ -429,12 +389,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   };
 
   const handleUpdateFolderName = async (id: string, name: string) => {
-    const originalFolder = items.find(i => i.id === id);
-    setItems(prev => prev.map(i => i.id === id ? { ...i, name } : i));
     try {
       await updateFolderNameAction({ id, name });
+      await refreshItems();
     } catch (e) {
-      if (originalFolder) setItems(prev => prev.map(i => i.id === id ? originalFolder : i));
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile rinominare la cartella.' });
     }
   }
@@ -451,131 +409,110 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const activeItem = active.data.current?.item as SpaceItem;
     const overId = over.id;
     
-    const overIsSpace = spaces.some(s => s.id === overId);
-    if (overIsSpace && activeItem.spaceId !== overId) {
-      setItems(prev => prev.map(i => i.id === active.id ? {...i, spaceId: String(overId), parentId: null} : i));
-      try {
-        await moveItemAction({ id: String(active.id), newSpaceId: String(overId) });
-      } catch (e) {
-        setItems(prev => prev.map(i => i.id === active.id ? {...i, spaceId: activeItem.spaceId } : i));
-        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-      }
-      return;
-    }
+    try {
+        const overIsSpace = spaces.some(s => s.id === overId);
+        if (overIsSpace && activeItem.spaceId !== overId) {
+            await moveItemAction({ id: String(active.id), newSpaceId: String(overId) });
+        } else {
+            const overItem = items.find(i => i.id === over.id);
+            if (!overItem) return;
 
-    const overItem = items.find(i => i.id === over.id);
-    if (!overItem) return;
-
-    if (activeItem.type === 'bookmark' && overItem.type === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-       const originalItems = items;
-       setItems(prev => prev.filter(i => i.id !== active.id && i.id !== over.id));
-       try {
-        const { folder, bookmarks } = await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [String(active.id), String(over.id)] });
-        setItems(prev => [...prev.filter(i => !bookmarks.find(b => b.id === i.id)), folder, ...bookmarks]);
-       } catch (e) {
-         setItems(originalItems);
-         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile creare la cartella.' });
-       }
-       return;
-    }
-    
-    if (activeItem.type === 'bookmark' && overItem.type === 'folder' && activeItem.parentId !== overItem.id) {
-        setItems(prev => prev.map(i => i.id === active.id ? {...i, parentId: String(over.id)} : i));
-        try {
-            await moveItemAction({ id: String(active.id), newParentId: String(over.id) });
-        } catch (e) {
-            setItems(prev => prev.map(i => i.id === active.id ? {...i, parentId: activeItem.parentId } : i));
-            toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento nella cartella.' });
+            if (activeItem.type === 'bookmark' && overItem.type === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+                await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [String(active.id), String(over.id)] });
+            } else if (activeItem.type === 'bookmark' && overItem.type === 'folder' && activeItem.parentId !== overItem.id) {
+                await moveItemAction({ id: String(active.id), newParentId: String(over.id) });
+            }
         }
+        await refreshItems(); // Refetch after any drop
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
+        await refreshItems(); // Refetch even on error to revert UI
     }
   };
 
   const handleSpaceSave = async (spaceData: { name: string, icon: string }, id?: string) => {
-    if (id) {
-      const originalSpaces = spaces;
-      setSpaces(prev => prev.map(s => s.id === id ? { ...s, ...spaceData } : s));
-      setEditingSpace(null);
-      try {
-        await updateSpaceAction({ id, data: spaceData });
-        toast({ title: 'Spazio aggiornato!', description: `"${spaceData.name}" è stato salvato.`});
-      } catch (error) {
-        setSpaces(originalSpaces);
-        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile aggiornare lo spazio.' });
-      }
-    } else {
-        setIsAddingSpace(false);
-        try {
+    try {
+        if (id) {
+            await updateSpaceAction({ id, data: spaceData });
+            toast({ title: 'Spazio aggiornato!', description: `"${spaceData.name}" è stato salvato.`});
+        } else {
             const newSpace = await createSpaceAction(spaceData);
-            setSpaces((prev) => [...prev, newSpace]);
             setActiveSpaceId(newSpace.id);
             toast({ title: 'Spazio creato!', description: `"${spaceData.name}" è stato aggiunto.`});
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile creare lo spazio.' });
         }
+        await refreshSpaces();
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Errore', description: `Impossibile salvare lo spazio.` });
+    } finally {
+        setIsAddingSpace(false);
+        setEditingSpace(null);
     }
   };
 
   const handleConfirmDeleteSpace = async () => {
     if (!deletingSpace) return;
-    const spaceToDelete = deletingSpace;
-    const originalSpaces = spaces;
-    const originalItems = items;
-
-    setSpaces(prev => prev.filter(s => s.id !== spaceToDelete.id));
-    setItems(prev => prev.filter(i => i.spaceId !== spaceToDelete.id));
-    setDeletingSpace(null);
-
+    const spaceName = deletingSpace.name;
     try {
-      await deleteSpaceAction({ id: spaceToDelete.id });
-      toast({ title: 'Spazio Eliminato', description: `"${spaceToDelete.name}" e tutti i suoi contenuti sono stati rimossi.` });
+      await deleteSpaceAction({ id: deletingSpace.id });
+      await refreshAllData(); // Refresh both spaces and items
+      toast({ title: 'Spazio Eliminato', description: `"${spaceName}" e tutti i suoi contenuti sono stati rimossi.` });
     } catch (error) {
-      setSpaces(originalSpaces);
-      setItems(originalItems);
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare lo spazio.' });
+    } finally {
+        setDeletingSpace(null);
     }
   };
   
-  const handleItemMove = (updatedItem: SpaceItem) => {
-    setItems(prev => prev.map(i => i.id === updatedItem.id ? updatedItem : i));
+  const handleItemMove = async (item: SpaceItem) => {
+    await refreshItems();
   };
   
   const handleAppInfoSave = async (formData: FormData) => {
-    setIsEditingAppInfo(false);
     try {
         const updatedInfo = await updateAppInfoAction(appInfo.id, formData);
         setAppInfo(updatedInfo);
+        setIsEditingAppInfo(false);
         toast({ title: 'Info app aggiornate!', description: 'Il nome e l\'icona della tua applicazione sono stati cambiati.'});
     } catch (e) {
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile aggiornare le info dell\'app.' });
     }
   }
 
-    const handleWorkspaceGenerated = (newSpaces: Space[], newItems: SpaceItem[]) => {
-        setSpaces(prev => [...prev, ...newSpaces]);
-        setItems(prev => [...prev, ...newItems]);
-        if (newSpaces.length > 0) {
-            setActiveSpaceId(newSpaces[0].id);
+  const handleWorkspaceGenerated = async () => {
+    await refreshAllData();
+  };
+
+  const handleExport = async () => {
+    try {
+        const jsonString = await exportWorkspaceAction(spaces.map(s => s.id));
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'workspace.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast({ title: 'Esportazione Riuscita', description: 'Il tuo spazio di lavoro è stato scaricato come file JSON.' });
+    } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Esportazione Fallita', description: 'Impossibile esportare il tuo spazio di lavoro.' });
+    }
+  };
+
+    const handleAddFromLibrary = async (tool: ToolsAi) => {
+        try {
+            await addBookmarkFromLibraryAction({ toolId: tool.id, spaceId: activeSpaceId });
+            await refreshItems();
+            toast({ title: 'Segnalibro Importato', description: `"${tool.name}" è stato importato nel tuo spazio.` });
+        } catch (error) {
+            console.error(error);
+            const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
+            toast({ variant: 'destructive', title: 'Errore', description: `Impossibile importare il segnalibro: ${errorMessage}` });
         }
     };
 
-    const handleExport = async () => {
-        try {
-            const jsonString = await exportWorkspaceAction(spaces.map(s => s.id));
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'workspace.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            toast({ title: 'Esportazione Riuscita', description: 'Il tuo spazio di lavoro è stato scaricato come file JSON.' });
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Esportazione Fallita', description: 'Impossibile esportare il tuo spazio di lavoro.' });
-        }
-    };
 
   const isLogoUrl = appInfo.logo?.startsWith('http');
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
@@ -838,7 +775,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         <CustomizeItemDialog
             item={customizingItem}
             onOpenChange={(open) => !open && setCustomizingItem(null)}
-            onItemUpdated={handleItemUpdate}
+            onItemUpdated={handleCustomizeItem}
         />
       )}
       {isEditingAppInfo && (
@@ -852,7 +789,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         <AddFromLibraryDialog 
             tools={tools} 
             activeSpaceId={activeSpaceId} 
-            onBookmarkAdded={handleAddBookmark}
+            onBookmarkAdded={handleAddFromLibrary}
             onOpenChange={setIsAddingFromLibrary}
         />
       )}

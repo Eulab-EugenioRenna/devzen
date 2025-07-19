@@ -5,10 +5,57 @@ import { generateWorkspace } from '@/ai/flows/generate-workspace';
 import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput } from '@/lib/types';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
+
+// ===== Data Fetching Actions =====
+
+function recordToSpace(record: RecordModel): Space {
+    return {
+        id: record.id,
+        name: record.name,
+        icon: record.icon,
+    };
+}
+
+export async function getSpacesAction(): Promise<Space[]> {
+  try {
+    const records = await pb.collection(spacesCollectionName).getFullList({
+      sort: 'created',
+    });
+    return records.map(recordToSpace);
+  } catch (error: any) {
+    console.error('Failed to fetch spaces:', error.response || error);
+    if (error?.status === 404) {
+        console.warn(`Warning: The collection "${spacesCollectionName}" was not found. You can create some via the UI.`);
+    } else if (error?.originalError) {
+        console.error('Underlying connection error:', error.originalError);
+    }
+    return [];
+  }
+}
+
+export async function getItemsAction(): Promise<SpaceItem[]> {
+  try {
+    const records = await pb.collection(bookmarksCollectionName).getFullList({
+      sort: '-created',
+    });
+    return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
+  } catch (error: any) {
+    console.error('Failed to fetch items:', error.response || error);
+    if (error?.status === 404) {
+        console.warn(`Warning: The collection "${bookmarksCollectionName}" was not found in your PocketBase instance. Please create it to store bookmarks and folders.`);
+    } else if (error?.originalError) {
+        console.error('Underlying connection error:', error.originalError);
+    }
+    return [];
+  }
+}
+
+
+// ===== Bookmark & Folder Actions =====
 
 export async function addBookmarkAction({
   title,
@@ -104,7 +151,7 @@ export async function updateBookmarkAction({
   return updatedBookmark as Bookmark;
 }
 
-export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean, updatedBookmarks?: Bookmark[] }> {
+export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean }> {
   const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id);
 
   if (itemToDelete.tool.type === 'folder') {
@@ -117,18 +164,11 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
       return pb.collection(bookmarksCollectionName).update(bm.id, data);
     });
     
-    const updatedRecords = await Promise.all(updatePromises);
-    const updatedBookmarks = updatedRecords
-        .map(recordToSpaceItem)
-        .filter((item): item is Bookmark => !!item && item.type === 'bookmark');
-    
-    await pb.collection(bookmarksCollectionName).delete(id);
-    return { success: true, updatedBookmarks };
-
-  } else {
-    await pb.collection(bookmarksCollectionName).delete(id);
-    return { success: true };
+    await Promise.all(updatePromises);
   }
+  
+  await pb.collection(bookmarksCollectionName).delete(id);
+  return { success: true };
 }
 
 export async function createFolderAction({ spaceId, initialBookmarkIds }: { spaceId: string, initialBookmarkIds: string[] }): Promise<{ folder: Folder, bookmarks: Bookmark[] }> {
@@ -222,14 +262,6 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
 }
 
 // ===== Azioni Spazio =====
-
-function recordToSpace(record: RecordModel): Space {
-    return {
-        id: record.id,
-        name: record.name,
-        icon: record.icon,
-    };
-}
 
 export async function createSpaceAction(data: { name: string, icon: string }): Promise<Space> {
     const record = await pb.collection(spacesCollectionName).create(data);
