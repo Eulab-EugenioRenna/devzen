@@ -7,10 +7,11 @@ import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
 import { chatInSpace } from '@/ai/flows/chat-in-space';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput } from '@/lib/types';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
+import { format } from 'date-fns';
 
 // ===== Data Fetching Actions =====
 
@@ -661,4 +662,33 @@ export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<Anal
 export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatInSpaceOutput> {
     const result = await chatInSpace(input);
     return result;
+}
+
+export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: string, messages: ChatMessage[] }): Promise<Bookmark> {
+  const title = `Nota Chat - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+  const content = messages.map(msg => `**${msg.role === 'user' ? 'Tu' : 'AI'}:**\n${msg.content}`).join('\n\n---\n\n');
+  const url = `devzen:note:${Date.now()}`;
+
+  const data = {
+    tool: {
+      type: 'bookmark',
+      title: title,
+      url: url,
+      summary: content,
+      spaceId: spaceId,
+      icon: 'FileSignature',
+    },
+  };
+
+  try {
+    const record = await pb.collection(bookmarksCollectionName).create(data);
+    const newNote = recordToSpaceItem(record);
+    if (!newNote || newNote.type !== 'bookmark') {
+      throw new Error('Impossibile creare o mappare la nota dal nuovo record.');
+    }
+    return newNote as Bookmark;
+  } catch (e) {
+    console.error('Impossibile creare la nota in PocketBase', e);
+    throw new Error('Impossibile salvare la nota della chat.');
+  }
 }

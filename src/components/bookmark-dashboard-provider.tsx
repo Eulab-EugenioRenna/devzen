@@ -578,6 +578,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             analysisResult={analysisResult} 
             isLoadingAnalysis={isAnalyzing}
             onOpenChange={(open) => { if (!open) { setAnalyzingSpace(null); setAnalysisResult(null); } }} 
+            onNoteSaved={refreshItems}
         />}
         {linkingSpacesInfo && <AlertDialog open={!!linkingSpacesInfo} onOpenChange={(open) => !open && setLinkingSpacesInfo(null)}>
                   <AlertDialogContent>
