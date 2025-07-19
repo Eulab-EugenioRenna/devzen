@@ -70,39 +70,46 @@ function SidebarSpaceMenuItem({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: space.id });
   const Icon = getIcon(space.icon);
+  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
+
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    setIsContextMenuOpen(true);
+  }
 
   return (
-    <SidebarMenuItem
-      ref={setNodeRef}
-      className={cn(
-        'rounded-lg transition-colors',
-        isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
-      )}
-    >
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                    onClick={() => onClick(space.id)}
-                    isActive={isActive}
-                    tooltip={space.name}
-                    className="w-full"
-                >
-                    <Icon />
-                    <span>{space.name}</span>
-                </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                onClick={() => onDelete(space)}
-            >
-                Delete Space
-            </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    </SidebarMenuItem>
+    <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuItem
+          ref={setNodeRef}
+          onContextMenu={handleContextMenu}
+          className={cn(
+            'rounded-lg transition-colors',
+            isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
+          )}
+        >
+          <SidebarMenuButton
+              onClick={() => onClick(space.id)}
+              isActive={isActive}
+              tooltip={space.name}
+              className="w-full"
+          >
+              <Icon />
+              <span>{space.name}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+            className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+            onClick={() => onDelete(space)}
+        >
+            Delete Space
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -183,7 +190,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         console.error('Error processing real-time item update:', error);
       }
     };
-    const unsubscribeItems = pb.collection(bookmarksCollectionName).subscribe('*', handleItemUpdate);
+    
 
     const handleSpaceUpdate = (e: { action: string; record: any }) => {
       try {
@@ -200,14 +207,18 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             newSpaces[existingIndex] = space;
             return newSpaces;
           } else {
-            return [...currentSpaces, space];
+            // Only add if it doesn't exist to prevent duplication from optimistic updates
+            if (!currentSpaces.some(s => s.id === space.id)) {
+                return [...currentSpaces, space];
+            }
           }
+          return currentSpaces; // Return current state if no change is needed
         });
       } catch (error) {
         console.error('Error processing real-time space update:', error);
       }
     };
-    const unsubscribeSpaces = pb.collection(spacesCollectionName).subscribe('*', handleSpaceUpdate);
+    
 
     const handleToolUpdate = (e: { action: string; record: any }) => {
       try {
@@ -231,9 +242,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         console.error("Error processing real-time tool update:", error);
       }
     };
-    const unsubscribeTools = pb.collection(toolsAiCollectionName).subscribe('*', handleToolUpdate);
-
-    const subscriptions = [unsubscribeItems, unsubscribeSpaces, unsubscribeTools];
+    
 
     const connectWithRetry = async (subscribeFn: () => Promise<() => void>, name: string) => {
         try {
@@ -346,7 +355,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
       if (result.success && type === 'folder' && result.updatedBookmarks) {
         const updatedBookmarkIds = new Set(result.updatedBookmarks.map(b => b.id));
-        // Remove old versions of the bookmarks
+        // Filter out old versions of bookmarks that are now updated
         newItems = newItems.filter(i => !updatedBookmarkIds.has(i.id));
         // Add the updated bookmarks
         newItems.push(...result.updatedBookmarks);
