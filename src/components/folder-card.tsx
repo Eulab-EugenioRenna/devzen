@@ -154,8 +154,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
   if (isOverlay) {
     return (
         <Card
-            className={cn("flex w-64 items-center gap-4 p-3 shadow-2xl", isDragging && "opacity-50")}
-            style={{width: '256px'}}
+            className={cn("flex w-64 items-center gap-4 p-3 shadow-2xl")}
         >
             {folderIcon}
             <div className="flex-1 overflow-hidden">
@@ -206,7 +205,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                   </CardTitle>
                 )}
                 <CardDescription className="mt-1 text-xs px-1">
-                    {cardDescriptionText}
+                  {isLink ? "Collegamento a Spazio" : `${(folder as Folder).items.length} elemento/i`}
                 </CardDescription>
             </div>
              <div className="flex items-center ml-auto pt-2">
@@ -281,7 +280,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             )}
           </div>
           <CardDescription className="mt-1 text-xs">
-            {cardDescriptionText}
+            {isLink ? "Collegamento a Spazio" : `${(folder as Folder).items.length} elemento/i`}
           </CardDescription>
         
             <CardContent className="p-0 pt-4 flex-1">
@@ -355,3 +354,4 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     </div>
   );
 }
+

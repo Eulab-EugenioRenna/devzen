@@ -89,7 +89,7 @@ function SidebarSpaceMenuItem({
   });
 
    const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
-    id: space.id,
+    id: `space-drag-${space.id}`,
     data: { type: 'space', item: space },
   });
 
@@ -422,13 +422,14 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const handleDragEnd = async (event: DragEndEvent) => {
     setDraggedItem(null);
     const { active, over } = event;
+  
     if (!over || !active.id || active.id === over.id) return;
   
     const activeItem = active.data.current?.item as SpaceItem | Space;
     const activeType = active.data.current?.type as string;
     const overId = String(over.id);
-    const overType = over.data.current?.type as string;
     const overItem = over.data.current?.item as SpaceItem | Space;
+    const overType = over.data.current?.type as string;
   
     try {
       if (overType.startsWith('space-sidebar')) {
@@ -436,24 +437,24 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
         if (activeType === 'folder' || activeType === 'bookmark') {
           await moveItemAction({ id: String(active.id), newSpaceId });
         }
+      } else if (overType === 'space-content') {
+        const targetSpaceId = overId.replace('space-content-', '');
+        if (activeType === 'space') {
+          await createSpaceLinkAction(activeItem as Space, targetSpaceId);
+        }
       } else {
         const overItemFromState = items.find(i => i.id === overId);
-        if (!overItemFromState) {
-          if(activeType === 'space' && overType === 'space-content') {
-            await createSpaceLinkAction(activeItem as Space, activeSpaceId);
-          }
-          await refreshAllData();
-          return;
-        }
+        if (!overItemFromState) return;
   
         if (activeType === 'bookmark' && overItemFromState.type === 'bookmark' && activeItem.spaceId === overItemFromState.spaceId) {
-          await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [String(active.id), overId] });
+          await createFolderAction({ spaceId: (activeItem as SpaceItem).spaceId!, initialBookmarkIds: [String(active.id), overId] });
         } else if (activeType === 'bookmark' && overItemFromState.type === 'folder' && (activeItem as Bookmark).parentId !== overItemFromState.id) {
           await moveItemAction({ id: String(active.id), newParentId: overId });
         }
       }
-      await refreshAllData(); 
+      await refreshAllData();
     } catch (e) {
+      console.error("Drag end error:", e);
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
       await refreshAllData();
     }
@@ -796,7 +797,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       {isMounted && createPortal(
         <DragOverlay>
           {draggedItem ? (
-            draggedItem.type === 'bookmark' ? (
+            (draggedItem as any).type === 'bookmark' ? (
                 <BookmarkCard
                     bookmark={draggedItem as Bookmark}
                     onEdit={() => {}}
@@ -805,7 +806,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     onDuplicate={() => {}}
                     isOverlay
                 />
-            ) : draggedItem.type === 'folder' || draggedItem.type === 'space-link' ? (
+            ) : (draggedItem as any).type === 'folder' || (draggedItem as any).type === 'space-link' ? (
                 <FolderCard
                     folder={draggedItem as Folder}
                     onDeleted={() => {}}
@@ -815,7 +816,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     onDuplicate={() => {}}
                     isOverlay
                 />
-            ) : draggedItem.type === 'space' ? (
+            ) : (draggedItem as any).type === 'space' ? (
                  <div className="flex items-center gap-2 overflow-hidden w-full bg-primary text-primary-foreground p-2 rounded-lg shadow-2xl">
                     <AppIcon className="size-6 shrink-0" />
                     <h1 className="text-lg font-semibold font-headline truncate">{(draggedItem as Space).name}</h1>
@@ -915,3 +916,4 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
+
