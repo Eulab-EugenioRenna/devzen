@@ -70,12 +70,6 @@ function SidebarSpaceMenuItem({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: space.id });
   const Icon = getIcon(space.icon);
-  const [isContextMenuOpen, setIsContextMenuOpen] = React.useState(false);
-
-  const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    setIsContextMenuOpen(true);
-  };
 
   return (
     <SidebarMenuItem
@@ -84,18 +78,21 @@ function SidebarSpaceMenuItem({
         'rounded-lg transition-colors',
         isOver ? 'bg-sidebar-accent/20' : 'bg-transparent'
       )}
-      onContextMenu={handleContextMenu}
     >
-      <DropdownMenu open={isContextMenuOpen} onOpenChange={setIsContextMenuOpen}>
+      <SidebarMenuButton
+          onClick={() => onClick(space.id)}
+          isActive={isActive}
+          tooltip={space.name}
+          className="pr-8"
+      >
+          <Icon />
+          <span>{space.name}</span>
+      </SidebarMenuButton>
+       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-           <SidebarMenuButton
-              onClick={() => onClick(space.id)}
-              isActive={isActive}
-              tooltip={space.name}
-          >
-              <Icon />
-              <span>{space.name}</span>
-          </SidebarMenuButton>
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 group-data-[collapsible=icon]:hidden">
+                <MoreVertical className="h-4 w-4" />
+            </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onClick={() => onEdit(space)}>Edit Space</DropdownMenuItem>
