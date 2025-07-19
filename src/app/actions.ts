@@ -8,6 +8,13 @@ import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
 import { chatInSpace } from '@/ai/flows/chat-in-space';
 import { discernInput } from '@/ai/flows/discern-input';
+import {
+    correctText,
+    summarizeText,
+    translateText,
+    improveText,
+    generateText,
+} from '@/ai/flows/text-tools';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
@@ -785,4 +792,21 @@ export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: str
     console.error('Impossibile creare la nota in PocketBase', e);
     throw new Error('Impossibile salvare la nota della chat.');
   }
+}
+
+// ===== Azioni AI per Editor di Testo =====
+export async function correctTextAction(text: string): Promise<string> {
+    return await correctText(text);
+}
+export async function summarizeTextAction(text: string): Promise<string> {
+    return await summarizeText(text);
+}
+export async function translateTextAction(text: string, language: string): Promise<string> {
+    return await translateText(text, language);
+}
+export async function improveTextAction(text: string): Promise<string> {
+    return await improveText(text);
+}
+export async function generateTextAction(prompt: string): Promise<string> {
+    return await generateText(prompt);
 }
