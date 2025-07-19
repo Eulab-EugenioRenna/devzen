@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -26,9 +27,9 @@ import {
   exportWorkspaceAction,
   smartSearchAction,
   analyzeSpaceAction,
-  suggestSpaceForUrlAction,
   getItemsAction,
   getSpacesAction,
+  customizeItemAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -60,7 +61,6 @@ import { Input } from './ui/input';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
 import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
-import { recordToToolAi } from '@/lib/data-mappers';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { Separator } from './ui/separator';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
@@ -204,24 +204,23 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
 
   React.useEffect(() => {
     setIsMounted(true);
-    // Real-time subscriptions are only set up on the client
     
-    const handleSubscriptionChange = () => {
-        // Simple refetch on any change.
-        refreshAllData();
+    const handleSubscriptionChange = (e: {action: string, record: any}) => {
+      console.log('Subscription change received:', e);
+      refreshAllData();
     };
     
-    const connectWithRetry = async (collectionName: string) => {
+    const subscribeToCollection = async (collectionName: string) => {
         try {
-            return await pb.collection(collectionName).subscribe('*', handleSubscriptionChange);
+            await pb.collection(collectionName).subscribe('*', handleSubscriptionChange);
         } catch (err: any) {
-            console.error(`Impossibile iscriversi alla collezione ${collectionName}:`, err?.originalError || err);
+            console.error(`Failed to subscribe to ${collectionName}:`, err?.originalError || err);
         }
     };
 
-    connectWithRetry(bookmarksCollectionName);
-    connectWithRetry(spacesCollectionName);
-    connectWithRetry(toolsAiCollectionName);
+    subscribeToCollection(bookmarksCollectionName);
+    subscribeToCollection(spacesCollectionName);
+    subscribeToCollection(toolsAiCollectionName);
 
 
     return () => {
@@ -329,17 +328,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
   const handleAddBookmark = async (values: {title: string, url: string, spaceId: string}) => {
-    try {
-        await addBookmarkAction(values);
-        await refreshItems();
-        toast({
-            title: 'Segnalibro aggiunto!',
-            description: `"${values.title}" è stato salvato.`,
-        });
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore imprevisto.';
-        throw error;
-    }
+    await addBookmarkAction(values);
+    await refreshItems();
+    toast({
+        title: 'Segnalibro aggiunto!',
+        description: `"${values.title}" è stato salvato.`,
+    });
   };
   
   const handleItemUpdate = async (updatedItem: Partial<Bookmark>) => {
@@ -371,21 +365,12 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   };
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
-    try {
-        await deleteItemAction({ id });
-        await refreshItems();
-        toast({
-            title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
-            description: `Rimosso con successo.`,
-        });
-    } catch (error) {
-      console.error(`Impossibile eliminare ${type}`, error);
-      toast({
-        variant: 'destructive',
-        title: 'Errore',
-        description: `Impossibile eliminare ${type}.`,
-      });
-    }
+    await deleteItemAction({ id });
+    await refreshItems();
+    toast({
+        title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
+        description: `Rimosso con successo.`,
+    });
   };
 
   const handleUpdateFolderName = async (id: string, name: string) => {
@@ -423,10 +408,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                 await moveItemAction({ id: String(active.id), newParentId: String(over.id) });
             }
         }
-        await refreshItems(); // Refetch after any drop
+        await refreshItems(); 
     } catch (e) {
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-        await refreshItems(); // Refetch even on error to revert UI
+        await refreshItems();
     }
   };
 
@@ -454,7 +439,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const spaceName = deletingSpace.name;
     try {
       await deleteSpaceAction({ id: deletingSpace.id });
-      await refreshAllData(); // Refresh both spaces and items
+      await refreshAllData(); 
       toast({ title: 'Spazio Eliminato', description: `"${spaceName}" e tutti i suoi contenuti sono stati rimossi.` });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare lo spazio.' });
@@ -518,7 +503,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const AppIcon = isLogoUrl ? null : getIcon(appInfo.logo);
 
   if (!isMounted) {
-    return null; // or a skeleton loader
+    return null; 
   }
 
   return (
@@ -589,7 +574,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     if (!e.target.value) setSearchResultIds(null);
                   }}
                 />
-                {isSearching && <Loader2 className="absolute right-3 h-4 w-4 animate-spin" />}
+                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
               </div>
             </form>
             <div className='flex items-center gap-2'>
@@ -691,7 +676,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center">
                 <h3 className="text-lg font-semibold font-headline">{searchResultIds ? 'Nessun risultato trovato' : (activeSpace ? 'Questo spazio è vuoto!' : 'Nessuno spazio ancora!')}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {searchResultIds ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
+                  {searchResultids ? `La tua ricerca per "${searchTerm}" non ha prodotto risultati.` : (activeSpace ? `Aggiungi il tuo primo segnalibro a '${activeSpace.name}' per iniziare.` : 'Crea il tuo primo spazio usando il pulsante [+] nella barra laterale.')}
                 </p>
               </div>
             )}
@@ -703,7 +688,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
           {draggedItem ? (
             draggedItem.type === 'bookmark' ? (
                 <BookmarkCard
-                    bookmark={draggedItem}
+                    bookmark={draggedItem as Bookmark}
                     onEdit={() => {}}
                     onDeleted={() => {}}
                     onCustomize={() => {}}
@@ -813,3 +798,5 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     </DndContext>
   );
 }
+
+    
