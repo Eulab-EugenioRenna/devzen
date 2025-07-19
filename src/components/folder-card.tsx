@@ -118,12 +118,79 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
         {folderIcon}
     </div>
   );
+
+  const OptionsMenu = (
+    <div className="absolute right-2 top-2">
+        <TooltipProvider>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Opzioni cartella</span>
+            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => onView(folder)}>Visualizza</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsEditing(true)}>Rinomina</DropdownMenuItem>
+            <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+            >
+                Elimina
+            </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+        </TooltipProvider>
+    </div>
+  );
+
+  const cardContent = (
+    <div className="flex-1 min-w-0" onDoubleClick={handleTitleDoubleClick}>
+        {isEditing ? (
+        <Input
+            ref={inputRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            className="h-7 text-base font-headline p-1"
+            onClick={(e) => e.stopPropagation()}
+        />
+        ) : (
+        <CardTitle className="font-headline text-base leading-tight p-1 rounded-sm truncate">
+            {folder.name}
+        </CardTitle>
+        )}
+        <CardDescription className="mt-1 text-xs px-1">
+            {folder.items.length} elemento/i
+        </CardDescription>
+    </div>
+  );
   
+  if (isOverlay) {
+    return (
+        <Card
+            className={cn("flex w-64 items-center gap-4 p-3 shadow-2xl")}
+        >
+            {folderIcon}
+            <div className="flex-1 overflow-hidden">
+                <CardTitle className="font-headline text-base leading-tight truncate">
+                  {folder.name}
+                </CardTitle>
+                <CardDescription className="truncate text-xs">
+                    {folder.items.length} elemento/i
+                </CardDescription>
+            </div>
+        </Card>
+    )
+  }
+
   if (viewMode === 'list') {
     return (
      <div
       ref={setDroppableNodeRef}
-      className={cn(isOverlay && 'shadow-2xl')}
       onDoubleClick={() => !isOverlay && onView(folder)}
     >
       <Card
@@ -159,28 +226,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                 </CardDescription>
             </div>
              <div className="flex items-center ml-auto pt-2">
-              <TooltipProvider>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Opzioni cartella</span>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={() => onView(folder)}>Visualizza</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Rinomina</DropdownMenuItem>
-                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                        Elimina
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-              </TooltipProvider>
+                {OptionsMenu}
             </div>
         </div>
       </Card>
@@ -211,7 +257,6 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
   return (
     <div
       ref={setDroppableNodeRef}
-      className={cn( isOverlay && 'shadow-2xl' )}
       onDoubleClick={() => !isOverlay && onView(folder)}
     >
       <Card
@@ -223,31 +268,9 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
       >
         <div 
           className="h-10 bg-[--card-header-bg] text-[--card-text-color]"
-        >
-             <div className="absolute right-4 top-2">
-               <TooltipProvider>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Opzioni cartella</span>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                        Elimina
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                </TooltipProvider>
-            </div>
-        </div>
-        <div className="relative p-4 pt-0">
+        />
+        <div className="relative p-4 pt-0 flex-1 flex flex-col">
+          {OptionsMenu}
           <div className="-mt-6 mb-4">
               <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab inline-block">
                 {folderIcon}
@@ -273,53 +296,54 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
           <CardDescription className="mt-1 text-xs">
             {folder.items.length} elemento/i
           </CardDescription>
-        </div>
-        <CardContent>
-          {folder.items.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {folder.items.slice(0, 10).map((bookmark) => {
-                const iconContent = (() => {
-                  const commonClasses = "h-8 w-8 rounded-full border bg-card flex-shrink-0";
-                  if (bookmark.iconUrl) {
+        
+            <CardContent className="p-0 pt-4 flex-1">
+            {folder.items.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                {folder.items.slice(0, 10).map((bookmark) => {
+                    const iconContent = (() => {
+                    const commonClasses = "h-8 w-8 rounded-full border bg-card flex-shrink-0";
+                    if (bookmark.iconUrl) {
+                        return (
+                        <img
+                            src={bookmark.iconUrl}
+                            alt={bookmark.title}
+                            className={cn(commonClasses, "object-cover p-0.5")}
+                        />
+                        );
+                    }
+                    if (bookmark.icon) {
+                        return (
+                        <div
+                            className={cn(commonClasses, "p-1.5 flex items-center justify-center")}
+                            style={{ color: bookmark.iconColor ?? 'currentColor' }}
+                        >
+                            <SimpleIcon slug={bookmark.icon} />
+                        </div>
+                        );
+                    }
                     return (
-                      <img
-                        src={bookmark.iconUrl}
-                        alt={bookmark.title}
-                        className={cn(commonClasses, "object-cover p-0.5")}
-                      />
+                        <Favicon
+                        url={bookmark.url}
+                        title={bookmark.title}
+                        className={commonClasses}
+                        fallbackClassName="text-xs"
+                        />
                     );
-                  }
-                  if (bookmark.icon) {
-                    return (
-                      <div
-                        className={cn(commonClasses, "p-1.5 flex items-center justify-center")}
-                        style={{ color: bookmark.iconColor ?? 'currentColor' }}
-                      >
-                        <SimpleIcon slug={bookmark.icon} />
-                      </div>
-                    );
-                  }
-                  return (
-                    <Favicon
-                      url={bookmark.url}
-                      title={bookmark.title}
-                       className={commonClasses}
-                       fallbackClassName="text-xs"
-                    />
-                  );
-                })();
+                    })();
 
-                return (
-                  <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} key={bookmark.id}>
-                    {iconContent}
-                  </a>
-                );
-              })}
-            </div>
-          ) : (
-             <p className="text-sm text-muted-foreground">Questa cartella è vuota. Trascina qui i segnalibri per aggiungerli.</p>
-          )}
-        </CardContent>
+                    return (
+                    <a href={bookmark.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} key={bookmark.id}>
+                        {iconContent}
+                    </a>
+                    );
+                })}
+                </div>
+            ) : (
+                <p className="text-sm text-muted-foreground">Questa cartella è vuota. Trascina qui i segnalibri per aggiungerli.</p>
+            )}
+            </CardContent>
+        </div>
       </Card>
       
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

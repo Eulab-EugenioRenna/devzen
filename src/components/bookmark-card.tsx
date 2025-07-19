@@ -109,6 +109,32 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
     </div>
   );
 
+  const OptionsMenu = (
+    <div className="absolute right-2 top-2">
+      <TooltipProvider>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Opzioni segnalibro</span>
+            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
+            <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+                className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+            >
+                Elimina
+            </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+        </TooltipProvider>
+    </div>
+  );
+
   if (isOverlay) {
     return (
         <Card
@@ -169,27 +195,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
             </CardDescription>
           </div>
           <div className="flex items-center ml-auto pt-2">
-            <TooltipProvider>
-              <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Opzioni segnalibro</span>
-                  </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
-                  <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                      className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                      Elimina
-                  </DropdownMenuItem>
-                  </DropdownMenuContent>
-              </DropdownMenu>
-              </TooltipProvider>
+            {OptionsMenu}
           </div>
         </div>
       </Card>
@@ -234,32 +240,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
       >
         <div 
           className="h-10 bg-[--card-header-bg] text-[--card-text-color] px-4 flex items-center"
-        >
-             <div className="absolute right-4 top-2">
-              <TooltipProvider>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Opzioni segnalibro</span>
-                    </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={onEdit}>Modifica</DropdownMenuItem>
-                    <DropdownMenuItem onClick={onCustomize}>Personalizza</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                        onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                        Elimina
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-              </TooltipProvider>
-            </div>
-        </div>
-        <div className="relative p-4 pt-0">
+        />
+        <div className="relative p-4 pt-0 flex-1 flex flex-col">
+            {OptionsMenu}
           <div className="-mt-6 mb-4">
              {DraggableIcon}
           </div>
@@ -277,10 +260,11 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, isOverl
           <CardDescription className="mt-1 truncate text-xs">
             {domain}
           </CardDescription>
+        
+            <CardContent className="p-0 pt-4 flex-1">
+                <p className="text-sm text-muted-foreground line-clamp-3">{bookmark.summary}</p>
+            </CardContent>
         </div>
-        <CardContent className="flex-1">
-          <p className="text-sm text-muted-foreground line-clamp-3">{bookmark.summary}</p>
-        </CardContent>
       </Card>
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
