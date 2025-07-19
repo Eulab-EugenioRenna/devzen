@@ -302,17 +302,25 @@ export async function updateSpaceAction({ id, data }: { id: string, data: { name
 }
 
 export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
-    // 1. Find and delete any space-links pointing to this space
-    const linkedItems = await pb.collection(bookmarksCollectionName).getFullList({
+    // 1. Find and delete any space-links that point TO this space
+    const incomingLinks = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.type = "space-link" && tool.linkedSpaceId = "${id}"`,
     });
-    const deleteLinkedItemsPromises = linkedItems.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
-    await Promise.all(deleteLinkedItemsPromises);
+    const deleteIncomingLinksPromises = incomingLinks.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
+    await Promise.all(deleteIncomingLinksPromises);
 
-    // 2. Find and delete all items within this space
+    // 2. Find all items WITHIN this space, handle any outgoing space-links, and then delete all items.
     const itemsInSpace = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.spaceId = "${id}"`,
     });
+    
+    // 2a. Find any outgoing space-links and restore the original space by setting isLink=false
+    const restoreSpacePromises = itemsInSpace
+        .filter(item => item.tool.type === 'space-link' && item.tool.linkedSpaceId)
+        .map(item => pb.collection(spacesCollectionName).update(item.tool.linkedSpaceId, { isLink: false }));
+    await Promise.all(restoreSpacePromises);
+
+    // 2b. Delete all items within the space
     const deleteItemsInSpacePromises = itemsInSpace.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
     await Promise.all(deleteItemsInSpacePromises);
 
