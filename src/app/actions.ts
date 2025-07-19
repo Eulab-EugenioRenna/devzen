@@ -121,21 +121,26 @@ export async function updateBookmarkAction({
   id,
   title,
   url,
+  summary,
 }: {
   id: string;
   title: string;
   url: string;
+  summary?: string;
 }): Promise<Bookmark> {
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   
-  let summary = record.tool.summary;
-  if(record.tool.url !== url) {
+  let newSummary = summary ?? record.tool.summary;
+  
+  // Only re-summarize if the URL changes and it's not a note
+  const isNote = record.tool.url.startsWith('devzen:note:');
+  if(!isNote && record.tool.url !== url) {
      try {
         const result = await summarizeBookmark({ url });
-        summary = result.summary;
+        newSummary = result.summary;
       } catch (e) {
         console.error('Impossibile aggiornare il riassunto', e);
-        summary = 'Impossibile generare un riassunto per questo nuovo URL.';
+        newSummary = 'Impossibile generare un riassunto per questo nuovo URL.';
       }
   }
 
@@ -144,7 +149,7 @@ export async function updateBookmarkAction({
       ...record.tool,
       title,
       url,
-      summary,
+      summary: newSummary,
     },
   };
 
@@ -666,7 +671,7 @@ export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatIn
 
 export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: string, messages: ChatMessage[] }): Promise<Bookmark> {
   const title = `Nota Chat - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
-  const content = messages.map(msg => `**${msg.role === 'user' ? 'Tu' : 'AI'}:**\n${msg.content}`).join('\n\n---\n\n');
+  const content = JSON.stringify(messages);
   const url = `devzen:note:${Date.now()}`;
 
   const data = {
@@ -676,7 +681,7 @@ export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: str
       url: url,
       summary: content,
       spaceId: spaceId,
-      icon: 'FileSignature',
+      icon: 'FileText',
     },
   };
 

@@ -53,6 +53,7 @@ import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
 import { DashboardSidebar } from './dashboard-sidebar';
 import { DashboardContent } from './dashboard-content';
+import { NoteViewDialog } from './note-view-dialog';
 
 interface DashboardContextType {
   // State
@@ -96,6 +97,7 @@ interface DashboardContextType {
   handleItemDuplicate: (item: SpaceItem) => void;
   handleItemMove: (item: SpaceItem) => void;
   handleFolderView: (folder: Folder) => void;
+  handleNoteView: (note: Bookmark) => void;
   handleUpdateFolderName: (id: string, name: string) => void;
 }
 
@@ -119,6 +121,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [isAddingSpace, setIsAddingSpace] = React.useState(false);
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
+  const [viewingNote, setViewingNote] = React.useState<Bookmark | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
   
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -252,12 +255,25 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleItemUpdate = async (updatedItem: Partial<Bookmark>) => {
     if (!editingBookmark) return;
     try {
-        await updateBookmarkAction({id: editingBookmark.id, ...updatedItem});
+        await updateBookmarkAction({id: editingBookmark.id, ...updatedItem, title: updatedItem.title!, url: updatedItem.url!});
         await refreshItems();
         setEditingBookmark(null);
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
         toast({ variant: "destructive", title: "Errore di aggiornamento", description: errorMessage });
+    }
+  };
+
+  const handleNoteUpdate = async (id: string, title: string, summary: string) => {
+    const noteToUpdate = items.find(i => i.id === id);
+    if (!noteToUpdate || noteToUpdate.type !== 'bookmark') return;
+
+    try {
+        await updateBookmarkAction({id, title, url: noteToUpdate.url, summary});
+        await refreshItems();
+    } catch(e) {
+        const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
+        toast({ variant: "destructive", title: "Errore di aggiornamento nota", description: errorMessage });
     }
   };
 
@@ -510,6 +526,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleItemDuplicate: handleDuplicateItem,
     handleItemMove: handleItemMove,
     handleFolderView: setViewingFolder,
+    handleNoteView: setViewingNote,
     handleUpdateFolderName: handleUpdateFolderName,
   };
 
@@ -529,7 +546,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
               const type = activeDragItem.data.current?.type;
 
               if (type === 'bookmark' && draggedItem) {
-                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} isOverlay isDragging={false} />;
+                return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onViewNote={() => {}} isOverlay isDragging={false} />;
               }
               if ((type === 'folder' || type === 'space-link') && draggedItem) {
                 return <FolderCard folder={draggedItem as Folder} onDeleted={() => {}} onView={() => {}} onNameUpdated={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onUnlink={() => {}} isOverlay isDragging={false} />;
@@ -568,6 +585,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
            </AlertDialog>
         }
         {viewingFolder && <FolderViewDialog folder={viewingFolder} onOpenChange={(open) => !open && setViewingFolder(null)} onItemMove={handleItemMove} onItemDelete={handleDeleteItem} />}
+        {viewingNote && <NoteViewDialog
+            note={viewingNote}
+            space={spaces.find(s => s.id === viewingNote.spaceId)!}
+            spaceBookmarks={items.filter(i => i.spaceId === viewingNote.spaceId && i.type === 'bookmark') as Bookmark[]}
+            onOpenChange={(open) => !open && setViewingNote(null)}
+            onNoteUpdated={handleNoteUpdate}
+        />}
         {customizingItem && <CustomizeItemDialog item={customizingItem} onOpenChange={(open) => !open && setCustomizingItem(null)} onItemUpdated={handleCustomizeItem} />}
         {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}
         {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} />}

@@ -24,7 +24,6 @@ export const iconMap: { [key: string]: React.FC<any> } = {
   Briefcase: LucideIcons.Briefcase,
   Code: LucideIcons.Code,
   FileText: LucideIcons.FileText,
-  FileSignature: LucideIcons.FileSignature,
   Bot: LucideIcons.Bot,
   Terminal: LucideIcons.Terminal,
   Database: LucideIcons.Database,

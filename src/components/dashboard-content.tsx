@@ -42,6 +42,7 @@ export function DashboardContent() {
     handleItemCustomize,
     handleItemDuplicate,
     handleFolderView,
+    handleNoteView,
     handleUpdateFolderName,
     setActiveSpaceId,
     handleUnlinkSpace,
@@ -298,10 +299,11 @@ export function DashboardContent() {
                                 <BookmarkCard
                                     key={bookmark.id}
                                     bookmark={bookmark}
-                                    onEdit={() => handleItemEdit(bookmark)}
+                                    onEdit={handleItemEdit}
                                     onDeleted={handleItemDelete}
                                     onCustomize={() => handleItemCustomize(bookmark)}
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
+                                    onViewNote={handleNoteView}
                                     viewMode={viewMode}
                                 />
                                )

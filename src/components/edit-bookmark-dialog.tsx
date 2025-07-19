@@ -45,12 +45,13 @@ export function EditBookmarkDialog({
   onBookmarkUpdated,
 }: EditBookmarkDialogProps) {
   const { toast } = useToast();
+  const isNote = bookmark.url.startsWith('devzen:note:');
 
   const form = useForm<z.infer<typeof bookmarkSchema>>({
     resolver: zodResolver(bookmarkSchema),
     defaultValues: {
       title: bookmark.title,
-      url: bookmark.url.replace(/^(https?:\/\/)/i, ''),
+      url: isNote ? bookmark.url : bookmark.url.replace(/^(https?:\/\/)/i, ''),
     },
   });
 
@@ -59,7 +60,7 @@ export function EditBookmarkDialog({
   const onSubmit = async (values: z.infer<typeof bookmarkSchema>) => {
     try {
       let url = values.url;
-      if (!/^(https?:\/\/)/i.test(url)) {
+      if (!isNote && !/^(https?:\/\/)/i.test(url)) {
         url = `https://${url}`;
       }
 
@@ -90,9 +91,9 @@ export function EditBookmarkDialog({
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Modifica Segnalibro</DialogTitle>
+          <DialogTitle className="font-headline">Modifica {isNote ? 'Nota' : 'Segnalibro'}</DialogTitle>
           <DialogDescription>
-            Apporta modifiche al tuo segnalibro qui. Clicca su Salva quando hai finito.
+            Apporta modifiche qui. Clicca su Salva quando hai finito.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -110,26 +111,28 @@ export function EditBookmarkDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL</FormLabel>
-                  <FormControl>
-                     <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 text-base ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
-                        <span className="text-muted-foreground">https://</span>
-                        <input
-                            {...field}
-                            placeholder="nextjs.org"
-                            className="w-full border-none bg-transparent pl-1 text-foreground placeholder:text-muted-foreground focus:outline-none"
-                        />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!isNote && (
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL</FormLabel>
+                    <FormControl>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 text-base ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
+                          <span className="text-muted-foreground">https://</span>
+                          <input
+                              {...field}
+                              placeholder="nextjs.org"
+                              className="w-full border-none bg-transparent pl-1 text-foreground placeholder:text-muted-foreground focus:outline-none"
+                          />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">

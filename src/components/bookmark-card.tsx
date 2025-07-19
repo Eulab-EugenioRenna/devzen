@@ -3,7 +3,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText } from 'lucide-react';
 
 import {
   Card,
@@ -37,10 +37,11 @@ import { TooltipProvider } from './ui/tooltip';
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
-  onEdit: () => void;
+  onEdit: (bookmark: Bookmark) => void;
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   onCustomize: () => void;
   onDuplicate: () => void;
+  onViewNote: (note: Bookmark) => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
@@ -54,7 +55,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -67,15 +68,53 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-  const domain = getDomain(bookmark.url);
-    
+  const isNote = bookmark.url.startsWith('devzen:note:');
+  const domain = isNote ? 'Nota salvata' : getDomain(bookmark.url);
+
   const cardStyle = {
     '--card-header-bg': bookmark.backgroundColor ?? 'hsl(var(--primary))',
     '--card-text-color': bookmark.textColor ?? 'hsl(var(--primary-foreground))',
   } as React.CSSProperties;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isNote) {
+      onViewNote(bookmark);
+    } else {
+      window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isNote) {
+        e.preventDefault();
+        onViewNote(bookmark);
+    }
+  };
+    
+  const getNoteSummaryPreview = (summary?: string): string => {
+    if (!summary) return 'Nessun contenuto...';
+    try {
+      const messages = JSON.parse(summary);
+      if (Array.isArray(messages) && messages.length > 0) {
+        return messages.map(m => `${m.role === 'user' ? 'Tu' : 'AI'}: ${m.content}`).join(' ').substring(0, 150) + '...';
+      }
+    } catch (e) {
+      // It's not a JSON, so it's a regular summary
+      return summary;
+    }
+    return 'Nessun contenuto...';
+  };
+
   const iconContent = (() => {
     const commonClasses = "h-12 w-12 rounded-full border-2 border-background bg-card flex-shrink-0";
+    if (isNote) {
+        return (
+            <div className={cn(commonClasses, "p-2.5 flex items-center justify-center")}>
+                <FileText className="text-muted-foreground" />
+            </div>
+        )
+    }
     if (bookmark.iconUrl) {
       return (
         <img
@@ -122,7 +161,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={onEdit}>
+              <DropdownMenuItem onClick={() => onEdit(bookmark)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Modifica
               </DropdownMenuItem>
@@ -177,15 +216,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     return (
     <div
       ref={setDroppableNodeRef}
-      className={cn(
-        'relative'
-      )}
+      className={cn('relative')}
+      onClick={handleCardClick}
     >
       <Card
         style={cardStyle}
         className={cn(
             "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
-            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+            isNote && "cursor-pointer"
         )}
       >
         <div 
@@ -200,10 +239,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
           <div className="flex-1 min-w-0 pt-2">
             <a
               href={bookmark.url}
-              target="_blank"
+              target={isNote ? undefined : "_blank"}
               rel="noopener noreferrer"
               className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleLinkClick}
             >
               <CardTitle className="font-headline text-base leading-tight hover:underline truncate">
                 {bookmark.title}
@@ -245,15 +284,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   return (
     <div
       ref={setDroppableNodeRef}
-      className={cn(
-        'relative'
-      )}
+      className={cn('relative')}
+      onClick={handleCardClick}
     >
       <Card
         style={cardStyle}
         className={cn(
             "group/card h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md",
-            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+            isNote && "cursor-pointer"
         )}
       >
         <div 
@@ -268,10 +307,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
           </div>
           <a
             href={bookmark.url}
-            target="_blank"
+            target={isNote ? undefined : "_blank"}
             rel="noopener noreferrer"
             className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleLinkClick}
           >
             <CardTitle className="font-headline text-lg leading-tight hover:underline">
               {bookmark.title}
@@ -282,7 +321,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
           </CardDescription>
         
             <CardContent className="p-0 pt-4 flex-1">
-                <p className="text-sm text-muted-foreground line-clamp-3">{bookmark.summary}</p>
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {isNote ? getNoteSummaryPreview(bookmark.summary) : bookmark.summary}
+                </p>
             </CardContent>
         </div>
       </Card>
