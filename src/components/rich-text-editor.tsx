@@ -33,6 +33,7 @@ import { FullscreenPreviewDialog } from './fullscreen-preview-dialog';
 interface RichTextEditorProps {
   content: string;
   onChange: (markdown: string) => void;
+  className?: string;
 }
 
 const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
@@ -292,7 +293,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
-export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
+export const RichTextEditor = ({ content, onChange, className }: RichTextEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -314,7 +315,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       attributes: {
         class: cn(
           'w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none h-full'
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none h-full overflow-y-auto'
         ),
       },
     },
@@ -333,11 +334,9 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
   }, [content, editor]);
 
   return (
-    <div className='flex flex-col flex-grow'>
+    <div className={cn('flex flex-col flex-grow min-h-0', className)}>
       <EditorToolbar editor={editor} />
-      <div className="relative flex-grow overflow-y-auto">
-        <EditorContent editor={editor} className="absolute inset-0" />
-      </div>
+      <EditorContent editor={editor} />
     </div>
   );
 };
