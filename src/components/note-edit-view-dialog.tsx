@@ -73,7 +73,7 @@ export function NoteEditViewDialog({ note, onOpenChange, onNoteUpdated }: NoteEd
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-3xl h-[80vh] flex flex-col p-6">
                 <DialogHeader>
-                     <DialogTitle className="sr-only">Modifica Nota: {title}</DialogTitle>
+                    <DialogTitle className="sr-only">{title}</DialogTitle>
                     <Input 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
