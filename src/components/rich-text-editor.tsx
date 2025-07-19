@@ -8,7 +8,7 @@ import Link from '@tiptap/extension-link';
 import { Markdown } from 'tiptap-markdown';
 import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Link2, Eraser, Sparkles, Languages, Pilcrow, BrainCircuit, MessageSquareQuote, Check, Loader2, ChevronDown
+  List, ListOrdered, Link2, Eraser, Sparkles, Languages, Pilcrow, BrainCircuit, MessageSquareQuote, Check, Loader2, ChevronDown, Eye
 } from 'lucide-react';
 import {
   correctTextAction,
@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useToast } from '@/hooks/use-toast';
+import { FullscreenPreviewDialog } from './fullscreen-preview-dialog';
 
 
 interface RichTextEditorProps {
@@ -36,6 +37,7 @@ interface RichTextEditorProps {
 
 const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
   const [isAiLoading, setIsAiLoading] = React.useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
   const { toast } = useToast();
   
   const setLink = React.useCallback(() => {
@@ -130,6 +132,13 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
 
 
   return (
+    <>
+    {isPreviewOpen && (
+        <FullscreenPreviewDialog
+            content={editor.storage.markdown.getMarkdown()}
+            onOpenChange={setIsPreviewOpen}
+        />
+    )}
     <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -157,6 +166,18 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      
+      <Button
+        type="button"
+        size="sm"
+        variant="ghost"
+        onClick={() => setIsPreviewOpen(true)}
+        title="Anteprima"
+      >
+        <Eye className="h-4 w-4" />
+        <span className='ml-2'>Anteprima</span>
+      </Button>
+
       <div className="h-6 w-px bg-border mx-1"/>
       <Button
         type="button"
@@ -254,6 +275,7 @@ const EditorToolbar = ({ editor }: { editor: Editor | null }) => {
         <Eraser className="h-4 w-4" />
       </Button>
     </div>
+    </>
   );
 };
 
@@ -279,7 +301,7 @@ export const RichTextEditor = ({ content, onChange }: RichTextEditorProps) => {
       attributes: {
         class: cn(
           'w-full rounded-b-md border border-t-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-          'prose dark:prose-invert prose-sm sm:prose-base max-w-none'
+          'prose dark:prose-invert prose-sm sm:prose-base max-w-none h-full'
         ),
       },
     },
