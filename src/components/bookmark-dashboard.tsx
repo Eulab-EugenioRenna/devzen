@@ -57,7 +57,7 @@ import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { EditBookmarkDialog } from '@/components/edit-bookmark-dialog';
 import { PlusCircle, Plus, LayoutGrid, List, MoreVertical, Library, Bot, ChevronDown, Settings, Search, Sparkles, Loader2, Eye, EyeOff, GripVertical, Link as LinkIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { AddEditSpaceDialog } from '@/components/add-edit-space-dialog';
+import { AddEditSpaceDialog } from './add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
@@ -109,7 +109,8 @@ function SidebarSpaceMenuItem({
       ref={setNodeRef}
       className={cn(
         'group relative rounded-lg transition-colors',
-        isOver ? 'bg-sidebar-accent' : 'bg-transparent'
+        isOver ? 'bg-sidebar-accent' : 'bg-transparent',
+        isActive && 'bg-sidebar-accent'
       )}
     >
       <div className='flex items-center w-full'>
@@ -219,6 +220,9 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   const [analyzingSpace, setAnalyzingSpace] = React.useState<Space | null>(null);
   const [analysisResult, setAnalysisResult] = React.useState<AnalyzeSpaceOutput | null>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+
+  const [linkingSpacesInfo, setLinkingSpacesInfo] = React.useState<{ source: Space; target: Space; } | null>(null);
+
 
   const { toast } = useToast();
 
@@ -441,8 +445,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveDragItem(null);
     const { active, over } = event;
+    setActiveDragItem(null);
   
     if (!over || !active.id || active.id === over.id) return;
   
@@ -453,9 +457,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     const overType = over.data.current?.type as string;
 
     try {
-      if (activeType === 'space' && overId === 'space-link-droppable-area') {
-        const targetSpaceId = (over.data.current as any).spaceId;
-        await createSpaceLinkAction(activeItem as Space, targetSpaceId);
+      if (activeType === 'space' && overId === `space-link-droppable-area` && activeSpace) {
+          const sourceSpace = activeItem as Space;
+          const targetSpace = activeSpace;
+          setLinkingSpacesInfo({ source: sourceSpace, target: targetSpace });
       } else if (overType === 'space-sidebar') {
         const newSpaceId = overItem.id;
         if (activeType === 'folder' || activeType === 'bookmark') {
@@ -478,6 +483,24 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       await refreshAllData();
     }
   };
+
+  const handleConfirmSpaceLink = async () => {
+    if (!linkingSpacesInfo) return;
+    try {
+        await createSpaceLinkAction(linkingSpacesInfo.source, linkingSpacesInfo.target.id);
+        await refreshAllData();
+        toast({
+            title: 'Collegamento Spazio Creato!',
+            description: `Un collegamento a "${linkingSpacesInfo.source.name}" è stato aggiunto a "${linkingSpacesInfo.target.name}".`,
+        });
+    } catch (error) {
+        console.error("Errore nella creazione del collegamento tra spazi:", error);
+        toast({ variant: "destructive", title: "Errore", description: "Impossibile creare il collegamento tra spazi." });
+    } finally {
+        setLinkingSpacesInfo(null);
+    }
+  };
+
 
   const handleSpaceSave = async (spaceData: { name: string, icon: string }, id?: string) => {
     try {
@@ -834,13 +857,13 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
       {isMounted && createPortal(
         <DragOverlay>
           {activeDragItem ? (() => {
-            const draggedItemData = activeDragItem.data.current?.item;
+            const draggedItem = activeDragItem.data.current?.item;
             const type = activeDragItem.data.current?.type;
 
-            if (type === 'bookmark' && draggedItemData) {
+            if (type === 'bookmark' && draggedItem) {
               return (
                 <BookmarkCard
-                  bookmark={draggedItemData as Bookmark}
+                  bookmark={draggedItem as Bookmark}
                   onEdit={() => {}}
                   onDeleted={() => {}}
                   onCustomize={() => {}}
@@ -850,10 +873,10 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               );
             }
 
-            if ((type === 'folder' || type === 'space-link') && draggedItemData) {
+            if ((type === 'folder' || type === 'space-link') && draggedItem) {
               return (
                 <FolderCard
-                  folder={draggedItemData as Folder}
+                  folder={draggedItem as Folder}
                   onDeleted={() => {}}
                   onView={() => {}}
                   onNameUpdated={() => {}}
@@ -864,15 +887,15 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               );
             }
             
-            if (type === 'space' && draggedItemData) {
-              const space = draggedItemData as Space;
-              const Icon = getIcon(space.icon);
-              return (
-                <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
-                    <Icon className="size-6 shrink-0" />
-                    <h1 className="text-base font-semibold font-headline truncate">{space.name}</h1>
-                </div>
-              );
+            if (type === 'space' && draggedItem) {
+                const space = draggedItem as Space;
+                const Icon = getIcon(space.icon);
+                return (
+                    <div className="flex items-center gap-2 overflow-hidden w-64 bg-primary text-primary-foreground p-3 rounded-lg shadow-2xl">
+                        <Icon className="size-6 shrink-0" />
+                        <h1 className="text-base font-semibold font-headline truncate">{space.name}</h1>
+                    </div>
+                );
             }
 
             return null;
@@ -967,6 +990,24 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
             }}
         />
        )}
+        {linkingSpacesInfo && (
+            <AlertDialog open={!!linkingSpacesInfo} onOpenChange={(open) => !open && setLinkingSpacesInfo(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Conferma Collegamento Spazio</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Stai per collegare lo spazio "{linkingSpacesInfo.source.name}" all'interno di "{linkingSpacesInfo.target.name}".
+                            Lo spazio originale sarà nascosto dalla sidebar (potrai mostrarlo di nuovo tramite le impostazioni).
+                            Vuoi procedere?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setLinkingSpacesInfo(null)}>Annulla</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmSpaceLink}>Conferma</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
     </DndContext>
   );
 }
