@@ -578,8 +578,8 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
               </h2>
             </div>
             <form onSubmit={handleSearch} className="w-full max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Cerca con AI (es. 'strumenti per UI design')..."
                   className="pl-10"
@@ -589,7 +589,7 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
                     if (!e.target.value) setSearchResultIds(null);
                   }}
                 />
-                {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+                {isSearching && <Loader2 className="absolute right-3 h-4 w-4 animate-spin" />}
               </div>
             </form>
             <div className='flex items-center gap-2'>
@@ -788,7 +788,6 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
        {isAddingFromLibrary && (
         <AddFromLibraryDialog 
             tools={tools} 
-            activeSpaceId={activeSpaceId} 
             onBookmarkAdded={handleAddFromLibrary}
             onOpenChange={setIsAddingFromLibrary}
         />

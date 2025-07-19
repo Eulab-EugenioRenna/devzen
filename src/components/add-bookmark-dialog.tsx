@@ -170,7 +170,7 @@ export function AddBookmarkDialog({
                 <FormItem>
                   <FormLabel>URL</FormLabel>
                   <FormControl>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 text-base ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
                           <span className="text-muted-foreground">https://</span>
                           <input
@@ -180,7 +180,7 @@ export function AddBookmarkDialog({
                               className="w-full border-none bg-transparent pl-1 text-foreground placeholder:text-muted-foreground focus:outline-none"
                           />
                       </div>
-                      {isSuggesting && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                      {isSuggesting && <Loader2 className="absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />}
                     </div>
                   </FormControl>
                   <FormMessage />
