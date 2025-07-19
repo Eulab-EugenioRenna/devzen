@@ -23,6 +23,7 @@ import {
   exportWorkspaceAction,
   smartSearchAction,
   analyzeSpaceAction,
+  suggestSpaceForUrlAction,
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -382,28 +383,42 @@ export function BookmarkDashboard({ initialItems, initialSpaces, initialAppInfo,
     if (customizingItem && customizingItem.id === updatedItem.id) setCustomizingItem(null);
   };
 
-
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder') => {
-    const itemToDelete = items.find((i) => i.id === id);
+    const originalItems = [...items];
+    const itemToDelete = originalItems.find((i) => i.id === id);
     if (!itemToDelete) return;
-
-    const originalItems = items;
-    const itemsWithoutDeleted = originalItems.filter(i => i.id !== id);
-    const updatedItemsWithMovedChildren = type === 'folder' 
-        ? itemsWithoutDeleted.map(i => i.parentId === id ? { ...i, parentId: null } : i)
-        : itemsWithoutDeleted;
-
-    setItems(updatedItemsWithMovedChildren);
-    
+  
+    setItems((currentItems) => {
+      let newItems = currentItems.filter((i) => i.id !== id);
+      if (type === 'folder') {
+        newItems = newItems.map((i) => {
+          if (i.parentId === id) {
+            return { ...i, parentId: null };
+          }
+          return i;
+        });
+      }
+      return newItems;
+    });
+  
     try {
-      await deleteItemAction({ id });
+      const result = await deleteItemAction({ id });
+  
+      if (result.success && result.updatedBookmarks) {
+        setItems((currentItems) => {
+          const updatedMap = new Map(result.updatedBookmarks?.map(b => [b.id, b]));
+          return currentItems
+            .filter(i => i.id !== id) // Ensure folder is removed
+            .map(i => updatedMap.get(i.id) || i); // Replace with updated bookmarks
+        });
+      }
+  
       toast({
         title: `${type === 'bookmark' ? 'Segnalibro' : 'Cartella'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
         description: `Rimosso con successo.`,
       });
-
     } catch (error) {
-      setItems(originalItems);
+      setItems(originalItems); // Revert on error
       console.error(`Impossibile eliminare ${type}`, error);
       toast({
         variant: 'destructive',
