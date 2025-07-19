@@ -4,30 +4,10 @@
  * @fileOverview A Genkit flow to analyze the content of a workspace space.
  * 
  * - analyzeSpace - A function that analyzes a collection of bookmarks and folders.
- * - AnalyzeSpaceInput - The input type for the analyzeSpace function.
- * - AnalyzeSpaceOutput - The return type for the analyzeSpace function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-
-const BookmarkSchemaForAnalysis = z.object({
-  title: z.string(),
-  summary: z.string().optional(),
-});
-
-export const AnalyzeSpaceInputSchema = z.object({
-  spaceName: z.string().describe('Il nome dello spazio da analizzare.'),
-  bookmarks: z.array(BookmarkSchemaForAnalysis).describe('Elenco dei segnalibri nello spazio.'),
-});
-export type AnalyzeSpaceInput = z.infer<typeof AnalyzeSpaceInputSchema>;
-
-export const AnalyzeSpaceOutputSchema = z.object({
-  analysis: z.string().describe('Un\'analisi dettagliata in formato Markdown.'),
-  keyThemes: z.array(z.string()).describe('I temi o le tecnologie chiave identificati.'),
-  suggestions: z.array(z.string()).describe('Suggerimenti per argomenti correlati o strumenti mancanti.'),
-});
-export type AnalyzeSpaceOutput = z.infer<typeof AnalyzeSpaceOutputSchema>;
+import { AnalyzeSpaceInputSchema, AnalyzeSpaceOutputSchema, type AnalyzeSpaceInput, type AnalyzeSpaceOutput } from '@/lib/types';
 
 export async function analyzeSpace(input: AnalyzeSpaceInput): Promise<AnalyzeSpaceOutput> {
   return analyzeSpaceFlow(input);

@@ -3,28 +3,11 @@
  * @fileOverview A Genkit flow to categorize a bookmark into a space.
  * 
  * - categorizeBookmark - Suggests a space for a given URL.
- * - CategorizeBookmarkInput - The input type for the categorizeBookmark function.
- * - CategorizeBookmarkOutput - The return type for the categorizeBookmark function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { CategorizeBookmarkInputSchema, CategorizeBookmarkOutputSchema, type CategorizeBookmarkInput, type CategorizeBookmarkOutput } from '@/lib/types';
 
-const SpaceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
-
-export const CategorizeBookmarkInputSchema = z.object({
-  url: z.string().url().describe('L\'URL del segnalibro da categorizzare.'),
-  spaces: z.array(SpaceSchema).describe('Un elenco di possibili spazi in cui inserire il segnalibro.'),
-});
-export type CategorizeBookmarkInput = z.infer<typeof CategorizeBookmarkInputSchema>;
-
-export const CategorizeBookmarkOutputSchema = z.object({
-  spaceId: z.string().describe("L'ID dello spazio suggerito più pertinente per il segnalibro."),
-});
-export type CategorizeBookmarkOutput = z.infer<typeof CategorizeBookmarkOutputSchema>;
 
 export async function categorizeBookmark(input: CategorizeBookmarkInput): Promise<CategorizeBookmarkOutput> {
   return categorizeBookmarkFlow(input);

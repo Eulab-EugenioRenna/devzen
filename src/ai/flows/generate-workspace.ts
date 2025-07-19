@@ -4,46 +4,13 @@
  * @fileOverview A Genkit flow to generate a workspace structure from a text prompt.
  * 
  * - generateWorkspace - A function that takes a user prompt and returns a JSON structure for a workspace.
- * - GenerateWorkspaceInput - The input type for the generateWorkspace function.
- * - GenerateWorkspaceOutput - The return type for the generateWorkspace function.
  */
 
 import { ai } from '@/ai/genkit';
 import { getToolsAiAction } from '@/app/actions';
 import { z } from 'genkit';
+import { GenerateWorkspaceInputSchema, GenerateWorkspaceOutputSchema, type GenerateWorkspaceInput, type GenerateWorkspaceOutput } from '@/lib/types';
 
-// Input Schema
-const GenerateWorkspaceInputSchema = z.object({
-  prompt: z.string().describe('Una descrizione testuale dello spazio di lavoro desiderato, inclusi spazi, cartelle e segnalibri.'),
-});
-export type GenerateWorkspaceInput = z.infer<typeof GenerateWorkspaceInputSchema>;
-
-// Output Schema
-const AIBookmarkSchema = z.object({
-  type: z.literal('bookmark'),
-  title: z.string().describe('Il titolo del segnalibro.'),
-  url: z.string().url().describe('L\'URL completo del segnalibro.'),
-  icon: z.string().optional().describe("Uno slug pertinente da simple-icons.org, es. 'nextdotjs' o 'react'.")
-});
-
-const AIFolderSchema = z.object({
-    type: z.literal('folder'),
-    name: z.string().describe('Il nome della cartella.'),
-    items: z.array(AIBookmarkSchema).describe('Un elenco di segnalibri all\'interno di questa cartella.')
-});
-
-const AISpaceItemSchema = z.union([AIBookmarkSchema, AIFolderSchema]);
-
-const AISpaceSchema = z.object({
-  name: z.string().describe('Il nome dello spazio.'),
-  icon: z.string().describe("Un nome di icona singolo e pertinente da lucide-react, es. 'Code' o 'Briefcase'. Usa un nome di icona valido."),
-  items: z.array(AISpaceItemSchema).describe('Un elenco di segnalibri e cartelle per questo spazio.'),
-});
-
-const GenerateWorkspaceOutputSchema = z.object({
-  spaces: z.array(AISpaceSchema).describe('Un array di spazi che compongono lo spazio di lavoro.'),
-});
-export type GenerateWorkspaceOutput = z.infer<typeof GenerateWorkspaceOutputSchema>;
 
 // The wrapper function that will be called from the frontend
 export async function generateWorkspace(input: GenerateWorkspaceInput): Promise<GenerateWorkspaceOutput> {

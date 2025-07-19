@@ -5,7 +5,7 @@ import { generateWorkspace } from '@/ai/flows/generate-workspace';
 import { categorizeBookmark } from '@/ai/flows/categorize-bookmark';
 import { smartSearch } from '@/ai/flows/smart-search';
 import { analyzeSpace } from '@/ai/flows/analyze-space';
-import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AISpace, AISpaceItem, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput } from '@/lib/types';
+import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput } from '@/lib/types';
 import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';

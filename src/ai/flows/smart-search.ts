@@ -4,30 +4,10 @@
  * @fileOverview A Genkit flow to perform a smart search over bookmarks.
  * 
  * - smartSearch - Searches bookmarks based on a natural language query.
- * - SmartSearchInput - The input type for the smartSearch function.
- * - SmartSearchOutput - The return type for the smartSearch function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-
-const BookmarkSearchSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  url: z.string(),
-  summary: z.string().optional(),
-});
-
-export const SmartSearchInputSchema = z.object({
-  query: z.string().describe('La query di ricerca in linguaggio naturale dell\'utente.'),
-  bookmarks: z.array(BookmarkSearchSchema).describe('L\'elenco dei segnalibri in cui cercare.'),
-});
-export type SmartSearchInput = z.infer<typeof SmartSearchInputSchema>;
-
-export const SmartSearchOutputSchema = z.object({
-  relevantBookmarkIds: z.array(z.string()).describe('Un array di ID dei segnalibri che corrispondono alla query.'),
-});
-export type SmartSearchOutput = z.infer<typeof SmartSearchOutputSchema>;
+import { SmartSearchInputSchema, SmartSearchOutputSchema, type SmartSearchInput, type SmartSearchOutput } from '@/lib/types';
 
 export async function smartSearch(input: SmartSearchInput): Promise<SmartSearchOutput> {
   return smartSearchFlow(input);
