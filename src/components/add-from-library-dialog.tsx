@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, LayoutGrid, List, Star } from 'lucide-react';
+import { Loader2, Plus, LayoutGrid, List, Star, Search } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { Favicon } from './favicon';
@@ -25,6 +25,7 @@ interface AddFromLibraryDialogProps {
 
 export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [categorySearchTerm, setCategorySearchTerm] = React.useState('');
   const [isAdding, setIsAdding] = React.useState<string | null>(null);
   const [activeCategory, setActiveCategory] = React.useState('All');
   
@@ -36,8 +37,19 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: A
 
   const categories = React.useMemo(() => {
     const categorySet = new Set(tools.map(tool => tool.category));
-    return ['All', ...Array.from(categorySet).sort()];
-  }, [tools]);
+    const allCategories = ['All', ...Array.from(categorySet).sort()];
+    
+    if (!categorySearchTerm) {
+        return allCategories;
+    }
+
+    const lowerCaseSearch = categorySearchTerm.toLowerCase();
+    return allCategories.filter(category => 
+        category.toLowerCase().includes(lowerCaseSearch) || 
+        (category === 'All' && 'tutti gli strumenti'.includes(lowerCaseSearch))
+    );
+
+  }, [tools, categorySearchTerm]);
 
   const filteredTools = React.useMemo(() => {
     return tools.filter(tool => {
@@ -52,6 +64,12 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: A
       return inCategory && inSearch;
     });
   }, [tools, searchTerm, activeCategory]);
+  
+    React.useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+        setActiveCategory('All');
+    }
+  }, [categories, activeCategory]);
 
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
@@ -63,9 +81,18 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: A
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow flex min-h-0 border-t">
-          <aside className="w-1/4 max-w-xs border-r p-4">
+          <aside className="w-1/4 max-w-xs border-r p-4 flex flex-col">
             <h3 className="font-semibold text-lg px-2 mb-2">Categorie</h3>
-            <ScrollArea className="h-full pr-3">
+            <div className="relative mb-2">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca categorie..."
+                value={categorySearchTerm}
+                onChange={(e) => setCategorySearchTerm(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+            <ScrollArea className="h-full pr-3 -mr-3">
                 <nav className="flex flex-col gap-1">
                 {categories.map(category => (
                     <Button
