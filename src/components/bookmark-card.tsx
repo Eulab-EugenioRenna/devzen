@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import {
@@ -172,7 +172,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   );
 
   const OptionsMenu = (
-    <div className="absolute right-2 top-2">
+    <div>
       <TooltipProvider>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -280,7 +280,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
               {domain}
             </CardDescription>
           </div>
-          <div className="flex items-center ml-auto pt-2">
+          <div className="ml-auto pt-2">
             {OptionsMenu}
           </div>
         </div>
@@ -328,28 +328,31 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
           style={{ clipPath: 'inset(0 0 -6px 0)' }}
         />
         <div className="relative p-4 pt-0 flex-1 flex flex-col">
-          <div className="absolute right-2 -top-8">
-            {OptionsMenu}
-          </div>
           <div className="-mt-6 mb-4">
              {DraggableIcon}
           </div>
-          <a
-            href={bookmark.url}
-            target={isNote ? undefined : "_blank"}
-            rel="noopener noreferrer"
-            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-            onClick={handleLinkClick}
-          >
-            <CardTitle className="font-headline text-lg leading-tight hover:underline">
-              {bookmark.title}
-            </CardTitle>
-          </a>
-          <CardDescription className="mt-1 truncate text-xs">
-            {domain}
-          </CardDescription>
+
+          <div className="flex justify-between items-start gap-2 mb-1">
+              <div className='flex-1 min-w-0'>
+                <a
+                  href={bookmark.url}
+                  target={isNote ? undefined : "_blank"}
+                  rel="noopener noreferrer"
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                  onClick={handleLinkClick}
+                >
+                  <CardTitle className="font-headline text-lg leading-tight hover:underline">
+                    {bookmark.title}
+                  </CardTitle>
+                </a>
+                <CardDescription className="mt-1 truncate text-xs">
+                  {domain}
+                </CardDescription>
+              </div>
+               {OptionsMenu}
+          </div>
         
-            <CardContent className="p-0 pt-4 flex-1">
+            <CardContent className="p-0 pt-3 flex-1">
                 <p className="text-sm text-muted-foreground line-clamp-3">
                   {getNoteSummaryPreview(bookmark.summary)}
                 </p>
@@ -379,3 +382,5 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     </div>
   );
 }
+
+    

@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import {
@@ -122,7 +121,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
   );
 
   const OptionsMenu = (
-    <div className="absolute right-2 top-2">
+    <div>
         <TooltipProvider>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -241,7 +240,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
                   {cardDescriptionText}
                 </CardDescription>
             </div>
-             <div className="flex items-center ml-auto pt-2">
+             <div className="ml-auto pt-2">
                 {OptionsMenu}
             </div>
         </div>
@@ -288,36 +287,36 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
           style={{ clipPath: 'inset(0 0 -6px 0)' }}
         />
         <div className="relative p-4 pt-0 flex-1 flex flex-col">
-          <div className="absolute right-2 -top-8">
-            {OptionsMenu}
-          </div>
           <div className="-mt-6 mb-4">
               <div ref={setDraggableNodeRef} {...listeners} {...attributes} className="cursor-grab inline-block">
                 {folderIcon}
               </div>
           </div>
-          <div onDoubleClick={handleTitleDoubleClick}>
-            {isEditing ? (
-              <Input
-                ref={inputRef}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={handleInputBlur}
-                onKeyDown={handleInputKeyDown}
-                className="h-7 text-lg font-headline p-1"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <CardTitle className="font-headline text-lg leading-tight p-1 rounded-sm">
-                {folder.name}
-              </CardTitle>
-            )}
+          <div className='flex justify-between items-start gap-2 mb-1'>
+            <div className='flex-1 min-w-0' onDoubleClick={handleTitleDoubleClick}>
+                {isEditing ? (
+                <Input
+                    ref={inputRef}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={handleInputBlur}
+                    onKeyDown={handleInputKeyDown}
+                    className="h-7 text-lg font-headline p-1"
+                    onClick={(e) => e.stopPropagation()}
+                />
+                ) : (
+                <CardTitle className="font-headline text-lg leading-tight p-1 rounded-sm">
+                    {folder.name}
+                </CardTitle>
+                )}
+                <CardDescription className="mt-1 text-xs px-1">
+                    {cardDescriptionText}
+                </CardDescription>
+            </div>
+            {OptionsMenu}
           </div>
-          <CardDescription className="mt-1 text-xs">
-            {cardDescriptionText}
-          </CardDescription>
         
-            <CardContent className="p-0 pt-4 flex-1">
+            <CardContent className="p-0 pt-3 flex-1">
             {!isLink && (folder as Folder).items?.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                 {(folder as Folder).items.slice(0, 10).map((bookmark) => {
@@ -388,3 +387,5 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     </div>
   );
 }
+
+    
