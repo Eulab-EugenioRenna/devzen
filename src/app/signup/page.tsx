@@ -25,7 +25,6 @@ function GoogleIcon() {
 
 export default function SignupPage() {
     const AppIcon = getIcon('Logo');
-    const router = useRouter();
     const { toast } = useToast();
     const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
 
@@ -40,8 +39,7 @@ export default function SignupPage() {
                     title: 'Accesso Riuscito!',
                     description: 'Benvenuto!',
                 });
-                router.push('/dashboard');
-                router.refresh();
+                window.location.href = '/dashboard';
             } else {
                 throw new Error('Autenticazione Google fallita.');
             }
