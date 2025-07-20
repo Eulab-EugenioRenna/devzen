@@ -306,8 +306,8 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
       filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${id}"`,
     });
 
-    const updatePromises = childBookmarks.map(bm => {
-      const recordToUpdate = bm;
+    const updatePromises = childBookmarks.map(async (bm) => {
+      const recordToUpdate = await pb.collection(bookmarksCollectionName).getOne(bm.id);
       const newToolData = { ...recordToUpdate.tool, parentId: null };
       return pb.collection(bookmarksCollectionName).update(recordToUpdate.id, { tool: newToolData, user: pb.authStore.model!.id });
     });
@@ -400,8 +400,9 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
         filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${id}"`,
       });
 
-      const updatePromises = childBookmarks.map(bm => {
-        const newToolData = { ...bm.tool, spaceId: newSpaceId };
+      const updatePromises = childBookmarks.map(async (bm) => {
+        const recordToUpdate = await pb.collection(bookmarksCollectionName).getOne(bm.id);
+        const newToolData = { ...recordToUpdate.tool, spaceId: newSpaceId };
         return pb.collection(bookmarksCollectionName).update(bm.id, { tool: newToolData, user: pb.authStore.model!.id });
       });
       await Promise.all(updatePromises);
@@ -998,3 +999,5 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
+
+    
