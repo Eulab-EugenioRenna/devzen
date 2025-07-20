@@ -52,7 +52,7 @@ export function EditBookmarkDialog({
     resolver: zodResolver(bookmarkSchema),
     defaultValues: {
       title: bookmark.title,
-      url: isNote ? bookmark.url : bookmark.url,
+      url: bookmark.url,
     },
   });
 
@@ -88,7 +88,10 @@ export function EditBookmarkDialog({
     }
   };
 
-  if (isNote) return null;
+  if (isNote) {
+    // Note editing is handled in its own dedicated dialog (NoteEditViewDialog)
+    return null;
+  }
 
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
@@ -114,24 +117,22 @@ export function EditBookmarkDialog({
                 </FormItem>
               )}
             />
-            {!isNote && (
-              <FormField
-                control={form.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL</FormLabel>
-                    <FormControl>
-                      <Input
-                          {...field}
-                          placeholder="https://nextjs.org"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL</FormLabel>
+                  <FormControl>
+                    <Input
+                        {...field}
+                        placeholder="https://nextjs.org"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">
@@ -149,5 +150,3 @@ export function EditBookmarkDialog({
     </Dialog>
   );
 }
-
-    

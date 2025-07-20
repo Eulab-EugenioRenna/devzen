@@ -51,7 +51,7 @@ interface FolderCardProps {
 }
 
 export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomize, onDuplicate, onShare, onUnlink, isOverlay, viewMode = 'grid', isDragging }: FolderCardProps) {
-  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: folder.id,
     data: { type: folder.type, item: folder },
   });
@@ -206,14 +206,14 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
   if (viewMode === 'list') {
     return (
      <div
-      ref={setDroppableNodeRef}
-      onDoubleClick={() => !isOverlay && onView(folder)}
-       className='relative'
+      ref={setNodeRef}
+      className='relative'
     >
       <Card
         style={cardStyle}
+        onDoubleClick={() => !isOverlay && onView(folder)}
         className={cn(
-            "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
+            "group/card overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
       >
@@ -276,14 +276,14 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
 
   return (
     <div
-      ref={setDroppableNodeRef}
-      onDoubleClick={() => !isOverlay && onView(folder)}
+      ref={setNodeRef}
       className='relative'
     >
       <Card
+        onDoubleClick={() => !isOverlay && onView(folder)}
         style={cardStyle}
         className={cn(
-            "group/card flex h-full flex-col overflow-hidden transition-all duration-200 hover:shadow-md",
+            "group/card flex h-full flex-col overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
         )}
       >
@@ -392,5 +392,3 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     </div>
   );
 }
-
-    

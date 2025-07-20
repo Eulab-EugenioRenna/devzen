@@ -26,6 +26,8 @@ async function revalidateAndGetClient() {
     const cookie = cookies().get('pb_auth');
     if (cookie) {
         pb.authStore.loadFromCookie(cookie.value);
+    } else {
+        pb.authStore.clear();
     }
     return pb;
 }
@@ -266,7 +268,11 @@ export async function updateBookmarkAction({
         console.error('Impossibile aggiornare il riassunto', e);
         newSummary = 'Impossibile generare un riassunto per questo nuovo URL.';
       }
+  } else if (isNote) {
+    // For notes, the summary is the content passed from the editor.
+    newSummary = summary ?? record.tool.summary;
   }
+
 
   const data = {
     tool: {

@@ -183,9 +183,9 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={handleCardClick}>
+              <DropdownMenuItem onClick={() => onEdit(bookmark)}>
                 <Pencil className="mr-2 h-4 w-4" />
-                {isNote ? 'Visualizza / Modifica' : 'Modifica'}
+                {isNote ? 'Modifica Nota' : 'Modifica'}
               </DropdownMenuItem>
               {!isNote && (
                 <DropdownMenuItem onClick={() => onRegenerateSummary(bookmark.id)} disabled={isRegenerating}>
@@ -249,14 +249,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     <div
       ref={setDroppableNodeRef}
       className={cn('relative')}
-      onClick={handleCardClick}
     >
       <Card
         style={cardStyle}
+        onClick={handleCardClick}
         className={cn(
             "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-            isNote && "cursor-pointer"
+            isNote && "cursor-pointer",
+            !isNote && "cursor-pointer"
         )}
       >
         <div 
@@ -318,14 +319,15 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     <div
       ref={setDroppableNodeRef}
       className={cn('relative')}
-      onClick={handleCardClick}
     >
       <Card
         style={cardStyle}
+        onClick={handleCardClick}
         className={cn(
             "group/card h-full flex flex-col overflow-hidden transition-all duration-200 hover:shadow-md",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-            isNote && "cursor-pointer"
+            isNote && "cursor-pointer",
+            !isNote && "cursor-pointer"
         )}
       >
         <div 
@@ -387,5 +389,3 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     </div>
   );
 }
-
-    
