@@ -4,18 +4,22 @@ import { pb, usersCollectionName } from '@/lib/pocketbase';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
+  // Always clear the auth store at the beginning of the middleware
+  // to ensure a clean state for each request.
+  pb.authStore.clear();
+
   // Get auth cookie
   const cookie = cookies().get('pb_auth');
   
-  // If there's a cookie, load it into PocketBase
+  // If there's a cookie, load it into PocketBase and verify it
   if (cookie) {
     try {
-      pb.authStore.loadFromCookie(cookie.value);
-      // Verify token
+      pb.authStore.loadFromCookie(cookie.value, true);
+      // Verify/refresh the token
       await pb.collection(usersCollectionName).authRefresh();
     } catch (_) {
-      // Clear invalid cookie
+      // If verification fails, clear the invalid cookie and auth store
       pb.authStore.clear();
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('pb_auth');
