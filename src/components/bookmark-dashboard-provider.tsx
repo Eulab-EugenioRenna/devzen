@@ -355,17 +355,21 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveDragItem(null);
+    
 
     if (!over || !active.id || active.id === over.id) {
+      setActiveDragItem(null);
       return;
     }
 
-    const activeItem = active.data.current?.item as SpaceItem;
-    const activeType = active.data.current?.type as string;
+    const activeItem = activeDragItem?.item as SpaceItem;
+    const activeType = activeDragItem?.type;
     const overItem = over.data.current?.item as SpaceItem | Space;
     const overType = over.data.current?.type as string;
     const overId = over.id as string;
+
+    // Reset drag state immediately for a snappier UI
+    setActiveDragItem(null);
 
     const scenario = `${activeType}-on-${overType || (overId === 'space-link-droppable-area' ? 'droppable' : 'unknown')}`;
 
@@ -677,5 +681,3 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
-
-    
