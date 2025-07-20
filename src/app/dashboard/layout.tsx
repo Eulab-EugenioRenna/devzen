@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { pb } from '@/lib/pocketbase';
+import { pb, usersCollectionName } from '@/lib/pocketbase';
 
 export default async function DashboardLayout({
   children,
@@ -11,6 +11,16 @@ export default async function DashboardLayout({
 
   if (cookie) {
     pb.authStore.loadFromCookie(cookie.value);
+    try {
+      // This will also auto-refresh the token if needed
+      if(pb.authStore.isValid) {
+        await pb.collection(usersCollectionName).authRefresh();
+      }
+    } catch (_) {
+      // Clear cookie to prevent infinite redirect loop
+      pb.authStore.clear();
+      cookies().delete('pb_auth');
+    }
   }
 
   if (!pb.authStore.isValid) {

@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import { LoginForm } from './login-form';
 import { getIcon } from '@/components/icons';
@@ -36,7 +35,8 @@ export default function LoginPage() {
             await pb.collection(usersCollectionName).authWithOAuth2({ provider: 'google' });
             
             if (pb.authStore.isValid) {
-                await setAuthCookieAction();
+                const cookie = pb.authStore.exportToCookie();
+                await setAuthCookieAction(cookie);
                 toast({
                     title: 'Accesso Riuscito!',
                     description: 'Benvenuto!',
