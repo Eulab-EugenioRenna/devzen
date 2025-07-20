@@ -31,8 +31,8 @@ function SidebarSpaceMenuItem({
 }) {
   const { setActiveSpaceId, handleEditSpace, handleDeleteSpace, handleShareItem, activeDragItem } = useDashboard();
   const { setNodeRef, isOver } = useDroppable({
-    id: `space-sidebar-${space.id}`,
-    data: { type: 'space-sidebar-item', item: space },
+    id: space.id,
+    data: { type: 'space', item: space },
   });
 
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({

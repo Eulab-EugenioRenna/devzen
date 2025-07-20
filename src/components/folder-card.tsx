@@ -211,7 +211,8 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
     >
       <Card
         style={cardStyle}
-        onDoubleClick={() => !isOverlay && onView(folder)}
+        onClick={() => onView(folder)}
+        onDoubleClick={handleTitleDoubleClick}
         className={cn(
             "group/card overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
@@ -225,7 +226,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
             <div className='-mt-6'>
               {DraggableIcon}
             </div>
-            <div className="flex-1 min-w-0 pt-2" onDoubleClick={handleTitleDoubleClick}>
+            <div className="flex-1 min-w-0 pt-2">
                {isEditing ? (
                   <Input
                     ref={inputRef}
@@ -280,7 +281,8 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
       className='relative'
     >
       <Card
-        onDoubleClick={() => !isOverlay && onView(folder)}
+        onClick={() => onView(folder)}
+        onDoubleClick={handleTitleDoubleClick}
         style={cardStyle}
         className={cn(
             "group/card flex h-full flex-col overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
@@ -298,7 +300,7 @@ export function FolderCard({ folder, onDeleted, onView, onNameUpdated, onCustomi
               </div>
           </div>
           <div className='flex justify-between items-start gap-2 mb-1'>
-            <div className='flex-1 min-w-0' onDoubleClick={handleTitleDoubleClick}>
+            <div className='flex-1 min-w-0'>
                 {isEditing ? (
                 <Input
                     ref={inputRef}

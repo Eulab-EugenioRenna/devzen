@@ -65,7 +65,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
     data: { type: 'bookmark', item: bookmark },
   });
 
-  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
   });
@@ -247,7 +247,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
   if (viewMode === 'list') {
     return (
     <div
-      ref={setDroppableNodeRef}
+      ref={setNodeRef}
       className={cn('relative')}
     >
       <Card
@@ -317,7 +317,7 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
 
   return (
     <div
-      ref={setDroppableNodeRef}
+      ref={setNodeRef}
       className={cn('relative')}
     >
       <Card
