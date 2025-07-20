@@ -18,8 +18,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download } from 'lucide-react';
+import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download, LogOut } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { handleLogout } from '@/app/auth/actions';
 
 function SidebarSpaceMenuItem({
   space,
@@ -135,13 +136,21 @@ export function DashboardSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 overflow-hidden w-full">
-            {isLogoUrl ? (
-            <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
-            ) : (
-            AppIcon && <AppIcon className="size-6 shrink-0" />
-            )}
-            <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
+        <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2 overflow-hidden">
+                {isLogoUrl ? (
+                <img src={appInfo.logo} alt={appInfo.title} className="size-6 shrink-0 rounded-sm object-cover" />
+                ) : (
+                AppIcon && <AppIcon className="size-6 shrink-0" />
+                )}
+                <h1 className="text-lg font-semibold font-headline truncate">{appInfo.title}</h1>
+            </div>
+            <form action={handleLogout}>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <LogOut className="h-4 w-4"/>
+                    <span className="sr-only">Logout</span>
+                </Button>
+            </form>
         </div>
       </SidebarHeader>
       <SidebarContent>
