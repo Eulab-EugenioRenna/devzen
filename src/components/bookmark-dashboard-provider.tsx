@@ -380,7 +380,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
                 await moveItemAction({ id: activeItem.id, newSpaceId });
             }
         } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
+            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
         } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
             await moveItemAction({ id: activeItem.id, newParentId: overId });
         }
