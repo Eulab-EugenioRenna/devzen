@@ -16,10 +16,28 @@ import {
     generateText,
 } from '@/ai/flows/text-tools';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage } from '@/lib/types';
-import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName } from '@/lib/pocketbase';
+import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName, usersCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
 import { format } from 'date-fns';
+import { cookies } from 'next/headers';
+
+async function revalidateAndGetClient() {
+    const cookie = cookies().get('pb_auth');
+    if (cookie) {
+        pb.authStore.loadFromCookie(cookie.value);
+        try {
+            // This will also auto-refresh the token if needed
+            if(pb.authStore.isValid) {
+                await pb.collection(usersCollectionName).authRefresh();
+            }
+        } catch (_) {
+            pb.authStore.clear();
+        }
+    }
+    return pb;
+}
+
 
 // ===== Data Fetching Actions =====
 
@@ -34,6 +52,8 @@ function recordToSpace(record: RecordModel): Space {
 }
 
 export async function getSpacesAction(): Promise<Space[]> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) return [];
   try {
     const records = await pb.collection(spacesCollectionName).getFullList({
       sort: 'created',
@@ -51,6 +71,8 @@ export async function getSpacesAction(): Promise<Space[]> {
 }
 
 export async function getItemsAction(): Promise<SpaceItem[]> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) return [];
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
       sort: '-created',
@@ -78,6 +100,9 @@ export async function addBookmarkOrNoteAction({
   spaceId: string;
   parentId?: string | null;
 }): Promise<Bookmark> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   if (!text || !spaceId) {
     throw new Error('Campi obbligatori mancanti');
   }
@@ -123,6 +148,7 @@ export async function addBookmarkOrNoteAction({
         spaceId,
         parentId: parentId ?? null,
       },
+      user: pb.authStore.model!.id,
     };
 
     const record = await pb.collection(bookmarksCollectionName).create(data);
@@ -147,6 +173,7 @@ export async function addBookmarkOrNoteAction({
         spaceId: spaceId,
         icon: 'NotebookPen',
       },
+      user: pb.authStore.model!.id,
     };
     
     const record = await pb.collection(bookmarksCollectionName).create(data);
@@ -170,6 +197,9 @@ export async function addBookmarkAction({
   spaceId: string;
   parentId?: string | null;
 }): Promise<Bookmark> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   if (!title || !url || !spaceId) {
     throw new Error('Campi obbligatori mancanti');
   }
@@ -199,6 +229,7 @@ export async function addBookmarkAction({
       spaceId,
       parentId: parentId ?? null,
     },
+    user: pb.authStore.model!.id,
   };
 
   try {
@@ -225,6 +256,9 @@ export async function updateBookmarkAction({
   url: string;
   summary?: string;
 }): Promise<Bookmark> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+  
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   
   let newSummary = summary ?? record.tool.summary;
@@ -258,6 +292,9 @@ export async function updateBookmarkAction({
 }
 
 export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean }> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id);
   const toolData = itemToDelete.tool as any;
 
@@ -289,6 +326,9 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
 }
 
 export async function createFolderAction({ spaceId, initialBookmarkIds }: { spaceId: string, initialBookmarkIds: string[] }): Promise<{ folder: Folder, bookmarks: Bookmark[] }> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+  
   const folderData = {
     tool: {
       type: 'folder',
@@ -296,6 +336,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
       spaceId: spaceId,
       parentId: null,
     },
+    user: pb.authStore.model!.id,
   };
 
   const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
@@ -322,6 +363,9 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
 }
 
 export async function updateFolderNameAction({ id, name }: { id: string, name: string }): Promise<Folder> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   const data = { tool: { ...record.tool, name } };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
@@ -334,6 +378,9 @@ export async function updateFolderNameAction({ id, name }: { id: string, name: s
 
 
 export async function moveItemAction({ id, newSpaceId, newParentId }: { id: string, newSpaceId?: string, newParentId?: string | null }): Promise<SpaceItem> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   const record = await pb.collection(bookmarksCollectionName).getOne(id);
   const tool = { ...record.tool };
 
@@ -370,6 +417,9 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
 }
 
 export async function customizeItemAction({ id, backgroundColor, textColor, icon, iconUrl, iconColor }: { id: string, backgroundColor: string, textColor: string, icon?: string, iconUrl?: string, iconColor?: string }): Promise<SpaceItem> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+    
     const record = await pb.collection(bookmarksCollectionName).getOne(id);
     const tool = { ...record.tool, backgroundColor, textColor };
 
@@ -395,16 +445,26 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
 // ===== Azioni Spazio =====
 
 export async function createSpaceAction(data: { name: string, icon: string, category?: string }): Promise<Space> {
-    const record = await pb.collection(spacesCollectionName).create(data);
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
+    const spaceData = { ...data, user: pb.authStore.model!.id };
+    const record = await pb.collection(spacesCollectionName).create(spaceData);
     return recordToSpace(record);
 }
 
 export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string, category?: string, isLink?: boolean } }): Promise<Space> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     const record = await pb.collection(spacesCollectionName).update(id, data);
     return recordToSpace(record);
 }
 
 export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     // 1. Find and delete any space-links that point TO this space
     const incomingLinks = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `tool.type = "space-link" && tool.linkedSpaceId = "${id}"`,
@@ -434,6 +494,9 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 }
 
 export async function createSpaceLinkAction(space: Space, targetSpaceId: string): Promise<SpaceLink> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+  
   const linkData = {
     tool: {
       type: 'space-link',
@@ -442,6 +505,7 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
       linkedSpaceId: space.id,
       spaceId: targetSpaceId,
     },
+    user: pb.authStore.model!.id,
   };
   
   const record = await pb.collection(bookmarksCollectionName).create(linkData);
@@ -455,12 +519,18 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
 }
 
 export async function unlinkSpaceAction({ id, linkedSpaceId }: { id: string, linkedSpaceId: string }): Promise<{ success: boolean }> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     await pb.collection(bookmarksCollectionName).delete(id);
     await pb.collection(spacesCollectionName).update(linkedSpaceId, { isLink: false });
     return { success: true };
 }
 
 export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   if (item.type === 'bookmark') {
     const newBookmarkData = {
       tool: {
@@ -468,6 +538,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
         title: `${item.title} (Copia)`,
         id: undefined, // Let PB generate new ID
       },
+      user: pb.authStore.model!.id,
     };
     delete newBookmarkData.tool.id;
     const record = await pb.collection(bookmarksCollectionName).create(newBookmarkData);
@@ -481,6 +552,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
         name: `${item.name} (Copia)`,
         id: undefined,
       },
+      user: pb.authStore.model!.id,
     };
     delete newFolderData.tool.id;
     
@@ -504,6 +576,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
           title: bookmark.tool.title,
           parentId: newFolder.id,
         },
+        user: pb.authStore.model!.id,
       };
       await pb.collection(bookmarksCollectionName).create(newBookmarkData);
     }
@@ -527,6 +600,9 @@ function recordToAppInfo(record: RecordModel): AppInfo {
 }
 
 export async function getAppInfoAction(): Promise<AppInfo> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) return { id: menuRecordId, title: 'DevZen', logo: 'Logo' };
+
     try {
         const record = await pb.collection(menuCollectionName).getOne(menuRecordId);
         return recordToAppInfo(record);
@@ -544,6 +620,9 @@ export async function getAppInfoAction(): Promise<AppInfo> {
 }
 
 export async function updateAppInfoAction(id: string, formData: FormData): Promise<AppInfo> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     const record = await pb.collection(menuCollectionName).update(id, formData);
     return recordToAppInfo(record);
 }
@@ -569,6 +648,9 @@ export async function addBookmarkFromLibraryAction({
   toolId: string;
   spaceId: string;
 }): Promise<Bookmark> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   if (!toolId || !spaceId) {
     throw new Error('Campi obbligatori mancanti');
   }
@@ -589,6 +671,7 @@ export async function addBookmarkFromLibraryAction({
       spaceId: spaceId,
       parentId: null,
     },
+    user: pb.authStore.model!.id,
   };
 
   try {
@@ -629,6 +712,9 @@ export async function generateWorkspaceAction(prompt: string): Promise<AIWorkspa
 }
 
 export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Promise<{ newSpaces: Space[], newItems: SpaceItem[] }> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+    
     const newSpaces: Space[] = [];
     const newItems: SpaceItem[] = [];
 
@@ -636,6 +722,7 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
         const spaceRecord = await pb.collection(spacesCollectionName).create({
             name: aiSpace.name,
             icon: aiSpace.icon,
+            user: pb.authStore.model!.id,
         });
         const newSpace = recordToSpace(spaceRecord);
         newSpaces.push(newSpace);
@@ -646,7 +733,8 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
                 newItems.push(newBookmark);
             } else if (aiItem.type === 'folder') {
                 const folderData = {
-                    tool: { type: 'folder', name: aiItem.name, spaceId: newSpace.id, parentId: null }
+                    tool: { type: 'folder', name: aiItem.name, spaceId: newSpace.id, parentId: null },
+                    user: pb.authStore.model!.id,
                 };
                 const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
                 const newFolder = recordToSpaceItem(folderRecord) as Folder;
@@ -664,6 +752,9 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
 }
 
 async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, parentId: string | null): Promise<Bookmark> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     let summary = 'Segnalibro generato dall\'IA.';
     try {
         const result = await summarizeBookmark({ url: aiBookmark.url });
@@ -682,6 +773,7 @@ async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, par
             spaceId,
             parentId,
         },
+        user: pb.authStore.model!.id,
     };
     const record = await pb.collection(bookmarksCollectionName).create(bookmarkData);
     return recordToSpaceItem(record) as Bookmark;
@@ -689,6 +781,9 @@ async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, par
 
 
 export async function exportWorkspaceAction(spaceIds: string[]): Promise<string> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     const workspace: AIWorkspace = { spaces: [] };
 
     for (const spaceId of spaceIds) {
@@ -756,7 +851,7 @@ export async function smartSearchAction(query: string, bookmarks: Bookmark[]): P
 }
 
 export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<AnalyzeSpaceOutput> {
-    const result = await analyzeSpace(input);
+    const result = await analyze(input);
     return result;
 }
 
@@ -766,6 +861,9 @@ export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatIn
 }
 
 export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: string, messages: ChatMessage[] }): Promise<Bookmark> {
+  const pb = await revalidateAndGetClient();
+  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
   const title = `Nota Chat - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
   const content = JSON.stringify(messages);
   const url = `devzen:note:${Date.now()}`;
@@ -779,6 +877,7 @@ export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: str
       spaceId: spaceId,
       icon: 'FileText',
     },
+    user: pb.authStore.model!.id,
   };
 
   try {
@@ -795,6 +894,9 @@ export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: str
 }
 
 export async function regenerateSummaryAction(id: string): Promise<Bookmark> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
     const record = await pb.collection(bookmarksCollectionName).getOne(id);
     if (!record || record.tool.type !== 'bookmark' || record.tool.url.startsWith('devzen:')) {
         throw new Error("Elemento non valido o non è un segnalibro valido per la rigenerazione.");
