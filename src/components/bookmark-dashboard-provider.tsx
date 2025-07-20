@@ -249,8 +249,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   }
 
   const handleAddBookmarkOrNote = async (values: {text: string, spaceId: string}) => {
+    // This action creates a new item, so we let the subscription handle the update for simplicity.
     await addBookmarkOrNoteAction(values);
-    // State will be updated by the subscription
     toast({
         title: 'Elemento aggiunto!',
         description: `Il tuo nuovo elemento è stato salvato.`,
@@ -259,9 +259,9 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   
   const handleItemUpdate = async (updatedItem: Partial<Bookmark>) => {
     if (!editingBookmark) return;
+    // Let subscription handle UI update.
     try {
         await updateBookmarkAction({id: editingBookmark.id, ...updatedItem, title: updatedItem.title!, url: updatedItem.url!});
-        // State will be updated by the subscription
         setEditingBookmark(null);
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
@@ -272,10 +272,9 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleNoteUpdate = async (id: string, title: string, summary: string) => {
     const noteToUpdate = items.find(i => i.id === id);
     if (!noteToUpdate || noteToUpdate.type !== 'bookmark') return;
-
+     // Let subscription handle UI update.
     try {
         await updateBookmarkAction({id, title, url: noteToUpdate.url, summary});
-        // State will be updated by the subscription
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
         toast({ variant: "destructive", title: "Errore di aggiornamento nota", description: errorMessage });
@@ -284,9 +283,9 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleCustomizeItem = async (customizationData: any) => {
     if (!customizingItem) return;
+    // Let subscription handle UI update.
     try {
         await customizeItemAction({ id: customizingItem.id, ...customizationData });
-        // State will be updated by the subscription
         setCustomizingItem(null);
     } catch (error) {
         console.error(error);
@@ -300,27 +299,36 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   };
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder' | 'space-link') => {
-    await deleteItemAction({ id });
-    // State will be updated by the subscription
-    toast({
-        title: `${type === 'bookmark' ? 'Segnalibro' : type === 'folder' ? 'Cartella' : 'Collegamento'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
-        description: `Rimosso con successo.`,
-    });
+    const originalItems = items;
+    // Optimistic UI update
+    setItems(prev => prev.filter(item => item.id !== id));
+    
+    try {
+        await deleteItemAction({ id });
+        toast({
+            title: `${type === 'bookmark' ? 'Segnalibro' : type === 'folder' ? 'Cartella' : 'Collegamento'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
+            description: `Rimosso con successo.`,
+        });
+    } catch (error) {
+        // Revert on error
+        setItems(originalItems);
+        toast({ variant: "destructive", title: "Errore", description: "Impossibile eliminare l'elemento." });
+    }
   };
 
   const handleUpdateFolderName = async (id: string, name: string) => {
+    // Let subscription handle UI update.
     try {
       await updateFolderNameAction({ id, name });
-      // State will be updated by the subscription
     } catch (e) {
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile rinominare la cartella.' });
     }
   }
   
   const handleDuplicateItem = async (item: SpaceItem) => {
+     // Let subscription handle UI update.
     try {
         await duplicateItemAction(item);
-        // State will be updated by the subscription
         toast({ title: 'Elemento duplicato!', description: 'La copia è stata creata con successo.'});
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Impossibile duplicare l\'elemento.';
@@ -331,8 +339,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const handleRegenerateSummary = async (id: string) => {
         setRegeneratingSummaryId(id);
         try {
+            // Let subscription handle UI update.
             await regenerateSummaryAction(id);
-            // State will be updated by the subscription
             toast({ title: 'Riepilogo rigenerato!', description: 'Il riepilogo del segnalibro è stato aggiornato.' });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Impossibile rigenerare il riassunto.';
@@ -362,6 +370,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const overItem = over.data.current?.item as SpaceItem | Space;
     const overType = over.data.current?.type as string;
     const overId = over.id as string;
+    const originalItems = items;
 
     const scenario = `${activeType}-on-${overType || (overId === 'space-link-droppable-area' ? 'droppable' : 'unknown')}`;
 
@@ -370,12 +379,15 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             case 'bookmark-on-bookmark':
                 const overBookmark = overItem as Bookmark;
                 if (activeItem.spaceId === overBookmark.spaceId) {
+                    // Let subscription handle UI for new item creation
                     await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
                 }
                 break;
 
             case 'bookmark-on-folder':
                 if (activeItem.parentId !== over.id) {
+                    // Optimistic update
+                    setItems(prevItems => prevItems.map(item => item.id === activeItem.id ? { ...item, parentId: over.id as string } : item));
                     await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
                 }
                 break;
@@ -384,6 +396,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             case 'folder-on-space':
             case 'space-link-on-space':
                 if (activeItem.spaceId !== overItem.id) {
+                     // Optimistic update
+                    setItems(prevItems => prevItems.map(item => {
+                        if (item.id === activeItem.id) {
+                            return { ...item, spaceId: overItem.id, parentId: null };
+                        }
+                        return item;
+                    }));
                     await moveItemAction({ id: activeItem.id, newSpaceId: overItem.id });
                 }
                 break;
@@ -398,17 +417,18 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
                 console.warn(`Unhandled drag and drop scenario: ${scenario}`);
         }
     } catch (e) {
+        // Revert on any error
+        setItems(originalItems);
         console.error("Drag and drop error:", e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile completare l\'operazione di trascinamento.' });
     }
-    // Data will be refreshed by the subscription
   };
 
   const handleConfirmSpaceLink = async () => {
     if (!linkingSpacesInfo) return;
     try {
+        // Let subscription handle UI update.
         await createSpaceLinkAction(linkingSpacesInfo.source, linkingSpacesInfo.target.id);
-        // State will be updated by the subscription
         toast({
             title: 'Collegamento Spazio Creato!',
             description: `Un collegamento a "${linkingSpacesInfo.source.name}" è stato aggiunto a "${linkingSpacesInfo.target.name}".`,
@@ -423,8 +443,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleUnlinkSpace = async (link: SpaceLink) => {
     try {
+      // Let subscription handle UI update.
       await unlinkSpaceAction({ id: link.id, linkedSpaceId: link.linkedSpaceId });
-      // State will be updated by the subscription
       toast({ title: 'Spazio Ripristinato', description: `Lo spazio "${link.name}" è ora di nuovo visibile nella sidebar.` });
     } catch (error) {
       console.error("Errore nel ripristino dello spazio:", error);
@@ -439,10 +459,10 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             toast({ title: 'Spazio aggiornato!', description: `"${spaceData.name}" è stato salvato.`});
         } else {
             const newSpace = await createSpaceAction(spaceData);
+            // Let subscription handle state update, but switch to the new space
             setActiveSpaceId(newSpace.id);
             toast({ title: 'Spazio creato!', description: `"${spaceData.name}" è stato aggiunto.`});
         }
-        // State will be updated by the subscription
     } catch (error) {
         toast({ variant: 'destructive', title: 'Errore', description: `Impossibile salvare lo spazio.` });
     } finally {
@@ -455,8 +475,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     if (!deletingSpace) return;
     const spaceName = deletingSpace.name;
     try {
+      // Let subscription handle UI update.
       await deleteSpaceAction({ id: deletingSpace.id });
-      // State will be updated by the subscription
       toast({ title: 'Spazio Eliminato', description: `"${spaceName}" e tutti i suoi contenuti sono stati rimossi.` });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare lo spazio.' });
@@ -466,7 +486,17 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   };
   
   const handleItemMove = async (item: SpaceItem) => {
-    // State will be updated by the subscription
+    // This function is mainly for folder-view-dialog, which removes an item from a folder.
+    const originalItems = items;
+    // Optimistic update
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, parentId: null } : i));
+
+    try {
+        await moveItemAction({ id: item.id, newParentId: null });
+    } catch (e) {
+        setItems(originalItems);
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare il segnalibro.' });
+    }
   };
   
   const handleAppInfoSave = async (formData: FormData) => {
@@ -481,7 +511,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   }
 
   const handleWorkspaceGenerated = async () => {
-    // State will be updated by the subscription
+    // Let subscription handle UI update.
   };
 
   const handleExport = async () => {
@@ -505,8 +535,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleAddFromLibraryFlow = async (tool: ToolsAi) => {
       try {
+          // Let subscription handle UI update.
           await addBookmarkFromLibraryAction({ toolId: tool.id, spaceId: activeSpaceId });
-          // State will be updated by the subscription
           toast({ title: 'Segnalibro Importato', description: `"${tool.name}" è stato importato nel tuo spazio.` });
       } catch (error) {
           console.error(error);
@@ -672,5 +702,3 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
-
-    

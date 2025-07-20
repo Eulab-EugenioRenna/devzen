@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import type { Bookmark, Folder, SpaceItem } from '@/lib/types';
-import { moveItemAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -46,11 +45,10 @@ export function FolderViewDialog({ folder, onOpenChange, onItemMove, onItemDelet
 
   const handleRemoveFromFolder = async (bookmark: Bookmark) => {
     try {
-      const movedItem = await moveItemAction({ id: bookmark.id, newParentId: null });
-      onItemMove(movedItem);
+      await onItemMove(bookmark);
       toast({ title: 'Segnalibro spostato', description: `"${bookmark.title}" spostato alla radice dello spazio.` });
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare il segnalibro.' });
+      // The provider will show the toast on error
     }
   };
   
