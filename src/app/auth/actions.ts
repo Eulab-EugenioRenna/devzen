@@ -81,8 +81,7 @@ export async function handleLogin(formData: FormData) {
 
 
 export async function handleLogout() {
+  pb.authStore.clear();
   cookies().delete('pb_auth');
   redirect('/login');
 }
-
-    
