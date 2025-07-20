@@ -350,14 +350,17 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
+    //RIMUOVERE console.log('//RIMUOVERE - DRAG START: ', event.active);
     setActiveDragItem(event.active);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
+    //RIMUOVERE console.log('//RIMUOVERE - DRAG END - Active: ', active, ' Over: ', over);
 
     if (!over || !active.id || active.id === over.id) {
+        //RIMUOVERE console.log('//RIMUOVERE - Scenrario di drop invalido o nullo.');
         return;
     }
 
@@ -365,31 +368,41 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const activeType = active.data.current?.type;
     const overItem = over.data.current?.item;
     const overType = over.data.current?.type;
-    const overId = String(over.id);
 
     try {
-        if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
-            const sourceSpace = activeItem as Space;
-            if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
-                setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
-                return;
-            }
-        } else if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
-            const newSpaceId = overItem.id;
-            if (newSpaceId && activeItem.spaceId !== newSpaceId) {
-                await moveItemAction({ id: activeItem.id, newSpaceId });
-            }
-        } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
-        } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
-            await moveItemAction({ id: activeItem.id, newParentId: overId });
+      // Scenario 1: Sidebar -> Main (Crea collegamento speciale)
+      if (activeType === 'space' && over.id === 'space-link-droppable-area' && activeSpace && activeItem.id !== activeSpace.id) {
+        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Spazio -> Area Principale');
+        setLinkingSpacesInfo({ source: activeItem, target: activeSpace });
+        return;
+      }
+      
+      // Scenario 2: Bookmark/Folder -> Sidebar (Sposta in un altro spazio)
+      if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
+        const newSpaceId = overItem.id;
+        if (activeItem.spaceId !== newSpaceId) {
+            //RIMUOVERE console.log(`//RIMUOVERE - Tentativo: ${activeType} -> Spazio Sidebar`);
+            await moveItemAction({ id: activeItem.id, newSpaceId });
         }
-        
-        await refreshAllData();
+      }
+      
+      // Scenario 3: Bookmark -> Bookmark (Crea nuova cartella)
+      else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Bookmark -> Bookmark');
+        await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
+      }
+
+      // Scenario 4: Bookmark -> Folder (Sposta bookmark in cartella)
+      else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== over.id) {
+        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Bookmark -> Cartella');
+        await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
+      }
+
+      await refreshAllData();
     } catch (e) {
-        console.error("DRAG END ERROR:", e);
-        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-        await refreshAllData();
+        //RIMUOVERE console.error("//RIMUOVERE - DRAG END ERROR:", e);
+        toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile completare l\'operazione di trascinamento.' });
+        await refreshAllData(); // Ricarica lo stato per evitare UI inconsistenti
     }
   };
 
