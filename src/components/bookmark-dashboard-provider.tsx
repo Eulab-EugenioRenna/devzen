@@ -350,12 +350,14 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
+    console.log('//RIMUOVERE - DRAG START:', event.active);
     setActiveDragItem(event.active);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
+    console.log('//RIMUOVERE - DRAG END - Active:', active, 'Over:', over);
 
     if (!over || !active.id || active.id === over.id) {
         return;
@@ -370,6 +372,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     try {
         // Flow 1: Sidebar Space -> Main Content Area (Create Space Link)
         if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
+            console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
             const sourceSpace = activeItem as Space;
             if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
                 setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
@@ -379,6 +382,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         
         // Flow 2: Bookmark/Folder -> Sidebar Space (Move Item to different Space)
         if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
+            console.log('//RIMUOVERE - Flow: Item -> Sidebar Space (Move Item)');
             const newSpaceId = overItem.id;
             if (newSpaceId && activeItem.spaceId !== newSpaceId) {
                 await moveItemAction({ id: activeItem.id, newSpaceId });
@@ -387,11 +391,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         
         // Flow 3: Bookmark -> Bookmark (Create new Folder)
         else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+            console.log('//RIMUOVERE - Flow: Bookmark -> Bookmark (Create Folder)');
             await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
         }
         
         // Flow 4: Bookmark -> Folder (Move Bookmark into Folder)
         else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
+            console.log('//RIMUOVERE - Flow: Bookmark -> Folder (Move into Folder)');
             await moveItemAction({ id: activeItem.id, newParentId: overId });
         }
         
@@ -399,6 +405,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         await refreshAllData();
     } catch (e) {
         console.error("Drag end error:", e);
+        console.log('//RIMUOVERE - DRAG END ERROR:', e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
         await refreshAllData(); // Refresh even on error to sync state
     }
