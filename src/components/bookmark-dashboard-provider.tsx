@@ -51,7 +51,7 @@ import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
-import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName } from '@/lib/pocketbase';
+import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName, menuCollectionName } from '@/lib/pocketbase';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
 import { DashboardSidebar } from './dashboard-sidebar';
@@ -163,6 +163,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const { toast } = useToast();
 
   const refreshAllData = React.useCallback(async () => {
+    console.log("Refreshing all data from server...");
     const [refreshedSpaces, refreshedItems] = await Promise.all([
       getSpacesAction(),
       getItemsAction()
@@ -171,24 +172,16 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     setItems(refreshedItems);
   }, []);
 
-  const refreshItems = React.useCallback(async () => {
-    setItems(await getItemsAction());
-  }, []);
-
-  const refreshSpaces = React.useCallback(async () => {
-    setSpaces(await getSpacesAction());
-  }, []);
-
   React.useEffect(() => {
     setIsMounted(true);
     
     const handleSubscriptionChange = (e: {action: string, record: any}) => {
-      console.log('Subscription change received:', e);
+      console.log('Subscription change received:', e.action, e.record.collectionName);
       refreshAllData();
     };
     
     const subscribeToCollections = () => {
-      const collections = [bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName, usersCollectionName];
+      const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName];
       collections.forEach(collectionName => {
         pb.collection(collectionName).subscribe('*', handleSubscriptionChange).catch(err => {
             console.error(`Failed to subscribe to ${collectionName}:`, err?.originalError || err);
@@ -199,7 +192,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     subscribeToCollections();
 
     return () => {
-       const collections = [bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName, usersCollectionName];
+       const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName];
        collections.forEach(collectionName => {
         pb.collection(collectionName).unsubscribe('*');
        });
@@ -257,7 +250,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleAddBookmarkOrNote = async (values: {text: string, spaceId: string}) => {
     await addBookmarkOrNoteAction(values);
-    await refreshItems();
+    // State will be updated by the subscription
     toast({
         title: 'Elemento aggiunto!',
         description: `Il tuo nuovo elemento è stato salvato.`,
@@ -268,7 +261,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     if (!editingBookmark) return;
     try {
         await updateBookmarkAction({id: editingBookmark.id, ...updatedItem, title: updatedItem.title!, url: updatedItem.url!});
-        await refreshItems();
+        // State will be updated by the subscription
         setEditingBookmark(null);
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
@@ -282,7 +275,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
     try {
         await updateBookmarkAction({id, title, url: noteToUpdate.url, summary});
-        await refreshItems();
+        // State will be updated by the subscription
     } catch(e) {
         const errorMessage = e instanceof Error ? e.message : 'Errore sconosciuto';
         toast({ variant: "destructive", title: "Errore di aggiornamento nota", description: errorMessage });
@@ -293,7 +286,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     if (!customizingItem) return;
     try {
         await customizeItemAction({ id: customizingItem.id, ...customizationData });
-        await refreshItems();
+        // State will be updated by the subscription
         setCustomizingItem(null);
     } catch (error) {
         console.error(error);
@@ -308,7 +301,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const handleDeleteItem = async (id: string, type: 'bookmark' | 'folder' | 'space-link') => {
     await deleteItemAction({ id });
-    await refreshAllData(); // Refresh all data to ensure spaces list is also updated
+    // State will be updated by the subscription
     toast({
         title: `${type === 'bookmark' ? 'Segnalibro' : type === 'folder' ? 'Cartella' : 'Collegamento'} eliminat${type === 'bookmark' ? 'o' : 'a'}`,
         description: `Rimosso con successo.`,
@@ -318,7 +311,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleUpdateFolderName = async (id: string, name: string) => {
     try {
       await updateFolderNameAction({ id, name });
-      await refreshItems();
+      // State will be updated by the subscription
     } catch (e) {
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile rinominare la cartella.' });
     }
@@ -327,7 +320,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleDuplicateItem = async (item: SpaceItem) => {
     try {
         await duplicateItemAction(item);
-        await refreshItems();
+        // State will be updated by the subscription
         toast({ title: 'Elemento duplicato!', description: 'La copia è stata creata con successo.'});
     } catch (e) {
         const message = e instanceof Error ? e.message : 'Impossibile duplicare l\'elemento.';
@@ -339,7 +332,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         setRegeneratingSummaryId(id);
         try {
             await regenerateSummaryAction(id);
-            await refreshItems();
+            // State will be updated by the subscription
             toast({ title: 'Riepilogo rigenerato!', description: 'Il riepilogo del segnalibro è stato aggiornato.' });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Impossibile rigenerare il riassunto.';
@@ -350,74 +343,72 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveDragItem(event.active.data.current as { item: SpaceItem; type: string });
+    if (event.active.data.current) {
+      setActiveDragItem(event.active.data.current as { item: SpaceItem; type: string });
+    }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    
+    const activeItem = activeDragItem?.item;
+    const activeType = activeDragItem?.type;
 
-    if (!over || !active.id || active.id === over.id) {
-      setActiveDragItem(null);
+    setActiveDragItem(null);
+
+    if (!over || !active.id || active.id === over.id || !activeItem || !activeType) {
       return;
     }
 
-    const activeItem = activeDragItem?.item as SpaceItem;
-    const activeType = activeDragItem?.type;
     const overItem = over.data.current?.item as SpaceItem | Space;
     const overType = over.data.current?.type as string;
     const overId = over.id as string;
 
-    // Reset drag state immediately for a snappier UI
-    setActiveDragItem(null);
-
     const scenario = `${activeType}-on-${overType || (overId === 'space-link-droppable-area' ? 'droppable' : 'unknown')}`;
 
     try {
-      switch (scenario) {
-        case 'bookmark-on-bookmark':
-          if (activeItem.spaceId === (overItem as SpaceItem).spaceId) {
-            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
-          }
-          break;
+        switch (scenario) {
+            case 'bookmark-on-bookmark':
+                const overBookmark = overItem as Bookmark;
+                if (activeItem.spaceId === overBookmark.spaceId) {
+                    await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
+                }
+                break;
 
-        case 'bookmark-on-folder':
-          if (activeItem.parentId !== over.id) {
-            await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
-          }
-          break;
+            case 'bookmark-on-folder':
+                if (activeItem.parentId !== over.id) {
+                    await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
+                }
+                break;
 
-        case 'bookmark-on-space':
-        case 'folder-on-space':
-        case 'space-link-on-space':
-          if (activeItem.spaceId !== overItem.id) {
-            await moveItemAction({ id: activeItem.id, newSpaceId: overItem.id });
-          }
-          break;
+            case 'bookmark-on-space':
+            case 'folder-on-space':
+            case 'space-link-on-space':
+                if (activeItem.spaceId !== overItem.id) {
+                    await moveItemAction({ id: activeItem.id, newSpaceId: overItem.id });
+                }
+                break;
 
-        case 'space-on-droppable':
-          if (activeSpace && activeItem.id !== activeSpace.id) {
-            setLinkingSpacesInfo({ source: activeItem as Space, target: activeSpace });
-          }
-          break;
+            case 'space-on-droppable':
+                if (activeSpace && activeItem.id !== activeSpace.id) {
+                    setLinkingSpacesInfo({ source: activeItem as Space, target: activeSpace });
+                }
+                break;
 
-        default:
-          console.warn(`Unhandled drag and drop scenario: ${scenario}`);
-      }
-      
-      await refreshAllData();
+            default:
+                console.warn(`Unhandled drag and drop scenario: ${scenario}`);
+        }
     } catch (e) {
         console.error("Drag and drop error:", e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile completare l\'operazione di trascinamento.' });
-        await refreshAllData(); // Revert to a consistent state
     }
+    // Data will be refreshed by the subscription
   };
 
   const handleConfirmSpaceLink = async () => {
     if (!linkingSpacesInfo) return;
     try {
         await createSpaceLinkAction(linkingSpacesInfo.source, linkingSpacesInfo.target.id);
-        await refreshAllData();
+        // State will be updated by the subscription
         toast({
             title: 'Collegamento Spazio Creato!',
             description: `Un collegamento a "${linkingSpacesInfo.source.name}" è stato aggiunto a "${linkingSpacesInfo.target.name}".`,
@@ -433,7 +424,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleUnlinkSpace = async (link: SpaceLink) => {
     try {
       await unlinkSpaceAction({ id: link.id, linkedSpaceId: link.linkedSpaceId });
-      await refreshAllData();
+      // State will be updated by the subscription
       toast({ title: 'Spazio Ripristinato', description: `Lo spazio "${link.name}" è ora di nuovo visibile nella sidebar.` });
     } catch (error) {
       console.error("Errore nel ripristino dello spazio:", error);
@@ -451,7 +442,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             setActiveSpaceId(newSpace.id);
             toast({ title: 'Spazio creato!', description: `"${spaceData.name}" è stato aggiunto.`});
         }
-        await refreshSpaces();
+        // State will be updated by the subscription
     } catch (error) {
         toast({ variant: 'destructive', title: 'Errore', description: `Impossibile salvare lo spazio.` });
     } finally {
@@ -465,7 +456,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const spaceName = deletingSpace.name;
     try {
       await deleteSpaceAction({ id: deletingSpace.id });
-      await refreshAllData(); 
+      // State will be updated by the subscription
       toast({ title: 'Spazio Eliminato', description: `"${spaceName}" e tutti i suoi contenuti sono stati rimossi.` });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile eliminare lo spazio.' });
@@ -475,13 +466,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   };
   
   const handleItemMove = async (item: SpaceItem) => {
-    await refreshItems();
+    // State will be updated by the subscription
   };
   
   const handleAppInfoSave = async (formData: FormData) => {
     try {
         const updatedInfo = await updateAppInfoAction(appInfo.id, formData);
-        setAppInfo(updatedInfo);
+        setAppInfo(updatedInfo); // Also update locally for immediate feedback
         setIsEditingAppInfo(false);
         toast({ title: 'Info app aggiornate!', description: 'Il nome e l\'icona della tua applicazione sono stati cambiati.'});
     } catch (e) {
@@ -490,7 +481,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   }
 
   const handleWorkspaceGenerated = async () => {
-    await refreshAllData();
+    // State will be updated by the subscription
   };
 
   const handleExport = async () => {
@@ -515,7 +506,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleAddFromLibraryFlow = async (tool: ToolsAi) => {
       try {
           await addBookmarkFromLibraryAction({ toolId: tool.id, spaceId: activeSpaceId });
-          await refreshItems();
+          // State will be updated by the subscription
           toast({ title: 'Segnalibro Importato', description: `"${tool.name}" è stato importato nel tuo spazio.` });
       } catch (error) {
           console.error(error);
@@ -657,7 +648,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             analysisResult={analysisResult} 
             isLoadingAnalysis={isAnalyzing}
             onOpenChange={(open) => { if (!open) { setAnalyzingSpace(null); setAnalysisResult(null); } }} 
-            onNoteSaved={refreshItems}
+            onNoteSaved={refreshAllData}
         />}
         {linkingSpacesInfo && <AlertDialog open={!!linkingSpacesInfo} onOpenChange={(open) => !open && setLinkingSpacesInfo(null)}>
                   <AlertDialogContent>
@@ -681,3 +672,5 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
+
+    
