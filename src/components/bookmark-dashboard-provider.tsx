@@ -350,59 +350,62 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
-    //RIMUOVERE console.log('//RIMUOVERE - DRAG START: ', event.active);
     setActiveDragItem(event.active);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
-    //RIMUOVERE console.log('//RIMUOVERE - DRAG END - Active: ', active, ' Over: ', over);
 
     if (!over || !active.id || active.id === over.id) {
-        //RIMUOVERE console.log('//RIMUOVERE - Scenrario di drop invalido o nullo.');
-        return;
+      return;
     }
 
     const activeItem = active.data.current?.item;
     const activeType = active.data.current?.type;
     const overItem = over.data.current?.item;
     const overType = over.data.current?.type;
+    const overId = over.id;
+
+    const scenario = `${activeType}-on-${overType || (overId === 'space-link-droppable-area' ? 'droppable' : 'unknown')}`;
 
     try {
-      // Scenario 1: Sidebar -> Main (Crea collegamento speciale)
-      if (activeType === 'space' && over.id === 'space-link-droppable-area' && activeSpace && activeItem.id !== activeSpace.id) {
-        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Spazio -> Area Principale');
-        setLinkingSpacesInfo({ source: activeItem, target: activeSpace });
-        return;
+      switch (scenario) {
+        case 'bookmark-on-bookmark':
+          if (activeItem.spaceId === overItem.spaceId) {
+            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
+          }
+          break;
+
+        case 'bookmark-on-folder':
+          if (activeItem.parentId !== over.id) {
+            await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
+          }
+          break;
+
+        case 'bookmark-on-space':
+        case 'folder-on-space':
+        case 'space-link-on-space':
+          if (activeItem.spaceId !== overItem.id) {
+            await moveItemAction({ id: activeItem.id, newSpaceId: overItem.id });
+          }
+          break;
+
+        case 'space-on-droppable':
+          if (activeSpace && activeItem.id !== activeSpace.id) {
+            setLinkingSpacesInfo({ source: activeItem, target: activeSpace });
+          }
+          break;
+
+        default:
+          console.warn(`Unhandled drag and drop scenario: ${scenario}`);
       }
       
-      // Scenario 2: Bookmark/Folder -> Sidebar (Sposta in un altro spazio)
-      if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
-        const newSpaceId = overItem.id;
-        if (activeItem.spaceId !== newSpaceId) {
-            //RIMUOVERE console.log(`//RIMUOVERE - Tentativo: ${activeType} -> Spazio Sidebar`);
-            await moveItemAction({ id: activeItem.id, newSpaceId });
-        }
-      }
-      
-      // Scenario 3: Bookmark -> Bookmark (Crea nuova cartella)
-      else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Bookmark -> Bookmark');
-        await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
-      }
-
-      // Scenario 4: Bookmark -> Folder (Sposta bookmark in cartella)
-      else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== over.id) {
-        //RIMUOVERE console.log('//RIMUOVERE - Tentativo: Bookmark -> Cartella');
-        await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
-      }
-
       await refreshAllData();
     } catch (e) {
-        //RIMUOVERE console.error("//RIMUOVERE - DRAG END ERROR:", e);
+        console.error("Drag and drop error:", e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile completare l\'operazione di trascinamento.' });
-        await refreshAllData(); // Ricarica lo stato per evitare UI inconsistenti
+        await refreshAllData(); // Revert to a consistent state
     }
   };
 
