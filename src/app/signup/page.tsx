@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { ClientResponseError } from 'pocketbase';
 
 import { SignupForm } from './signup-form';
 import { getIcon } from '@/components/icons';
@@ -44,12 +45,20 @@ export default function SignupPage() {
                 throw new Error('Autenticazione Google fallita.');
             }
         } catch (error) {
-            console.error(error);
-            toast({
-                variant: 'destructive',
-                title: 'Errore',
-                description: 'Impossibile accedere con Google. Potrebbe essere necessario abilitare i popup.',
-            });
+             if (error instanceof ClientResponseError && error.status === 400) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Registrazione Fallita',
+                    description: "Impossibile registrarsi con Google. Esiste già un account registrato con questa email. Prova ad accedere.",
+                });
+            } else {
+                console.error(error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Errore',
+                    description: 'Impossibile accedere con Google. Potrebbe essere necessario abilitare i popup.',
+                });
+            }
         } finally {
             setIsGoogleLoading(false);
         }

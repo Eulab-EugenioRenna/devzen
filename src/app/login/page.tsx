@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { ClientResponseError } from 'pocketbase';
 
 import { LoginForm } from './login-form';
 import { getIcon } from '@/components/icons';
@@ -46,12 +47,20 @@ export default function LoginPage() {
                 throw new Error('Autenticazione Google fallita.');
             }
         } catch (error) {
-            console.error(error);
-            toast({
-                variant: 'destructive',
-                title: 'Errore',
-                description: 'Impossibile accedere con Google. Potrebbe essere necessario abilitare i popup.',
-            });
+            if (error instanceof ClientResponseError && error.status === 400) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Accesso Fallito',
+                    description: "Impossibile accedere con Google. Esiste già un account registrato con questa email. Prova ad accedere con la tua password.",
+                });
+            } else {
+                console.error(error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Errore',
+                    description: 'Impossibile accedere con Google. Potrebbe essere necessario abilitare i popup.',
+                });
+            }
         } finally {
             setIsGoogleLoading(false);
         }
