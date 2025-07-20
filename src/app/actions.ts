@@ -16,7 +16,7 @@ import {
     generateText,
 } from '@/ai/flows/text-tools';
 import type { Bookmark, Folder, Space, SpaceItem, AppInfo, ToolsAi, AIWorkspace, AIBookmark, AnalyzeSpaceInput, AnalyzeSpaceOutput, AISpace, AIFolder, AISpaceItem, SpaceLink, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage } from '@/lib/types';
-import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, menuRecordId, toolsAiCollectionName, usersCollectionName } from '@/lib/pocketbase';
+import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName, usersCollectionName } from '@/lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 import { recordToSpaceItem, recordToToolAi } from '@/lib/data-mappers';
 import { format } from 'date-fns';
@@ -604,21 +604,29 @@ function recordToAppInfo(record: RecordModel): AppInfo {
 
 export async function getAppInfoAction(): Promise<AppInfo> {
     const pb = await revalidateAndGetClient();
-    if (!pb.authStore.isValid) return { id: menuRecordId, title: 'DevZen', logo: 'Logo' };
+    if (!pb.authStore.isValid) {
+      return { id: '', title: 'DevZen', logo: 'Logo' };
+    }
 
     try {
-        const record = await pb.collection(menuCollectionName).getOne(menuRecordId);
-        return recordToAppInfo(record);
-    } catch (e: any) {
-        if (e.status === 404) {
-             console.warn(`Record info app con ID "${menuRecordId}" non trovato nella collezione "${menuCollectionName}". Assicurati che questo record esista. Ritorno ai valori predefiniti.`);
-        } else {
-             console.error('Impossibile recuperare le info dell\'app:', e);
-             if (e?.originalError) {
-                console.error('Errore di connessione sottostante:', e.originalError);
-           }
+        const records = await pb.collection(menuCollectionName).getFullList({
+            filter: `user = "${pb.authStore.model!.id}"`,
+            sort: '-created',
+        });
+
+        if (records.length > 0) {
+            return recordToAppInfo(records[0]);
         }
-        return { id: menuRecordId, title: 'DevZen', logo: 'Logo' };
+        // If no record found for the user, return default.
+        return { id: '', title: 'DevZen', logo: 'Logo' };
+    } catch (e: any) {
+        console.error('Impossibile recuperare le info dell\'app:', e);
+        if (e.status === 404) {
+             console.warn(`La collezione "${menuCollectionName}" non è stata trovata. Ritorno ai valori predefiniti.`);
+        } else if (e?.originalError) {
+           console.error('Errore di connessione sottostante:', e.originalError);
+        }
+        return { id: '', title: 'DevZen', logo: 'Logo' };
     }
 }
 
@@ -626,11 +634,25 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-    // The user field might not be necessary for a global settings collection, 
-    // but if it is, you should add it to the form data or update logic.
-    const record = await pb.collection(menuCollectionName).update(id, formData);
-    return recordToAppInfo(record);
+    const data = formData;
+    data.append('user', pb.authStore.model!.id);
+
+    try {
+      if (id) {
+        // If an ID is provided, update the existing record
+        const record = await pb.collection(menuCollectionName).update(id, data);
+        return recordToAppInfo(record);
+      } else {
+        // If no ID, create a new record for this user
+        const record = await pb.collection(menuCollectionName).create(data);
+        return recordToAppInfo(record);
+      }
+    } catch (e) {
+        console.error("Impossibile salvare le info dell'app", e);
+        throw new Error("Impossibile salvare le impostazioni dell'app.");
+    }
 }
+
 
 // ===== Azioni Libreria Strumenti AI =====
 
