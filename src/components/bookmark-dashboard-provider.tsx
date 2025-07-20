@@ -356,34 +356,45 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
-
+  
     if (!over || !active.id || active.id === over.id) {
       return;
     }
-
-    const activeType = active.data.current?.type as string;
+  
     const activeItem = active.data.current?.item;
+    const activeType = active.data.current?.type as string;
+    const overItem = over.data.current?.item;
     const overType = over.data.current?.type as string;
     const overId = String(over.id);
-    const overItem = over.data.current?.item;
-
+  
     try {
+      // Flow 1: Sidebar Space -> Main Content Area (Create Space Link)
       if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
         const sourceSpace = activeItem as Space;
         if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
           setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
         }
-      } else if ((activeType === 'bookmark' || activeType === 'folder') && overType.startsWith('space-sidebar-')) {
-        const newSpaceId = overId.replace('space-sidebar-', '');
+        return;
+      }
+  
+      // Flow 2: Bookmark/Folder -> Sidebar Space (Move Item to different Space)
+      if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space-sidebar-item') {
+        const newSpaceId = overItem.id;
         if (newSpaceId && activeItem.spaceId !== newSpaceId) {
           await moveItemAction({ id: activeItem.id, newSpaceId });
         }
-      } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-        await createFolderAction({ spaceId: activeItem.spaceId!, initialBookmarkIds: [activeItem.id, overId] });
-      } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
-        await moveItemAction({ id: activeItem.id, newParentId: overId });
       }
       
+      // Flow 3: Bookmark -> Bookmark (Create new Folder)
+      else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+        await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
+      }
+      
+      // Flow 4: Bookmark -> Folder (Move Bookmark into Folder)
+      else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
+        await moveItemAction({ id: activeItem.id, newParentId: overId });
+      }
+  
       await refreshAllData();
     } catch (e) {
       console.error("Drag end error:", e);
@@ -660,5 +671,3 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
-
-    
