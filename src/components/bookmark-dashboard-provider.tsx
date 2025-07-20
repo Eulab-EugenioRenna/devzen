@@ -370,38 +370,34 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const overId = String(over.id);
 
     try {
-        // Flow 1: Sidebar Space -> Main Content Area (Create Space Link)
-        if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
-            console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
-            const sourceSpace = activeItem as Space;
-            if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
-                setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
-                return;
-            }
+        // Flow: Bookmark -> Bookmark (Create new Folder)
+        if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+            console.log('//RIMUOVERE - Flow: Bookmark -> Bookmark (Create Folder)');
+            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
         }
-        
-        // Flow 2: Bookmark/Folder -> Sidebar Space (Move Item to different Space)
-        if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
+        // Flow: Bookmark -> Folder (Move Bookmark into Folder)
+        else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
+            console.log('//RIMUOVERE - Flow: Bookmark -> Folder (Move into Folder)');
+            await moveItemAction({ id: activeItem.id, newParentId: overId });
+        }
+        // Flow: Item -> Sidebar Space (Move Item to different Space)
+        else if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
             console.log('//RIMUOVERE - Flow: Item -> Sidebar Space (Move Item)');
             const newSpaceId = overItem.id;
             if (newSpaceId && activeItem.spaceId !== newSpaceId) {
                 await moveItemAction({ id: activeItem.id, newSpaceId });
             }
         }
-        
-        // Flow 3: Bookmark -> Bookmark (Create new Folder)
-        else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-            console.log('//RIMUOVERE - Flow: Bookmark -> Bookmark (Create Folder)');
-            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
+        // Flow: Sidebar Space -> Main Content Area (Create Space Link)
+        else if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
+            console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
+            const sourceSpace = activeItem as Space;
+            if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
+                setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
+                return; // Return early to show dialog
+            }
         }
         
-        // Flow 4: Bookmark -> Folder (Move Bookmark into Folder)
-        else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
-            console.log('//RIMUOVERE - Flow: Bookmark -> Folder (Move into Folder)');
-            await moveItemAction({ id: activeItem.id, newParentId: overId });
-        }
-        
-        // Always refresh data after a potential change
         await refreshAllData();
     } catch (e) {
         console.error("Drag end error:", e);
