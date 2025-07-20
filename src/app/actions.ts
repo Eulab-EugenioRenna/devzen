@@ -60,7 +60,7 @@ export async function getSpacesAction(): Promise<Space[]> {
     });
     return records.map(recordToSpace);
   } catch (error: any) {
-    console.error('Failed to fetch spaces:', error.response || error);
+    console.error('Failed to fetch spaces:', error);
     if (error?.status === 404) {
         console.warn(`Warning: The collection "${spacesCollectionName}" was not found. You can create some via the UI.`);
     } else if (error?.originalError) {
@@ -79,7 +79,7 @@ export async function getItemsAction(): Promise<SpaceItem[]> {
     });
     return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
   } catch (error: any) {
-    console.error('Failed to fetch items:', error.response || error);
+    console.error('Failed to fetch items:', error);
     if (error?.status === 404) {
         console.warn(`Warning: The collection "${bookmarksCollectionName}" was not found in your PocketBase instance. Please create it to store bookmarks and folders.`);
     } else if (error?.originalError) {
@@ -610,7 +610,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
         if (e.status === 404) {
              console.warn(`Record info app con ID "${menuRecordId}" non trovato nella collezione "${menuCollectionName}". Assicurati che questo record esista. Ritorno ai valori predefiniti.`);
         } else {
-             console.error('Impossibile recuperare le info dell\'app:', e.response || e);
+             console.error('Impossibile recuperare le info dell\'app:', e);
              if (e?.originalError) {
                 console.error('Errore di connessione sottostante:', e.originalError);
            }
@@ -943,3 +943,5 @@ export async function improveTextAction(text: string): Promise<string> {
 export async function generateTextAction(prompt: string): Promise<string> {
     return await generateText(prompt);
 }
+
+    
