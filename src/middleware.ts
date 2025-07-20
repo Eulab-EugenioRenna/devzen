@@ -5,19 +5,17 @@ import { pb, usersCollectionName } from '@/lib/pocketbase';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always clear the auth store at the beginning of the middleware
-  // to ensure a clean state for each request.
   pb.authStore.clear();
 
-  // Get auth cookie
   const cookie = cookies().get('pb_auth');
   
-  // If there's a cookie, load it into PocketBase and verify it
   if (cookie) {
+    pb.authStore.loadFromCookie(cookie.value);
     try {
-      pb.authStore.loadFromCookie(cookie.value, true);
-      // Verify/refresh the token
-      await pb.collection(usersCollectionName).authRefresh();
+      // Verify/refresh the token if it's valid
+      if (pb.authStore.isValid) {
+        await pb.collection(usersCollectionName).authRefresh();
+      }
     } catch (_) {
       // If verification fails, clear the invalid cookie and auth store
       pb.authStore.clear();
@@ -27,7 +25,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const isAuthenticated = pb.authStore.isValid;
+  // Check if the user is authenticated (a valid model exists in the auth store)
+  const isAuthenticated = pb.authStore.isValid && !!pb.authStore.model;
 
   // If user is trying to access auth pages but is already logged in, redirect to dashboard
   if (isAuthenticated && (pathname.startsWith('/login') || pathname.startsWith('/signup'))) {
