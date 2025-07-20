@@ -206,7 +206,7 @@ export function DashboardContent() {
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
-        {activeDragItem?.data.current?.type === 'space' && activeDragItem?.id !== activeSpaceId && (
+        {activeDragItem?.type === 'space' && activeDragItem?.item.id !== activeSpaceId && (
           <div
             ref={setSpaceLinkDroppableRef}
             className={cn(
@@ -219,7 +219,7 @@ export function DashboardContent() {
           </div>
         )}
         
-        {!hasContent && activeDragItem?.id ? (
+        {!hasContent && activeDragItem?.item?.id ? (
           <div className="flex h-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/50 p-12 text-center" />
         ) : hasContent ? (
             <div className="flex flex-col gap-8">
@@ -232,7 +232,7 @@ export function DashboardContent() {
                             : "flex flex-col gap-4"
                         )}>
                             {folders.map(folder =>
-                              activeDragItem?.id === folder.id ? (
+                              activeDragItem?.item?.id === folder.id ? (
                                 <div key={folder.id} className={cn(
                                     "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
                                     viewMode === 'list' ? 'h-28' : 'h-52'
@@ -265,7 +265,7 @@ export function DashboardContent() {
                             : "flex flex-col gap-4"
                         )}>
                              {spaceLinks.map(link =>
-                                activeDragItem?.id === link.id ? (
+                                activeDragItem?.item?.id === link.id ? (
                                     <div key={link.id} className={cn(
                                         "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
                                         viewMode === 'list' ? 'h-28' : 'h-52'
@@ -302,7 +302,7 @@ export function DashboardContent() {
                             : "flex flex-col gap-4"
                         )}>
                             {chatNotes.map(bookmark => 
-                              activeDragItem?.id === bookmark.id ? (
+                              activeDragItem?.item?.id === bookmark.id ? (
                                 <div key={bookmark.id} className={cn(
                                     "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
                                     viewMode === 'list' ? 'h-28' : 'h-52'
@@ -337,7 +337,7 @@ export function DashboardContent() {
                             : "flex flex-col gap-4"
                         )}>
                             {textNotes.map(bookmark => 
-                              activeDragItem?.id === bookmark.id ? (
+                              activeDragItem?.item?.id === bookmark.id ? (
                                 <div key={bookmark.id} className={cn(
                                     "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
                                     viewMode === 'list' ? 'h-28' : 'h-52'
@@ -374,7 +374,7 @@ export function DashboardContent() {
                             : "flex flex-col gap-4"
                         )}>
                             {regularBookmarks.map(bookmark => 
-                              activeDragItem?.id === bookmark.id ? (
+                              activeDragItem?.item?.id === bookmark.id ? (
                                 <div key={bookmark.id} className={cn(
                                     "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
                                     viewMode === 'list' ? 'h-28' : 'h-52'
