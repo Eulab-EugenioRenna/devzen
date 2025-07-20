@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -674,5 +673,3 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
-
-    

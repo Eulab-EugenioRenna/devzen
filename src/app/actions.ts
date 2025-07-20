@@ -1,4 +1,3 @@
-
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
@@ -353,7 +352,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
     const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
         const recordToUpdate = await pb.collection(bookmarksCollectionName).getOne(bookmarkId);
         const newToolData = { ...recordToUpdate.tool, parentId: newFolder.id };
-        return pb.collection(bookmarksCollectionName).update(bookmarkId, { tool: newToolData });
+        return pb.collection(bookmarksCollectionName).update(bookmarkId, { tool: newToolData, user: pb.authStore.model!.id, });
     });
 
     const updatedRecords = await Promise.all(updatePromises);
