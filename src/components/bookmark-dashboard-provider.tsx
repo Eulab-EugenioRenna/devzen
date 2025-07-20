@@ -370,8 +370,17 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const overId = String(over.id);
 
     try {
+        // Flow: Sidebar Space -> Main Content Area (Create Space Link)
+        if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
+             console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
+            const sourceSpace = activeItem as Space;
+            if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
+                setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
+                return; // Return early to show dialog
+            }
+        }
         // Flow: Bookmark -> Bookmark (Create new Folder)
-        if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+        else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
             console.log('//RIMUOVERE - Flow: Bookmark -> Bookmark (Create Folder)');
             await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
         }
@@ -388,20 +397,10 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
                 await moveItemAction({ id: activeItem.id, newSpaceId });
             }
         }
-        // Flow: Sidebar Space -> Main Content Area (Create Space Link)
-        else if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
-            console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
-            const sourceSpace = activeItem as Space;
-            if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
-                setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
-                return; // Return early to show dialog
-            }
-        }
         
         await refreshAllData();
     } catch (e) {
-        console.error("Drag end error:", e);
-        console.log('//RIMUOVERE - DRAG END ERROR:', e);
+        console.error("//RIMUOVERE - DRAG END ERROR:", e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
         await refreshAllData(); // Refresh even on error to sync state
     }
@@ -675,3 +674,5 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
+
+    

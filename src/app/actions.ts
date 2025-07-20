@@ -26,7 +26,8 @@ async function revalidateAndGetClient() {
     const cookie = cookies().get('pb_auth');
     if (cookie) {
         pb.authStore.loadFromCookie(cookie.value);
-    } else {
+    }
+    if (!pb.authStore.isValid && cookie) {
         pb.authStore.clear();
     }
     return pb;
@@ -306,7 +307,7 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
     });
 
     const updatePromises = childBookmarks.map(bm => {
-      const data = { tool: { ...bm.tool, parentId: null }, user: pb.authStore.model!.id };
+      const data = { 'tool.parentId': null, user: pb.authStore.model!.id };
       return pb.collection(bookmarksCollectionName).update(bm.id, data);
     });
     
@@ -349,9 +350,9 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   }
   const newFolder = newFolderUnchecked as Folder;
 
-  const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
-    const record = await pb.collection(bookmarksCollectionName).getOne(bookmarkId, { filter: `user = "${pb.authStore.model!.id}"` });
-    const data = { tool: { ...record.tool, parentId: newFolder.id }, user: pb.authStore.model!.id };
+  const updatePromises = initialBookmarkIds.map((bookmarkId) => {
+    // Only update the parentId field.
+    const data = { 'tool.parentId': newFolder.id };
     return pb.collection(bookmarksCollectionName).update(bookmarkId, data);
   });
   
@@ -362,6 +363,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
 
   return { folder: newFolder, bookmarks: updatedBookmarks };
 }
+
 
 export async function updateFolderNameAction({ id, name }: { id: string, name: string }): Promise<Folder> {
   const pb = await revalidateAndGetClient();
@@ -383,21 +385,22 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
-  const tool = { ...record.tool };
+  
+  const toolChanges: any = {};
 
   if (newSpaceId) {
-    tool.spaceId = newSpaceId;
+    toolChanges['tool.spaceId'] = newSpaceId;
     // When moving to a new space, always reset the parent folder.
-    tool.parentId = null; 
+    toolChanges['tool.parentId'] = null;
     
     // If the item being moved is a folder, also move all its children.
-    if (tool.type === 'folder') {
+    if (record.tool.type === 'folder') {
       const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
         filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${id}"`,
       });
 
       const updatePromises = childBookmarks.map(bm => {
-        const data = { tool: { ...bm.tool, spaceId: newSpaceId }, user: pb.authStore.model!.id };
+        const data = { 'tool.spaceId': newSpaceId, user: pb.authStore.model!.id };
         return pb.collection(bookmarksCollectionName).update(bm.id, data);
       });
       await Promise.all(updatePromises);
@@ -405,11 +408,10 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   }
   
   if (newParentId !== undefined) {
-    tool.parentId = newParentId;
+    toolChanges['tool.parentId'] = newParentId;
   }
   
-  const data = { tool, user: pb.authStore.model!.id };
-  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
+  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, toolChanges);
   const updatedItem = recordToSpaceItem(updatedRecord);
   if (!updatedItem) {
     throw new Error('Impossibile spostare o mappare l\'elemento.');
@@ -994,5 +996,7 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
+
+    
 
     
