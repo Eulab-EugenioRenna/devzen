@@ -50,7 +50,7 @@ import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
-import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
+import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName } from '@/lib/pocketbase';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
 import { DashboardSidebar } from './dashboard-sidebar';
@@ -183,23 +183,22 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
       refreshAllData();
     };
     
-    const subscribeToCollection = async (collectionName: string) => {
-        try {
-            await pb.collection(collectionName).subscribe('*', handleSubscriptionChange);
-        } catch (err: any) {
+    const subscribeToCollections = () => {
+      const collections = [bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName, usersCollectionName];
+      collections.forEach(collectionName => {
+        pb.collection(collectionName).subscribe('*', handleSubscriptionChange).catch(err => {
             console.error(`Failed to subscribe to ${collectionName}:`, err?.originalError || err);
-        }
+        });
+      });
     };
 
-    subscribeToCollection(bookmarksCollectionName);
-    subscribeToCollection(spacesCollectionName);
-    subscribeToCollection(toolsAiCollectionName);
-
+    subscribeToCollections();
 
     return () => {
-      pb.collection(bookmarksCollectionName).unsubscribe('*');
-      pb.collection(spacesCollectionName).unsubscribe('*');
-      pb.collection(toolsAiCollectionName).unsubscribe('*');
+       const collections = [bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName, usersCollectionName];
+       collections.forEach(collectionName => {
+        pb.collection(collectionName).unsubscribe('*');
+       });
     };
   }, [refreshAllData]);
   
@@ -658,3 +657,5 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
+
+    

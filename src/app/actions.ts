@@ -57,6 +57,7 @@ export async function getSpacesAction(): Promise<Space[]> {
   try {
     const records = await pb.collection(spacesCollectionName).getFullList({
       sort: 'created',
+      filter: `user = "${pb.authStore.model!.id}"`,
     });
     return records.map(recordToSpace);
   } catch (error: any) {
@@ -76,6 +77,7 @@ export async function getItemsAction(): Promise<SpaceItem[]> {
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
       sort: '-created',
+      filter: `user = "${pb.authStore.model!.id}"`,
     });
     return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
   } catch (error: any) {
@@ -259,7 +261,7 @@ export async function updateBookmarkAction({
   const pb = await revalidateAndGetClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
   
-  const record = await pb.collection(bookmarksCollectionName).getOne(id);
+  const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
   
   let newSummary = summary ?? record.tool.summary;
   
@@ -281,6 +283,7 @@ export async function updateBookmarkAction({
       url,
       summary: newSummary,
     },
+    user: pb.authStore.model!.id,
   };
 
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
@@ -295,17 +298,17 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
   const pb = await revalidateAndGetClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-  const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id);
+  const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
   const toolData = itemToDelete.tool as any;
 
   if (toolData.type === 'folder') {
     // If it's a folder, find all children and move them to the root of the space
     const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
-      filter: `tool.parentId = "${id}"`,
+      filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${id}"`,
     });
 
     const updatePromises = childBookmarks.map(bm => {
-      const data = { tool: { ...bm.tool, parentId: null } };
+      const data = { tool: { ...bm.tool, parentId: null }, user: pb.authStore.model!.id };
       return pb.collection(bookmarksCollectionName).update(bm.id, data);
     });
     
@@ -313,7 +316,7 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
   } else if (toolData.type === 'space-link' && toolData.linkedSpaceId) {
     // If it's a space link, update the original space to no longer be a link
     try {
-        await pb.collection(spacesCollectionName).update(toolData.linkedSpaceId, { isLink: false });
+        await pb.collection(spacesCollectionName).update(toolData.linkedSpaceId, { isLink: false, user: pb.authStore.model!.id });
     } catch (e) {
         console.error(`Failed to update original space ${toolData.linkedSpaceId} when deleting link ${id}. It might already be deleted.`, e);
         // We can continue to delete the link itself even if the original space is gone.
@@ -349,8 +352,8 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
   const newFolder = newFolderUnchecked as Folder;
 
   const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
-    const record = await pb.collection(bookmarksCollectionName).getOne(bookmarkId);
-    const data = { tool: { ...record.tool, parentId: newFolder.id } };
+    const record = await pb.collection(bookmarksCollectionName).getOne(bookmarkId, { filter: `user = "${pb.authStore.model!.id}"` });
+    const data = { tool: { ...record.tool, parentId: newFolder.id }, user: pb.authStore.model!.id };
     return pb.collection(bookmarksCollectionName).update(bookmarkId, data);
   });
   
@@ -366,8 +369,8 @@ export async function updateFolderNameAction({ id, name }: { id: string, name: s
   const pb = await revalidateAndGetClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-  const record = await pb.collection(bookmarksCollectionName).getOne(id);
-  const data = { tool: { ...record.tool, name } };
+  const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
+  const data = { tool: { ...record.tool, name }, user: pb.authStore.model!.id };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   const updatedFolder = recordToSpaceItem(updatedRecord);
   if (!updatedFolder || updatedFolder.type !== 'folder') {
@@ -381,7 +384,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   const pb = await revalidateAndGetClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-  const record = await pb.collection(bookmarksCollectionName).getOne(id);
+  const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
   const tool = { ...record.tool };
 
   if (newSpaceId) {
@@ -392,11 +395,11 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
     // If the item being moved is a folder, also move all its children.
     if (tool.type === 'folder') {
       const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
-        filter: `tool.parentId = "${id}"`,
+        filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${id}"`,
       });
 
       const updatePromises = childBookmarks.map(bm => {
-        const data = { tool: { ...bm.tool, spaceId: newSpaceId } };
+        const data = { tool: { ...bm.tool, spaceId: newSpaceId }, user: pb.authStore.model!.id };
         return pb.collection(bookmarksCollectionName).update(bm.id, data);
       });
       await Promise.all(updatePromises);
@@ -407,7 +410,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
     tool.parentId = newParentId;
   }
   
-  const data = { tool };
+  const data = { tool, user: pb.authStore.model!.id };
   const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
   const updatedItem = recordToSpaceItem(updatedRecord);
   if (!updatedItem) {
@@ -420,7 +423,7 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
     
-    const record = await pb.collection(bookmarksCollectionName).getOne(id);
+    const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
     const tool = { ...record.tool, backgroundColor, textColor };
 
     if (icon !== undefined) {
@@ -433,7 +436,7 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
         (tool as any).iconColor = iconColor;
     }
 
-    const data = { tool };
+    const data = { tool, user: pb.authStore.model!.id };
     const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
     const updatedItem = recordToSpaceItem(updatedRecord);
     if (!updatedItem) {
@@ -457,7 +460,7 @@ export async function updateSpaceAction({ id, data }: { id: string, data: { name
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-    const record = await pb.collection(spacesCollectionName).update(id, data);
+    const record = await pb.collection(spacesCollectionName).update(id, { ...data, user: pb.authStore.model!.id });
     return recordToSpace(record);
 }
 
@@ -467,20 +470,20 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 
     // 1. Find and delete any space-links that point TO this space
     const incomingLinks = await pb.collection(bookmarksCollectionName).getFullList({
-        filter: `tool.type = "space-link" && tool.linkedSpaceId = "${id}"`,
+        filter: `user = "${pb.authStore.model!.id}" && tool.type = "space-link" && tool.linkedSpaceId = "${id}"`,
     });
     const deleteIncomingLinksPromises = incomingLinks.map(item => pb.collection(bookmarksCollectionName).delete(item.id));
     await Promise.all(deleteIncomingLinksPromises);
 
     // 2. Find all items WITHIN this space, handle any outgoing space-links, and then delete all items.
     const itemsInSpace = await pb.collection(bookmarksCollectionName).getFullList({
-        filter: `tool.spaceId = "${id}"`,
+        filter: `user = "${pb.authStore.model!.id}" && tool.spaceId = "${id}"`,
     });
     
     // 2a. Find any outgoing space-links and restore the original space by setting isLink=false
     const restoreSpacePromises = itemsInSpace
         .filter(item => item.tool.type === 'space-link' && item.tool.linkedSpaceId)
-        .map(item => pb.collection(spacesCollectionName).update(item.tool.linkedSpaceId, { isLink: false }));
+        .map(item => pb.collection(spacesCollectionName).update(item.tool.linkedSpaceId, { isLink: false, user: pb.authStore.model!.id }));
     await Promise.all(restoreSpacePromises);
 
     // 2b. Delete all items within the space
@@ -509,7 +512,7 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
   };
   
   const record = await pb.collection(bookmarksCollectionName).create(linkData);
-  await pb.collection(spacesCollectionName).update(space.id, { isLink: true });
+  await pb.collection(spacesCollectionName).update(space.id, { isLink: true, user: pb.authStore.model!.id });
 
   const newLink = recordToSpaceItem(record);
   if (!newLink || newLink.type !== 'space-link') {
@@ -523,7 +526,7 @@ export async function unlinkSpaceAction({ id, linkedSpaceId }: { id: string, lin
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     await pb.collection(bookmarksCollectionName).delete(id);
-    await pb.collection(spacesCollectionName).update(linkedSpaceId, { isLink: false });
+    await pb.collection(spacesCollectionName).update(linkedSpaceId, { isLink: false, user: pb.authStore.model!.id });
     return { success: true };
 }
 
@@ -566,7 +569,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
     const newFolder = recordToSpaceItem(folderRecord) as Folder;
 
     const childBookmarks = await pb.collection(bookmarksCollectionName).getFullList({
-      filter: `tool.parentId = "${item.id}"`,
+      filter: `user = "${pb.authStore.model!.id}" && tool.parentId = "${item.id}"`,
     });
 
     for (const bookmark of childBookmarks) {
@@ -623,6 +626,8 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
+    // The user field might not be necessary for a global settings collection, 
+    // but if it is, you should add it to the form data or update logic.
     const record = await pb.collection(menuCollectionName).update(id, formData);
     return recordToAppInfo(record);
 }
@@ -787,9 +792,9 @@ export async function exportWorkspaceAction(spaceIds: string[]): Promise<string>
     const workspace: AIWorkspace = { spaces: [] };
 
     for (const spaceId of spaceIds) {
-        const spaceRecord = await pb.collection(spacesCollectionName).getOne(spaceId);
+        const spaceRecord = await pb.collection(spacesCollectionName).getOne(spaceId, { filter: `user = "${pb.authStore.model!.id}"` });
         const spaceItems = await pb.collection(bookmarksCollectionName).getFullList({
-            filter: `tool.spaceId = "${spaceId}"`
+            filter: `user = "${pb.authStore.model!.id}" && tool.spaceId = "${spaceId}"`
         });
 
         const items: AISpaceItem[] = [];
@@ -897,7 +902,7 @@ export async function regenerateSummaryAction(id: string): Promise<Bookmark> {
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-    const record = await pb.collection(bookmarksCollectionName).getOne(id);
+    const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
     if (!record || record.tool.type !== 'bookmark' || record.tool.url.startsWith('devzen:')) {
         throw new Error("Elemento non valido o non è un segnalibro valido per la rigenerazione.");
     }
@@ -916,6 +921,7 @@ export async function regenerateSummaryAction(id: string): Promise<Bookmark> {
             ...record.tool,
             summary: summary,
         },
+        user: pb.authStore.model!.id,
     };
 
     const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, data);
@@ -945,4 +951,6 @@ export async function generateTextAction(prompt: string): Promise<string> {
 }
 
     
+    
+
     

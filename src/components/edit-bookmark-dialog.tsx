@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -51,7 +52,7 @@ export function EditBookmarkDialog({
     resolver: zodResolver(bookmarkSchema),
     defaultValues: {
       title: bookmark.title,
-      url: isNote ? bookmark.url : bookmark.url.replace(/^(https?:\/\/)/i, ''),
+      url: isNote ? bookmark.url : bookmark.url,
     },
   });
 
@@ -121,14 +122,10 @@ export function EditBookmarkDialog({
                   <FormItem>
                     <FormLabel>URL</FormLabel>
                     <FormControl>
-                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 text-base ring-offset-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
-                          <span className="text-muted-foreground">https://</span>
-                          <input
-                              {...field}
-                              placeholder="nextjs.org"
-                              className="w-full border-none bg-transparent pl-1 text-foreground placeholder:text-muted-foreground focus:outline-none"
-                          />
-                      </div>
+                      <Input
+                          {...field}
+                          placeholder="https://nextjs.org"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -152,3 +149,5 @@ export function EditBookmarkDialog({
     </Dialog>
   );
 }
+
+    
