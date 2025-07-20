@@ -307,8 +307,9 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
     });
 
     const updatePromises = childBookmarks.map(bm => {
-      const newToolData = { ...bm.tool, parentId: null };
-      return pb.collection(bookmarksCollectionName).update(bm.id, { tool: newToolData, user: pb.authStore.model!.id });
+      const recordToUpdate = bm;
+      const newToolData = { ...recordToUpdate.tool, parentId: null };
+      return pb.collection(bookmarksCollectionName).update(recordToUpdate.id, { tool: newToolData, user: pb.authStore.model!.id });
     });
     
     await Promise.all(updatePromises);
@@ -997,5 +998,3 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
-
-    

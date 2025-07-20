@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -349,14 +350,12 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
-    console.log('//RIMUOVERE - DRAG START:', event.active);
     setActiveDragItem(event.active);
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
-    console.log('//RIMUOVERE - DRAG END - Active:', active, 'Over:', over);
 
     if (!over || !active.id || active.id === over.id) {
         return;
@@ -369,39 +368,28 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     const overId = String(over.id);
 
     try {
-        // Flow: Sidebar Space -> Main Content Area (Create Space Link)
         if (activeType === 'space' && overId === 'space-link-droppable-area' && activeSpace) {
-             console.log('//RIMUOVERE - Flow: Sidebar Space -> Main Content (Create Space Link)');
             const sourceSpace = activeItem as Space;
             if (sourceSpace && activeSpace && sourceSpace.id !== activeSpace.id) {
                 setLinkingSpacesInfo({ source: sourceSpace, target: activeSpace });
-                return; // Return early to show dialog
+                return;
             }
-        }
-        // Flow: Bookmark -> Bookmark (Create new Folder)
-        else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
-            console.log('//RIMUOVERE - Flow: Bookmark -> Bookmark (Create Folder)');
-            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
-        }
-        // Flow: Bookmark -> Folder (Move Bookmark into Folder)
-        else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
-            console.log('//RIMUOVERE - Flow: Bookmark -> Folder (Move into Folder)');
-            await moveItemAction({ id: activeItem.id, newParentId: overId });
-        }
-        // Flow: Item -> Sidebar Space (Move Item to different Space)
-        else if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
-            console.log('//RIMUOVERE - Flow: Item -> Sidebar Space (Move Item)');
+        } else if ((activeType === 'bookmark' || activeType === 'folder' || activeType === 'space-link') && overType === 'space') {
             const newSpaceId = overItem.id;
             if (newSpaceId && activeItem.spaceId !== newSpaceId) {
                 await moveItemAction({ id: activeItem.id, newSpaceId });
             }
+        } else if (activeType === 'bookmark' && overType === 'bookmark' && activeItem.spaceId === overItem.spaceId) {
+            await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [activeItem.id, overId] });
+        } else if (activeType === 'bookmark' && overType === 'folder' && activeItem.parentId !== overId) {
+            await moveItemAction({ id: activeItem.id, newParentId: overId });
         }
         
         await refreshAllData();
     } catch (e) {
-        console.error("//RIMUOVERE - DRAG END ERROR:", e);
+        console.error("DRAG END ERROR:", e);
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile spostare l\'elemento.' });
-        await refreshAllData(); // Refresh even on error to sync state
+        await refreshAllData();
     }
   };
 
