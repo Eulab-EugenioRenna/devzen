@@ -50,6 +50,7 @@ export async function handleSignup(formData: FormData) {
   // Set auth cookie
   const cookie = pb.authStore.exportToCookie();
   cookies().set('pb_auth', cookie);
+  redirect('/dashboard');
 }
 
 
@@ -77,6 +78,7 @@ export async function handleLogin(formData: FormData) {
 
     const cookie = pb.authStore.exportToCookie();
     cookies().set('pb_auth', cookie);
+    redirect('/dashboard');
 }
 
 

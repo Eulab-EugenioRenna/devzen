@@ -64,7 +64,7 @@ export function SignupForm() {
           title: 'Registrazione Riuscita!',
           description: 'Stai per essere reindirizzato alla dashboard.',
         });
-        router.refresh();
+        // Redirect is now handled by the server action
       }
     };
   

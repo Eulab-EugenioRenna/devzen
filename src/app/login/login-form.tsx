@@ -61,7 +61,7 @@ export function LoginForm() {
         title: 'Accesso Riuscito!',
         description: 'Stai per essere reindirizzato alla dashboard.',
       });
-      router.refresh(); // Important for middleware to kick in
+      // Redirect is now handled by the server action
     }
   };
 
