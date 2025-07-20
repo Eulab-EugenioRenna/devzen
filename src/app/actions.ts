@@ -307,8 +307,8 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
     });
 
     const updatePromises = childBookmarks.map(bm => {
-      const data = { 'tool.parentId': null, user: pb.authStore.model!.id };
-      return pb.collection(bookmarksCollectionName).update(bm.id, data);
+      const newToolData = { ...bm.tool, parentId: null };
+      return pb.collection(bookmarksCollectionName).update(bm.id, { tool: newToolData, user: pb.authStore.model!.id });
     });
     
     await Promise.all(updatePromises);
@@ -328,40 +328,40 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
 }
 
 export async function createFolderAction({ spaceId, initialBookmarkIds }: { spaceId: string, initialBookmarkIds: string[] }): Promise<{ folder: Folder, bookmarks: Bookmark[] }> {
-  const pb = await revalidateAndGetClient();
-  if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
-  
-  const folderData = {
-    tool: {
-      type: 'folder',
-      name: 'Nuova Cartella',
-      spaceId: spaceId,
-      parentId: null,
-    },
-    user: pb.authStore.model!.id,
-  };
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-  const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
-  const newFolderUnchecked = recordToSpaceItem(folderRecord);
+    const folderData = {
+        tool: {
+            type: 'folder',
+            name: 'Nuova Cartella',
+            spaceId: spaceId,
+            parentId: null,
+        },
+        user: pb.authStore.model!.id,
+    };
 
-  if (!newFolderUnchecked || newFolderUnchecked.type !== 'folder') {
-    await pb.collection(bookmarksCollectionName).delete(folderRecord.id).catch(e => console.error("Impossibile pulire il record della cartella non valido dopo l'errore di creazione.", e));
-    throw new Error('Impossibile creare o mappare la nuova cartella dal record.');
-  }
-  const newFolder = newFolderUnchecked as Folder;
+    const folderRecord = await pb.collection(bookmarksCollectionName).create(folderData);
+    const newFolderUnchecked = recordToSpaceItem(folderRecord);
 
-  const updatePromises = initialBookmarkIds.map((bookmarkId) => {
-    // Only update the parentId field.
-    const data = { 'tool.parentId': newFolder.id };
-    return pb.collection(bookmarksCollectionName).update(bookmarkId, data);
-  });
-  
-  const updatedRecords = await Promise.all(updatePromises);
-  const updatedBookmarks = updatedRecords
-    .map(recordToSpaceItem)
-    .filter((item): item is Bookmark => !!item && item.type === 'bookmark');
+    if (!newFolderUnchecked || newFolderUnchecked.type !== 'folder') {
+        await pb.collection(bookmarksCollectionName).delete(folderRecord.id).catch(e => console.error("Impossibile pulire il record della cartella non valido dopo l'errore di creazione.", e));
+        throw new Error('Impossibile creare o mappare la nuova cartella dal record.');
+    }
+    const newFolder = newFolderUnchecked as Folder;
 
-  return { folder: newFolder, bookmarks: updatedBookmarks };
+    const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
+        const recordToUpdate = await pb.collection(bookmarksCollectionName).getOne(bookmarkId);
+        const newToolData = { ...recordToUpdate.tool, parentId: newFolder.id };
+        return pb.collection(bookmarksCollectionName).update(bookmarkId, { tool: newToolData });
+    });
+
+    const updatedRecords = await Promise.all(updatePromises);
+    const updatedBookmarks = updatedRecords
+        .map(recordToSpaceItem)
+        .filter((item): item is Bookmark => !!item && item.type === 'bookmark');
+
+    return { folder: newFolder, bookmarks: updatedBookmarks };
 }
 
 
@@ -389,9 +389,9 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   const toolChanges: any = {};
 
   if (newSpaceId) {
-    toolChanges['tool.spaceId'] = newSpaceId;
+    toolChanges.spaceId = newSpaceId;
     // When moving to a new space, always reset the parent folder.
-    toolChanges['tool.parentId'] = null;
+    toolChanges.parentId = null;
     
     // If the item being moved is a folder, also move all its children.
     if (record.tool.type === 'folder') {
@@ -400,18 +400,19 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
       });
 
       const updatePromises = childBookmarks.map(bm => {
-        const data = { 'tool.spaceId': newSpaceId, user: pb.authStore.model!.id };
-        return pb.collection(bookmarksCollectionName).update(bm.id, data);
+        const newToolData = { ...bm.tool, spaceId: newSpaceId };
+        return pb.collection(bookmarksCollectionName).update(bm.id, { tool: newToolData, user: pb.authStore.model!.id });
       });
       await Promise.all(updatePromises);
     }
   }
   
   if (newParentId !== undefined) {
-    toolChanges['tool.parentId'] = newParentId;
+    toolChanges.parentId = newParentId;
   }
   
-  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, toolChanges);
+  const updatedTool = { ...record.tool, ...toolChanges };
+  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, { tool: updatedTool });
   const updatedItem = recordToSpaceItem(updatedRecord);
   if (!updatedItem) {
     throw new Error('Impossibile spostare o mappare l\'elemento.');
@@ -996,7 +997,3 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
-
-    
-
-    
