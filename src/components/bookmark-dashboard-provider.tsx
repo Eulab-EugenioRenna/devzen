@@ -69,7 +69,7 @@ interface DashboardContextType {
   appInfo: AppInfo;
   tools: ToolsAi[];
   showLinks: boolean;
-  activeDragItem: Active | null;
+  activeDragItem: { item: SpaceItem; type: string } | null;
   searchTerm: string;
   isSearching: boolean;
   searchResultIds: Set<string> | null;
@@ -125,7 +125,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
   const [editingBookmark, setEditingBookmark] = React.useState<Bookmark | null>(null);
-  const [activeDragItem, setActiveDragItem] = React.useState<Active | null>(null);
+  const [activeDragItem, setActiveDragItem] = React.useState<{ item: SpaceItem; type: string } | null>(null);
   const [editingSpace, setEditingSpace] = React.useState<Space | null>(null);
   const [isAddingSpace, setIsAddingSpace] = React.useState(false);
   const [deletingSpace, setDeletingSpace] = React.useState<Space | null>(null);
@@ -350,7 +350,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveDragItem(event.active);
+    setActiveDragItem(event.active.data.current as { item: SpaceItem; type: string });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -361,18 +361,18 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
       return;
     }
 
-    const activeItem = active.data.current?.item;
-    const activeType = active.data.current?.type;
-    const overItem = over.data.current?.item;
-    const overType = over.data.current?.type;
-    const overId = over.id;
+    const activeItem = active.data.current?.item as SpaceItem;
+    const activeType = active.data.current?.type as string;
+    const overItem = over.data.current?.item as SpaceItem | Space;
+    const overType = over.data.current?.type as string;
+    const overId = over.id as string;
 
     const scenario = `${activeType}-on-${overType || (overId === 'space-link-droppable-area' ? 'droppable' : 'unknown')}`;
 
     try {
       switch (scenario) {
         case 'bookmark-on-bookmark':
-          if (activeItem.spaceId === overItem.spaceId) {
+          if (activeItem.spaceId === (overItem as SpaceItem).spaceId) {
             await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
           }
           break;
@@ -393,7 +393,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
         case 'space-on-droppable':
           if (activeSpace && activeItem.id !== activeSpace.id) {
-            setLinkingSpacesInfo({ source: activeItem, target: activeSpace });
+            setLinkingSpacesInfo({ source: activeItem as Space, target: activeSpace });
           }
           break;
 
@@ -586,8 +586,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         {isMounted && createPortal(
           <DragOverlay>
             {activeDragItem ? (() => {
-              const draggedItem = activeDragItem.data.current?.item;
-              const type = activeDragItem.data.current?.type;
+              const draggedItem = activeDragItem.item;
+              const type = activeDragItem.type;
 
               if (type === 'bookmark' && draggedItem) {
                 return <BookmarkCard bookmark={draggedItem as Bookmark} onEdit={() => {}} onDeleted={() => {}} onCustomize={() => {}} onDuplicate={() => {}} onShare={() => {}} onViewNote={() => {}} onViewTextNote={() => {}} onRegenerateSummary={() => {}} isRegenerating={false} isOverlay isDragging={false} />;
@@ -677,3 +677,5 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     </DashboardContext.Provider>
   );
 }
+
+    
