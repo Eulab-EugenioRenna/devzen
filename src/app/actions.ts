@@ -1,3 +1,4 @@
+
 'use server';
 
 import { summarizeBookmark } from '@/ai/flows/summarize-bookmark';
@@ -352,7 +353,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
     const updatePromises = initialBookmarkIds.map(async (bookmarkId) => {
         const recordToUpdate = await pb.collection(bookmarksCollectionName).getOne(bookmarkId);
         const newToolData = { ...recordToUpdate.tool, parentId: newFolder.id };
-        return pb.collection(bookmarksCollectionName).update(bookmarkId, { tool: newToolData, user: pb.authStore.model!.id, });
+        return pb.collection(bookmarksCollectionName).update(bookmarkId, { tool: newToolData, user: pb.authStore.model!.id });
     });
 
     const updatedRecords = await Promise.all(updatePromises);
@@ -411,7 +412,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
   }
   
   const updatedTool = { ...record.tool, ...toolChanges };
-  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, { tool: updatedTool });
+  const updatedRecord = await pb.collection(bookmarksCollectionName).update(id, { tool: updatedTool, user: pb.authStore.model!.id });
   const updatedItem = recordToSpaceItem(updatedRecord);
   if (!updatedItem) {
     throw new Error('Impossibile spostare o mappare l\'elemento.');
@@ -996,3 +997,5 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
+
+    
