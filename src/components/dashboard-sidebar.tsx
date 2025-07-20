@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download, LogOut } from 'lucide-react';
+import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download, LogOut, Share2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { handleLogout } from '@/app/auth/actions';
 
@@ -29,7 +29,7 @@ function SidebarSpaceMenuItem({
   space: any;
   isActive: boolean;
 }) {
-  const { setActiveSpaceId, handleEditSpace, handleDeleteSpace, activeDragItem } = useDashboard();
+  const { setActiveSpaceId, handleEditSpace, handleDeleteSpace, handleShareItem, activeDragItem } = useDashboard();
   const { setNodeRef, isOver } = useDroppable({
     id: `space-sidebar-${space.id}`,
     data: { type: 'space-sidebar', item: space },
@@ -87,6 +87,10 @@ function SidebarSpaceMenuItem({
             <DropdownMenuItem onClick={() => handleEditSpace(space)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Modifica Spazio
+            </DropdownMenuItem>
+             <DropdownMenuItem onClick={() => handleShareItem(space)}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Condividi Spazio
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

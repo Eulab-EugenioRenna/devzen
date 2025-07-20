@@ -43,6 +43,8 @@ export function DashboardContent() {
     handleItemEdit,
     handleItemCustomize,
     handleItemDuplicate,
+    handleItemMove,
+    handleShareItem,
     handleFolderView,
     handleNoteView,
     handleTextNoteView,
@@ -244,6 +246,7 @@ export function DashboardContent() {
                                     onNameUpdated={handleUpdateFolderName}
                                     onCustomize={() => handleItemCustomize(folder)}
                                     onDuplicate={() => handleItemDuplicate(folder)}
+                                    onShare={() => handleShareItem(folder)}
                                     onUnlink={() => {}}
                                     viewMode={viewMode}
                                 />
@@ -276,6 +279,7 @@ export function DashboardContent() {
                                         onNameUpdated={() => {}} // Cannot rename links
                                         onCustomize={() => handleItemCustomize(link)}
                                         onDuplicate={() => handleItemDuplicate(link)}
+                                        onShare={() => handleShareItem(link)}
                                         onUnlink={handleUnlinkSpace}
                                         viewMode={viewMode}
                                     />
@@ -311,6 +315,7 @@ export function DashboardContent() {
                                     onDeleted={handleItemDelete}
                                     onCustomize={() => handleItemCustomize(bookmark)}
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
+                                    onShare={() => handleShareItem(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
                                     onRegenerateSummary={handleRegenerateSummary}
@@ -345,6 +350,7 @@ export function DashboardContent() {
                                     onDeleted={handleItemDelete}
                                     onCustomize={() => handleItemCustomize(bookmark)}
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
+                                    onShare={() => handleShareItem(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
                                     onRegenerateSummary={handleRegenerateSummary}
@@ -381,6 +387,7 @@ export function DashboardContent() {
                                     onDeleted={handleItemDelete}
                                     onCustomize={() => handleItemCustomize(bookmark)}
                                     onDuplicate={() => handleItemDuplicate(bookmark)}
+                                    onShare={() => handleShareItem(bookmark)}
                                     onViewNote={handleNoteView}
                                     onViewTextNote={handleTextNoteView}
                                     onRegenerateSummary={handleRegenerateSummary}

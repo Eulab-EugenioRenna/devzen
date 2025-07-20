@@ -26,14 +26,6 @@ async function revalidateAndGetClient() {
     const cookie = cookies().get('pb_auth');
     if (cookie) {
         pb.authStore.loadFromCookie(cookie.value);
-        try {
-            // This will also auto-refresh the token if needed
-            if(pb.authStore.isValid) {
-                await pb.collection(usersCollectionName).authRefresh();
-            }
-        } catch (_) {
-            pb.authStore.clear();
-        }
     }
     return pb;
 }
@@ -972,7 +964,27 @@ export async function generateTextAction(prompt: string): Promise<string> {
     return await generateText(prompt);
 }
 
-    
-    
+// ===== Azioni di Condivisione =====
+export async function sendWebhookAction(url: string, data: any): Promise<{ success: boolean }> {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data, null, 2),
+    });
 
-    
+    if (!response.ok) {
+      throw new Error(`La richiesta al Webhook è fallita con stato ${response.status}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Errore invio Webhook:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
+  }
+}

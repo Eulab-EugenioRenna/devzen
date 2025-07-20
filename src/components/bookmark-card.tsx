@@ -4,7 +4,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen, RefreshCw, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, FileText, NotebookPen, RefreshCw, Loader2, Share2 } from 'lucide-react';
 
 import {
   Card,
@@ -41,6 +41,7 @@ interface BookmarkCardProps {
   onDeleted: (id: string, type: 'bookmark' | 'folder') => void;
   onCustomize: () => void;
   onDuplicate: () => void;
+  onShare: (bookmark: Bookmark) => void;
   onViewNote: (note: Bookmark) => void;
   onViewTextNote: (note: Bookmark) => void;
   onRegenerateSummary: (id: string) => void;
@@ -58,7 +59,7 @@ function getDomain(url: string) {
   }
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onViewNote, onViewTextNote, onRegenerateSummary, isRegenerating, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDuplicate, onShare, onViewNote, onViewTextNote, onRegenerateSummary, isRegenerating, isOverlay, viewMode = 'grid', isDragging }: BookmarkCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: bookmark.id,
     data: { type: 'bookmark', item: bookmark },
@@ -195,6 +196,10 @@ export function BookmarkCard({ bookmark, onEdit, onDeleted, onCustomize, onDupli
               <DropdownMenuItem onClick={onDuplicate}>
                 <Copy className="mr-2 h-4 w-4" />
                 Duplica
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onShare(bookmark)}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Condividi
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onCustomize}>
                 <Palette className="mr-2 h-4 w-4" />

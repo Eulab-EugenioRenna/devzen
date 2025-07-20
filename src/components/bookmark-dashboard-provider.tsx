@@ -35,7 +35,8 @@ import {
   createSpaceLinkAction,
   unlinkSpaceAction,
   chatInSpaceAction,
-  regenerateSummaryAction
+  regenerateSummaryAction,
+  sendWebhookAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,7 @@ import { DashboardSidebar } from './dashboard-sidebar';
 import { DashboardContent } from './dashboard-content';
 import { NoteViewDialog } from './note-view-dialog';
 import { NoteEditViewDialog } from './note-edit-view-dialog';
+import { ShareDialog } from './share-dialog';
 
 interface DashboardContextType {
   // State
@@ -87,6 +89,7 @@ interface DashboardContextType {
   handleNewSpaceClick: () => void;
   handleDeleteSpace: (space: Space) => void;
   handleUnlinkSpace: (link: SpaceLink) => void;
+  handleShareItem: (item: SpaceItem | Space) => void;
   handleAppInfoSave: (formData: FormData) => void;
   handleEditAppInfo: () => void;
   handleExport: () => void;
@@ -130,6 +133,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [viewingNote, setViewingNote] = React.useState<Bookmark | null>(null);
   const [viewingTextNote, setViewingTextNote] = React.useState<Bookmark | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
+  const [sharingItem, setSharingItem] = React.useState<SpaceItem | Space | null>(null);
   
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isSearching, setIsSearching] = React.useState(false);
@@ -535,6 +539,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleNewSpaceClick,
     handleDeleteSpace: setDeletingSpace,
     handleUnlinkSpace,
+    handleShareItem: setSharingItem,
     handleAppInfoSave,
     handleEditAppInfo: () => setIsEditingAppInfo(true),
     handleExport,
@@ -653,6 +658,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
                   </AlertDialogContent>
               </AlertDialog>
         }
+        {sharingItem && <ShareDialog item={sharingItem} onOpenChange={() => setSharingItem(null)} onWebhookSent={sendWebhookAction} />}
       </DndContext>
     </DashboardContext.Provider>
   );
