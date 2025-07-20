@@ -851,7 +851,7 @@ export async function smartSearchAction(query: string, bookmarks: Bookmark[]): P
 }
 
 export async function analyzeSpaceAction(input: AnalyzeSpaceInput): Promise<AnalyzeSpaceOutput> {
-    const result = await analyze(input);
+    const result = await analyzeSpace(input);
     return result;
 }
 
@@ -944,4 +944,5 @@ export async function generateTextAction(prompt: string): Promise<string> {
     return await generateText(prompt);
 }
 
+    
     
