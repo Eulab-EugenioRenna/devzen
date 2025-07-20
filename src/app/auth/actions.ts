@@ -87,3 +87,14 @@ export async function handleLogout() {
   cookies().delete('pb_auth');
   redirect('/login');
 }
+
+export async function setAuthCookieAction() {
+    if (pb.authStore.isValid && pb.authStore.token) {
+        const cookie = pb.authStore.exportToCookie();
+        cookies().set('pb_auth', cookie);
+    } else {
+        // This case should ideally not be hit if called after a successful auth
+        // but as a safeguard, we clear any potentially invalid cookie.
+        cookies().delete('pb_auth');
+    }
+}
