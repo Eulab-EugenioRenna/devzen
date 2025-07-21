@@ -343,3 +343,5 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
     </div>
   );
 }
+
+    
