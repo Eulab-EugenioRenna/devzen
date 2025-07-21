@@ -88,7 +88,7 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, onLibraryI
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-4">
-          <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
             <DialogTitle className="font-headline text-2xl">Importa dalla Libreria di Strumenti AI</DialogTitle>
             <Button variant="outline" onClick={() => setIsImporting(true)}>
               <Upload className="mr-2 h-4 w-4" />
