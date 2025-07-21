@@ -4,7 +4,7 @@
 import * as React from 'react';
 import type { Bookmark } from '@/lib/types';
 import { useDraggable } from '@dnd-kit/core';
-import { MoreHorizontal, Pencil, Copy, Palette, Trash2, ClipboardCheck, Share2, Edit } from 'lucide-react';
+import { MoreHorizontal, Pencil, Copy, Palette, Trash2, ClipboardCheck, Share2, Edit, ChevronsUpDown } from 'lucide-react';
 
 import {
   Card,
@@ -29,6 +29,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Progress } from './ui/progress';
@@ -54,7 +60,9 @@ const parseTasks = (markdown: string): Task[] => {
 };
 
 const tasksToMarkdown = (title: string, tasks: Task[]): string => {
-    const header = `# ${title.replace('Piano d\'Azione e Task', 'Task per')}\n\n`;
+    const headerMatch = title.match(/Piano d'Azione e Task|Tasks per (.*)/);
+    const baseTitle = headerMatch?.[1] || title;
+    const header = `# Tasks per ${baseTitle}\n\n`;
     return header + tasks.map(task => `- [${task.completed ? 'x' : ' '}] ${task.text}`).join('\n');
 };
 
@@ -66,13 +74,13 @@ interface TaskCardProps {
   onCustomize: () => void;
   onDuplicate: () => void;
   onShare: (note: Bookmark) => void;
-  onViewTextNote: (note: Bookmark) => void;
+  onEditTasks: (note: Bookmark) => void;
   isOverlay?: boolean;
   viewMode?: 'grid' | 'list';
   isDragging?: boolean;
 }
 
-export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplicate, onShare, onViewTextNote, isOverlay, viewMode = 'grid', isDragging }: TaskCardProps) {
+export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplicate, onShare, onEditTasks, isOverlay, viewMode = 'grid', isDragging }: TaskCardProps) {
   const { attributes, listeners, setNodeRef: setDraggableNodeRef } = useDraggable({
     id: note.id,
     data: { type: 'bookmark', item: note },
@@ -125,9 +133,9 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
             </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => onViewTextNote(note)}>
+              <DropdownMenuItem onClick={() => onEditTasks(note)}>
                 <Edit className="mr-2 h-4 w-4" />
-                Modifica Nota
+                Gestisci Task
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onDuplicate}>
                 <Copy className="mr-2 h-4 w-4" />
@@ -153,6 +161,27 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
         </DropdownMenu>
         </TooltipProvider>
     </div>
+  );
+
+  const TaskList = ({ tasks, start = 0, end }: { tasks: Task[], start?: number, end?: number }) => (
+    <>
+      {tasks.slice(start, end).map((task, index) => (
+        <div key={index + start} className="flex items-center space-x-2">
+          <Checkbox 
+              id={`task-${note.id}-${index + start}`}
+              checked={task.completed}
+              onCheckedChange={() => handleTaskToggle(index + start)}
+              onClick={(e) => e.stopPropagation()}
+          />
+          <Label 
+              htmlFor={`task-${note.id}-${index + start}`}
+              className={cn("text-sm truncate", task.completed && "line-through text-muted-foreground")}
+          >
+              {task.text}
+          </Label>
+        </div>
+      ))}
+    </>
   );
 
   if (isDragging) {
@@ -187,9 +216,8 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
     >
       <Card
         style={cardStyle}
-        onClick={() => onViewTextNote(note)}
         className={cn(
-            "group/card overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer",
+            "group/card overflow-hidden transition-all duration-200 hover:shadow-md",
         )}
       >
         <div 
@@ -203,7 +231,7 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
           </div>
 
           <div className="flex-1 min-w-0 pt-2">
-            <CardTitle className="font-headline text-base leading-tight hover:underline truncate">
+            <CardTitle className="font-headline text-base leading-tight truncate">
               {note.title}
             </CardTitle>
             <CardDescription className="mt-1 truncate text-xs">
@@ -274,28 +302,21 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
             <CardContent className="p-0 pt-3 flex-1 flex flex-col gap-2">
                 <Progress value={progress} className="h-2" />
                 <div className="space-y-2 pt-2">
-                    {tasks.slice(0, 3).map((task, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={`task-${note.id}-${index}`}
-                                checked={task.completed}
-                                onCheckedChange={() => handleTaskToggle(index)}
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                            <Label 
-                                htmlFor={`task-${note.id}-${index}`}
-                                className={cn("text-sm truncate", task.completed && "line-through text-muted-foreground")}
-                            >
-                                {task.text}
-                            </Label>
-                        </div>
-                    ))}
-                    {tasks.length > 3 && (
-                        <p className="text-xs text-muted-foreground" onClick={(e) => { e.stopPropagation(); onViewTextNote(note); }} >
-                            + {tasks.length - 3} altre attività...
-                        </p>
-                    )}
+                  <TaskList tasks={tasks} end={3} />
                 </div>
+                 {tasks.length > 3 && (
+                    <Accordion type="single" collapsible className="w-full -mt-2">
+                      <AccordionItem value="item-1" className="border-b-0">
+                        <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline py-1 justify-start gap-1">
+                           + {tasks.length - 3} altre attività
+                           <ChevronsUpDown className="h-3 w-3" />
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-2">
+                           <TaskList tasks={tasks} start={3} />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                )}
             </CardContent>
         </div>
       </Card>

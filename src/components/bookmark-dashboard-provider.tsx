@@ -64,6 +64,7 @@ import { NoteEditViewDialog } from './note-edit-view-dialog';
 import { ShareDialog } from './share-dialog';
 import { DevelopIdeaDialog } from './develop-idea-dialog';
 import { TaskCard } from './task-card';
+import { EditTasksDialog } from './edit-tasks-dialog';
 
 interface DashboardContextType {
   // State
@@ -112,6 +113,7 @@ interface DashboardContextType {
   handleFolderView: (folder: Folder) => void;
   handleNoteView: (note: Bookmark) => void;
   handleTextNoteView: (note: Bookmark) => void;
+  handleTasksEdit: (note: Bookmark) => void;
   handleUpdateFolderName: (id: string, name: string) => void;
   handleRegenerateSummary: (id: string) => void;
   handleUpdateNote: (id: string, title: string, summary: string) => void;
@@ -139,6 +141,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [viewingFolder, setViewingFolder] = React.useState<Folder | null>(null);
   const [viewingNote, setViewingNote] = React.useState<Bookmark | null>(null);
   const [viewingTextNote, setViewingTextNote] = React.useState<Bookmark | null>(null);
+  const [editingTasks, setEditingTasks] = React.useState<Bookmark | null>(null);
   const [customizingItem, setCustomizingItem] = React.useState<SpaceItem | null>(null);
   const [sharingItem, setSharingItem] = React.useState<SpaceItem | Space | null>(null);
   
@@ -605,6 +608,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleFolderView: setViewingFolder,
     handleNoteView: setViewingNote,
     handleTextNoteView: setViewingTextNote,
+    handleTasksEdit: setEditingTasks,
     handleUpdateFolderName: handleUpdateFolderName,
     handleRegenerateSummary,
     handleUpdateNote: handleNoteUpdate,
@@ -676,6 +680,11 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         {viewingTextNote && <NoteEditViewDialog
           note={viewingTextNote}
           onOpenChange={(open) => !open && setViewingTextNote(null)}
+          onNoteUpdated={handleNoteUpdate}
+        />}
+        {editingTasks && <EditTasksDialog
+          note={editingTasks}
+          onOpenChange={(open) => !open && setEditingTasks(null)}
           onNoteUpdated={handleNoteUpdate}
         />}
         {customizingItem && <CustomizeItemDialog item={customizingItem} onOpenChange={(open) => !open && setCustomizingItem(null)} onItemUpdated={handleCustomizeItem} />}

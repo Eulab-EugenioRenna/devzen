@@ -50,6 +50,7 @@ export function DashboardContent() {
     handleFolderView,
     handleNoteView,
     handleTextNoteView,
+    handleTasksEdit,
     handleUpdateFolderName,
     setActiveSpaceId,
     handleUnlinkSpace,
@@ -325,7 +326,7 @@ export function DashboardContent() {
                                     onCustomize={() => handleItemCustomize(note)}
                                     onDuplicate={() => handleItemDuplicate(note)}
                                     onShare={() => handleShareItem(note)}
-                                    onViewTextNote={handleTextNoteView}
+                                    onEditTasks={handleTasksEdit}
                                     viewMode={viewMode}
                                 />
                                )
