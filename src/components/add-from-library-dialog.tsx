@@ -11,23 +11,25 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, LayoutGrid, List, Star, Search } from 'lucide-react';
+import { Loader2, Plus, Search, Upload } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { Favicon } from './favicon';
-import { cn } from '@/lib/utils';
+import { ImportToLibraryDialog } from './import-to-library-dialog';
 
 interface AddFromLibraryDialogProps {
   onOpenChange: (open: boolean) => void;
   onBookmarkAdded: (tool: ToolsAi) => void;
+  onLibraryImported: () => void;
   tools: ToolsAi[];
 }
 
-export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: AddFromLibraryDialogProps) {
+export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, onLibraryImported, tools }: AddFromLibraryDialogProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [categorySearchTerm, setCategorySearchTerm] = React.useState('');
   const [isAdding, setIsAdding] = React.useState<string | null>(null);
   const [activeCategory, setActiveCategory] = React.useState('All');
+  const [isImporting, setIsImporting] = React.useState(false);
   
   const handleAddTool = async (tool: ToolsAi) => {
     setIsAdding(tool.id);
@@ -72,13 +74,31 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: A
   }, [categories, activeCategory]);
 
   return (
+    <>
+    {isImporting && (
+      <ImportToLibraryDialog
+        onOpenChange={setIsImporting}
+        onImported={() => {
+          setIsImporting(false);
+          onLibraryImported();
+        }}
+      />
+    )}
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="font-headline text-2xl">Importa dalla Libreria di Strumenti AI</DialogTitle>
-          <DialogDescription>
-            Sfoglia un elenco curato di strumenti AI e importali come segnalibri nel tuo spazio.
-          </DialogDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle className="font-headline text-2xl">Importa dalla Libreria di Strumenti AI</DialogTitle>
+              <DialogDescription>
+                Sfoglia un elenco curato di strumenti AI e importali come segnalibri nel tuo spazio.
+              </DialogDescription>
+            </div>
+            <Button variant="outline" onClick={() => setIsImporting(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Importa in Libreria
+            </Button>
+          </div>
         </DialogHeader>
         <div className="flex-grow flex min-h-0 border-t">
           <aside className="w-1/4 max-w-xs border-r p-4 flex flex-col">
@@ -167,5 +187,6 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, tools }: A
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

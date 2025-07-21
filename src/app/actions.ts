@@ -28,7 +28,11 @@ async function revalidateAndGetClient() {
         pb.authStore.loadFromCookie(cookie.value);
     }
     if (!pb.authStore.isValid && cookie) {
-        pb.authStore.clear();
+        try {
+            await pb.collection(usersCollectionName).authRefresh();
+        } catch (_) {
+            pb.authStore.clear();
+        }
     }
     return pb;
 }
@@ -661,6 +665,7 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
   try {
+    const pb = await revalidateAndGetClient();
     const records = await pb.collection(toolsAiCollectionName).getFullList({
       filter: 'deleted = false',
     });
@@ -714,6 +719,32 @@ export async function addBookmarkFromLibraryAction({
   } catch (e) {
     console.error('Impossibile creare segnalibro dalla libreria in PocketBase', e);
     throw new Error('Impossibile salvare il segnalibro dalla libreria.');
+  }
+}
+
+export async function batchImportToolsAction(tools: { name: string; link: string }[]): Promise<{ success: boolean; count: number }> {
+  try {
+    const response = await fetch('https://ai-tool.eulab.cloud/api/batch', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(tools),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`La richiesta API è fallita con stato ${response.status}: ${errorData}`);
+    }
+    
+    const result = await response.json();
+    return { success: true, count: result.count || tools.length };
+  } catch (error) {
+    console.error('Errore durante l\'importazione batch degli strumenti:', error);
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error('Si è verificato un errore sconosciuto durante l\'importazione.');
   }
 }
 
@@ -999,5 +1030,3 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
   }
 }
-
-    

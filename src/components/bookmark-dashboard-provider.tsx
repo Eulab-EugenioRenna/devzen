@@ -30,6 +30,7 @@ import {
   analyzeSpaceAction,
   getItemsAction,
   getSpacesAction,
+  getToolsAiAction,
   customizeItemAction,
   duplicateItemAction,
   createSpaceLinkAction,
@@ -164,12 +165,14 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
 
   const refreshAllData = React.useCallback(async () => {
     console.log("Refreshing all data from server...");
-    const [refreshedSpaces, refreshedItems] = await Promise.all([
+    const [refreshedSpaces, refreshedItems, refreshedTools] = await Promise.all([
       getSpacesAction(),
-      getItemsAction()
+      getItemsAction(),
+      getToolsAiAction(),
     ]);
     setSpaces(refreshedSpaces);
     setItems(refreshedItems);
+    setTools(refreshedTools);
   }, []);
 
   React.useEffect(() => {
@@ -181,7 +184,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
     
     const subscribeToCollections = () => {
-      const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName];
+      const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName];
       collections.forEach(collectionName => {
         pb.collection(collectionName).subscribe('*', handleSubscriptionChange).catch(err => {
             console.error(`Failed to subscribe to ${collectionName}:`, err?.originalError || err);
@@ -192,7 +195,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     subscribeToCollections();
 
     return () => {
-       const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName];
+       const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName];
        collections.forEach(collectionName => {
         pb.collection(collectionName).unsubscribe('*');
        });
@@ -379,14 +382,13 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             case 'bookmark-on-bookmark':
                 const overBookmark = overItem as Bookmark;
                 if (activeItem.spaceId === overBookmark.spaceId) {
-                    // Let subscription handle UI for new item creation
+                    // Optimistic update handled by subscription after action.
                     await createFolderAction({ spaceId: activeItem.spaceId, initialBookmarkIds: [active.id as string, over.id as string] });
                 }
                 break;
 
             case 'bookmark-on-folder':
                 if (activeItem.parentId !== over.id) {
-                    // Optimistic update
                     setItems(prevItems => prevItems.map(item => item.id === activeItem.id ? { ...item, parentId: over.id as string } : item));
                     await moveItemAction({ id: activeItem.id, newParentId: over.id as string });
                 }
@@ -396,13 +398,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
             case 'folder-on-space':
             case 'space-link-on-space':
                 if (activeItem.spaceId !== overItem.id) {
-                     // Optimistic update
-                    setItems(prevItems => prevItems.map(item => {
-                        if (item.id === activeItem.id) {
-                            return { ...item, spaceId: overItem.id, parentId: null };
-                        }
-                        return item;
-                    }));
+                    setItems(prevItems => prevItems.filter(item => item.id !== activeItem.id));
                     await moveItemAction({ id: activeItem.id, newSpaceId: overItem.id });
                 }
                 break;
@@ -511,7 +507,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   }
 
   const handleWorkspaceGenerated = async () => {
-    // Let subscription handle UI update.
+    await refreshAllData();
   };
 
   const handleExport = async () => {
@@ -669,7 +665,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         />}
         {customizingItem && <CustomizeItemDialog item={customizingItem} onOpenChange={(open) => !open && setCustomizingItem(null)} onItemUpdated={handleCustomizeItem} />}
         {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}
-        {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} />}
+        {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} onLibraryImported={refreshAllData} />}
         {isGeneratingWorkspace && <GenerateWorkspaceDialog onOpenChange={setIsGeneratingWorkspace} onWorkspaceGenerated={handleWorkspaceGenerated} />}
         {analyzingSpace && <AnalyzeSpaceDialog 
             space={analyzingSpace} 
