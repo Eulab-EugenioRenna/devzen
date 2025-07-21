@@ -1,4 +1,3 @@
-'use server';
 
 export * from './actions/data';
 export * from './actions/items';

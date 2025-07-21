@@ -1,4 +1,3 @@
-'use server';
 
 import { pb } from '@/lib/pocketbase';
 import { cookies } from 'next/headers';
