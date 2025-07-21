@@ -3,20 +3,31 @@ import { pb } from '@/lib/pocketbase';
 import { cookies } from 'next/headers';
 import type { RecordModel } from 'pocketbase';
 import type { SpaceItem, ToolsAi, ToolsAiSummary, Bookmark, Folder, SpaceLink, Space, AppInfo } from '@/lib/types';
-import { usersCollectionName } from '@/lib/pocketbase';
 
 export async function revalidateAndGetClient() {
+    // Leggi il cookie dalla richiesta
     const cookie = cookies().get('pb_auth');
+
+    // Carica il cookie nell'authStore di PocketBase
     if (cookie) {
         pb.authStore.loadFromCookie(cookie.value, false);
+    } else {
+        // Se non c'è cookie, pulisci lo store per sicurezza
+        pb.authStore.clear();
+        return pb;
     }
+
+    // Prova a rinfrescare il token per validare la sessione.
+    // Questo è il passaggio cruciale che mancava.
     try {
-      if(pb.authStore.isValid) {
-        await pb.collection(usersCollectionName).authRefresh();
-      }
+        if (pb.authStore.isValid) {
+            await pb.collection('devzen_users').authRefresh();
+        }
     } catch (_) {
-      pb.authStore.clear();
+        // Se il refresh fallisce (es. token scaduto), pulisci lo store.
+        pb.authStore.clear();
     }
+
     return pb;
 }
 
