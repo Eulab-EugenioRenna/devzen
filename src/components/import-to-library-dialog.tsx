@@ -60,15 +60,7 @@ export function ImportToLibraryDialog({ onOpenChange, onImported }: ImportToLibr
 
   const onSubmit = async (values: z.infer<typeof importSchema>) => {
     try {
-      const processedTools = values.tools.map(tool => {
-        let link = tool.link.trim();
-        if (link && !/^(https?:\/\/)/i.test(link)) {
-            link = `https://${link}`;
-        }
-        return { ...tool, link };
-      });
-
-      const result = await batchImportToolsAction(processedTools);
+      const result = await batchImportToolsAction(values.tools);
       toast({
         title: 'Importazione Riuscita!',
         description: `${result.count} nuovi strumenti sono stati inviati alla libreria.`,
