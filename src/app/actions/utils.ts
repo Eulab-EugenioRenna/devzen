@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import PocketBase from 'pocketbase';
+import type { RecordModel } from 'pocketbase';
+import type { Space, AppInfo } from '@/lib/types';
 
 /**
  * Creates a new PocketBase instance for a server-side request.
@@ -29,4 +31,24 @@ export function createClient(): PocketBase {
 
 export { revalidateAndGetClient } from './revalidate';
 export * from '../../lib/data-mappers';
-export { recordToSpace, recordToAppInfo } from './mappers';
+
+// Mappers moved here from the deleted mappers.ts file
+export function recordToSpace(record: RecordModel): Space {
+  return {
+    id: record.id,
+    name: record.name,
+    icon: record.icon,
+    category: record.category,
+    isLink: record.isLink,
+  };
+}
+
+export function recordToAppInfo(record: RecordModel): AppInfo {
+    const client = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL);
+    const logoUrl = record.logo ? client.files.getUrl(record, record.logo) : '';
+    return {
+        id: record.id,
+        title: record.title,
+        logo: record.logo ? logoUrl : 'Logo',
+    };
+}
