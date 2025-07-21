@@ -12,7 +12,7 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { ScrollArea } from './ui/scroll-area';
-import { Loader2, Send, User, Bot, Sparkles, Copy, Check, Wand, ClipboardCheck, Link, ArrowRight } from 'lucide-react';
+import { Loader2, Send, User, Bot, Sparkles, Copy, Check, Wand, ClipboardCheck, Link, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from './ui/badge';
 
@@ -60,7 +60,7 @@ const ChatMessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
     );
 };
 
-const FinalPlanView: React.FC<{ payload: IdeaPayload; conversation: ChatMessage[]; onCreate: (payload: IdeaPayload, conversation: ChatMessage[]) => void; isLoading: boolean; }> = ({ payload, conversation, onCreate, isLoading }) => {
+const FinalPlanView: React.FC<{ payload: IdeaPayload; conversation: ChatMessage[]; onCreate: (payload: IdeaPayload, conversation: ChatMessage[]) => void; onBack: () => void; isLoading: boolean; }> = ({ payload, conversation, onCreate, onBack, isLoading }) => {
   return (
     <div className="flex flex-col h-full">
       <DialogHeader>
@@ -69,7 +69,7 @@ const FinalPlanView: React.FC<{ payload: IdeaPayload; conversation: ChatMessage[
             Ecco il piano per la tua idea!
         </DialogTitle>
         <DialogDescription>
-            Questo è il riepilogo dello spazio di lavoro che verrà creato.
+            Questo è il riepilogo dello spazio di lavoro che verrà creato. Puoi confermare o tornare indietro per modificare.
         </DialogDescription>
       </DialogHeader>
       <ScrollArea className="flex-grow my-4 pr-4 -mr-4">
@@ -98,7 +98,11 @@ const FinalPlanView: React.FC<{ payload: IdeaPayload; conversation: ChatMessage[
             </div>
         </div>
       </ScrollArea>
-      <div className="mt-auto flex justify-end shrink-0">
+      <div className="mt-auto flex justify-between shrink-0">
+          <Button variant="outline" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Modifica
+          </Button>
           <Button onClick={() => onCreate(payload, conversation)} disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Crea Spazio di Lavoro
@@ -198,6 +202,12 @@ export function DevelopIdeaDialog({ onOpenChange, onWorkspaceCreated, developIde
         }
     }
 
+    const handleReturnToChat = () => {
+        setIsFinished(false);
+        setFinalPayload(null);
+        setMessages(prev => [...prev, { role: 'model', content: 'Certo, torniamo a discutere. Cosa vorresti modificare o aggiungere?' }]);
+    };
+
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col p-6">
@@ -206,6 +216,7 @@ export function DevelopIdeaDialog({ onOpenChange, onWorkspaceCreated, developIde
                         payload={finalPayload} 
                         conversation={messages}
                         onCreate={handleCreateWorkspace} 
+                        onBack={handleReturnToChat}
                         isLoading={isLoading}
                     />
                  ) : (

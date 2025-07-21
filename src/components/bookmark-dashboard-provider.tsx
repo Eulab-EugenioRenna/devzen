@@ -63,6 +63,7 @@ import { NoteViewDialog } from './note-view-dialog';
 import { NoteEditViewDialog } from './note-edit-view-dialog';
 import { ShareDialog } from './share-dialog';
 import { DevelopIdeaDialog } from './develop-idea-dialog';
+import { TaskCard } from './task-card';
 
 interface DashboardContextType {
   // State
@@ -113,6 +114,7 @@ interface DashboardContextType {
   handleTextNoteView: (note: Bookmark) => void;
   handleUpdateFolderName: (id: string, name: string) => void;
   handleRegenerateSummary: (id: string) => void;
+  handleUpdateNote: (id: string, title: string, summary: string) => void;
 }
 
 const DashboardContext = React.createContext<DashboardContextType | null>(null);
@@ -605,6 +607,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleTextNoteView: setViewingTextNote,
     handleUpdateFolderName: handleUpdateFolderName,
     handleRegenerateSummary,
+    handleUpdateNote: handleNoteUpdate,
   };
 
 

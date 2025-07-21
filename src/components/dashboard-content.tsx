@@ -15,6 +15,7 @@ import { AddBookmarkDialog } from '@/components/add-bookmark-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FolderCard } from '@/components/folder-card';
 import { BookmarkCard } from '@/components/bookmark-card';
+import { TaskCard } from '@/components/task-card';
 
 import { cn } from '@/lib/utils';
 import { PlusCircle, Plus, LayoutGrid, List, ChevronDown, Library, Bot, Search, Sparkles, Loader2, Link as LinkIcon, BrainCircuit } from 'lucide-react';
@@ -53,6 +54,7 @@ export function DashboardContent() {
     setActiveSpaceId,
     handleUnlinkSpace,
     handleRegenerateSummary,
+    handleUpdateNote,
   } = useDashboard();
 
   const activeSpace = spaces.find(s => s.id === activeSpaceId);
@@ -61,7 +63,7 @@ export function DashboardContent() {
     id: 'space-link-droppable-area',
   });
 
-  const { folders, regularBookmarks, chatNotes, textNotes, spaceLinks } = React.useMemo(() => {
+  const { folders, regularBookmarks, chatNotes, textNotes, taskNotes, spaceLinks } = React.useMemo(() => {
     const spaceItems = items.filter((item) => item.spaceId === activeSpaceId);
     
     let filteredItems = spaceItems;
@@ -104,13 +106,15 @@ export function DashboardContent() {
     });
 
     const chatNotes = rootBookmarks.filter(bm => bm.url.startsWith('devzen:note:'));
-    const textNotes = rootBookmarks.filter(bm => bm.url.startsWith('devzen:text-note:'));
+    const taskNotes = rootBookmarks.filter(bm => bm.url.endsWith('-tasks'));
+    const textNotes = rootBookmarks.filter(bm => bm.url.startsWith('devzen:text-note:') && !bm.url.endsWith('-tasks'));
+
     const regularBookmarks = rootBookmarks.filter(bm => !bm.url.startsWith('devzen:'));
 
-    return { folders: populatedFolders, regularBookmarks, chatNotes, textNotes, spaceLinks: allSpaceLinks };
+    return { folders: populatedFolders, regularBookmarks, chatNotes, textNotes, taskNotes, spaceLinks: allSpaceLinks };
   }, [items, activeSpaceId, searchResultIds]);
   
-  const hasContent = folders.length > 0 || regularBookmarks.length > 0 || chatNotes.length > 0 || textNotes.length > 0 || spaceLinks.length > 0;
+  const hasContent = folders.length > 0 || regularBookmarks.length > 0 || chatNotes.length > 0 || textNotes.length > 0 || taskNotes.length > 0 || spaceLinks.length > 0;
 
   return (
     <SidebarInset className="flex flex-col">
@@ -294,8 +298,40 @@ export function DashboardContent() {
                     </div>
                 )}
 
-                {(folders.length > 0 || spaceLinks.length > 0) && (regularBookmarks.length > 0 || chatNotes.length > 0 || textNotes.length > 0) && (
+                {(folders.length > 0 || spaceLinks.length > 0) && (regularBookmarks.length > 0 || chatNotes.length > 0 || textNotes.length > 0 || taskNotes.length > 0) && (
                     <Separator />
+                )}
+
+                {taskNotes.length > 0 && (
+                    <div>
+                         <h3 className="mb-4 text-lg font-semibold text-muted-foreground">Tasks</h3>
+                        <div className={cn(
+                            viewMode === 'grid'
+                            ? "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                            : "flex flex-col gap-4"
+                        )}>
+                            {taskNotes.map(note => 
+                              activeDragItem?.item?.id === note.id ? (
+                                <div key={note.id} className={cn(
+                                    "rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20",
+                                    viewMode === 'list' ? 'h-28' : 'h-52'
+                                )}/>
+                               ) : (
+                                <TaskCard
+                                    key={note.id}
+                                    note={note}
+                                    onNoteUpdated={handleUpdateNote}
+                                    onDeleted={handleItemDelete}
+                                    onCustomize={() => handleItemCustomize(note)}
+                                    onDuplicate={() => handleItemDuplicate(note)}
+                                    onShare={() => handleShareItem(note)}
+                                    onViewTextNote={handleTextNoteView}
+                                    viewMode={viewMode}
+                                />
+                               )
+                            )}
+                        </div>
+                    </div>
                 )}
 
                 {chatNotes.length > 0 && (
@@ -368,7 +404,7 @@ export function DashboardContent() {
                     </div>
                 )}
 
-                {(chatNotes.length > 0 || textNotes.length > 0) && regularBookmarks.length > 0 && <Separator />}
+                {(chatNotes.length > 0 || textNotes.length > 0 || taskNotes.length > 0) && regularBookmarks.length > 0 && <Separator />}
 
                 {regularBookmarks.length > 0 && (
                     <div>

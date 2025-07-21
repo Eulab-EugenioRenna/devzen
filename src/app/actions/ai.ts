@@ -14,7 +14,7 @@ import {
     generateText,
     developIdea
 } from '@/ai/flows';
-import type { Bookmark, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSpaceOutput, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage, AISpace, AIBookmark, AISpaceItem, AIFolder, DevelopIdeaInput, DevelopIdeaOutput, IdeaPayload } from '@/lib/types';
+import type { Bookmark, Folder, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSpaceOutput, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage, AISpace, AIBookmark, AISpaceItem, AIFolder, DevelopIdeaInput, DevelopIdeaOutput, IdeaPayload } from '@/lib/types';
 import { addBookmarkFromLibraryAction } from './items';
 import { createSpaceAction } from './spaces';
 import { revalidateAndGetClient } from './utils';
