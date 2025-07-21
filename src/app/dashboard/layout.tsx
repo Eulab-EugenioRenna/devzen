@@ -22,6 +22,10 @@ export default async function DashboardLayout({
       cookies().delete('pb_auth');
     }
   }
+  
+  console.log("--- CHECKPOINT 2 [DashboardLayout] ---");
+  console.log("Server layout check. isValid:", pb.authStore.isValid);
+  console.log("User model:", pb.authStore.model?.id);
 
   if (!pb.authStore.isValid) {
     redirect('/login');

@@ -7,12 +7,17 @@ import type { Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
 
 export async function getSpacesAction(): Promise<Space[]> {
   const pb = await revalidateAndGetClient();
+  console.log("--- CHECKPOINT 4 [getSpacesAction] ---");
+  console.log("Auth check inside action. isValid:", pb.authStore.isValid);
+  console.log("User model:", pb.authStore.model?.id);
+  
   if (!pb.authStore.isValid) return [];
   try {
     const records = await pb.collection(spacesCollectionName).getFullList({
       sort: 'created',
       filter: `user = "${pb.authStore.model!.id}"`,
     });
+    console.log(`--- CHECKPOINT 5 [getSpacesAction] --- Found ${records.length} spaces.`);
     return records.map(recordToSpace);
   } catch (error: any) {
     console.error('Failed to fetch spaces:', error);
@@ -27,12 +32,17 @@ export async function getSpacesAction(): Promise<Space[]> {
 
 export async function getItemsAction(): Promise<SpaceItem[]> {
   const pb = await revalidateAndGetClient();
+  console.log("--- CHECKPOINT 6 [getItemsAction] ---");
+  console.log("Auth check inside action. isValid:", pb.authStore.isValid);
+  console.log("User model:", pb.authStore.model?.id);
+
   if (!pb.authStore.isValid) return [];
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
       sort: '-created',
       filter: `user = "${pb.authStore.model!.id}"`,
     });
+    console.log(`--- CHECKPOINT 7 [getItemsAction] --- Found ${records.length} items.`);
     return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
   } catch (error: any) {
     console.error('Failed to fetch items:', error);

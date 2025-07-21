@@ -22,6 +22,9 @@ export async function handleLogin(formData: FormData) {
 
     try {
         await pb.collection(usersCollectionName).authWithPassword(email, password);
+        console.log("--- CHECKPOINT 1 [handleLogin] ---");
+        console.log("User authenticated on server. isValid:", pb.authStore.isValid);
+        console.log("User model:", pb.authStore.model?.id);
     } catch (e) {
         console.error(e);
         return { error: 'Credenziali di accesso non valide.' };

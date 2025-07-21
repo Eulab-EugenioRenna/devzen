@@ -4,6 +4,8 @@ import { BookmarkDashboardProvider } from '@/components/bookmark-dashboard-provi
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
+  console.log("--- CHECKPOINT 3 [DashboardPage] ---");
+  console.log("Fetching initial data on the server...");
   const [items, spaces, appInfo, tools] = await Promise.all([
       getItemsAction(), 
       getSpacesAction(),

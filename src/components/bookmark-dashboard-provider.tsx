@@ -130,6 +130,9 @@ export const useDashboard = () => {
 };
 
 export function BookmarkDashboardProvider({ initialItems, initialSpaces, initialAppInfo, initialTools }: { initialItems: SpaceItem[], initialSpaces: Space[], initialAppInfo: AppInfo, initialTools: ToolsAi[] }) {
+  console.log("--- CHECKPOINT 8 [BookmarkDashboardProvider] ---");
+  console.log(`Received ${initialSpaces.length} spaces and ${initialItems.length} items from server.`);
+  
   const [spaces, setSpaces] = React.useState<Space[]>(initialSpaces);
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
