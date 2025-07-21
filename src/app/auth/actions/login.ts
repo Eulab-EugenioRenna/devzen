@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { usersCollectionName } from '@/lib/pocketbase';
-import { revalidateAndGetClient } from '@/app/actions/utils';
+import { createClient } from '@/app/actions/utils';
 import { redirect } from 'next/navigation';
 
 const loginSchema = z.object({
@@ -12,7 +12,7 @@ const loginSchema = z.object({
 });
 
 export async function handleLogin(formData: FormData) {
-    const pb = await revalidateAndGetClient();
+    const pb = createClient();
     const values = Object.fromEntries(formData.entries());
     const validated = loginSchema.safeParse(values);
 

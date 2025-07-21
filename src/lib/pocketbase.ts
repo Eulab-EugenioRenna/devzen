@@ -1,9 +1,7 @@
 import PocketBase from 'pocketbase';
 
-if (!process.env.NEXT_PUBLIC_POCKETBASE_URL) {
-  throw new Error('POCKETBASE_URL is not set in the environment variables. Please add it to your .env file.');
-}
-
+// This instance is now primarily for client-side usage, 
+// where the authStore is persisted in localStorage.
 export const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL);
 
 // This is disabled to prevent client-side navigation from cancelling

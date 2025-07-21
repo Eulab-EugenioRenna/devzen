@@ -1,11 +1,10 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { summarizeBookmark, discernInput } from '@/ai/flows';
 import { bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { Bookmark, Folder, SpaceItem, ToolsAi } from '@/lib/types';
-import { revalidateAndGetClient } from './utils';
+import { createClient } from './utils';
 import { recordToSpaceItem, recordToToolAi } from './utils';
 
 export async function addBookmarkOrNoteAction({
@@ -17,7 +16,7 @@ export async function addBookmarkOrNoteAction({
   spaceId: string;
   parentId?: string | null;
 }): Promise<Bookmark> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   if (!text || !spaceId) {
@@ -110,7 +109,7 @@ export async function addBookmarkAction({
   spaceId: string;
   parentId?: string | null;
 }): Promise<Bookmark> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   if (!title || !url || !spaceId) {
@@ -169,7 +168,7 @@ export async function updateBookmarkAction({
   url: string;
   summary?: string;
 }): Promise<Bookmark> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
   
   const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -208,7 +207,7 @@ export async function updateBookmarkAction({
 }
 
 export async function deleteItemAction({ id }: { id: string }): Promise<{ success: boolean }> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const itemToDelete = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -236,7 +235,7 @@ export async function deleteItemAction({ id }: { id: string }): Promise<{ succes
 }
 
 export async function createFolderAction({ spaceId, initialBookmarkIds }: { spaceId: string, initialBookmarkIds: string[] }): Promise<{ folder: Folder, bookmarks: Bookmark[] }> {
-    const pb = await revalidateAndGetClient();
+    const pb = createClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const folderData = {
@@ -273,7 +272,7 @@ export async function createFolderAction({ spaceId, initialBookmarkIds }: { spac
 }
 
 export async function updateFolderNameAction({ id, name }: { id: string, name: string }): Promise<Folder> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -287,7 +286,7 @@ export async function updateFolderNameAction({ id, name }: { id: string, name: s
 }
 
 export async function moveItemAction({ id, newSpaceId, newParentId }: { id: string, newSpaceId?: string, newParentId?: string | null }): Promise<SpaceItem> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -325,7 +324,7 @@ export async function moveItemAction({ id, newSpaceId, newParentId }: { id: stri
 }
 
 export async function customizeItemAction({ id, backgroundColor, textColor, icon, iconUrl, iconColor }: { id: string, backgroundColor: string, textColor: string, icon?: string, iconUrl?: string, iconColor?: string }): Promise<SpaceItem> {
-    const pb = await revalidateAndGetClient();
+    const pb = createClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
     
     const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -341,7 +340,7 @@ export async function customizeItemAction({ id, backgroundColor, textColor, icon
 }
 
 export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const newToolData = { ...item };
@@ -384,7 +383,7 @@ export async function duplicateItemAction(item: SpaceItem): Promise<SpaceItem> {
 }
 
 export async function regenerateSummaryAction(id: string): Promise<Bookmark> {
-    const pb = await revalidateAndGetClient();
+    const pb = createClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const record = await pb.collection(bookmarksCollectionName).getOne(id, { filter: `user = "${pb.authStore.model!.id}"` });
@@ -426,7 +425,7 @@ export async function addBookmarkFromLibraryAction({
   toolId: string;
   spaceId: string;
 }): Promise<Bookmark> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   if (!toolId || !spaceId) {
@@ -498,5 +497,3 @@ export async function batchImportToolsAction(tools: { name: string; link: string
     throw new Error('Si è verificato un errore sconosciuto durante l\'importazione.');
   }
 }
-
-    

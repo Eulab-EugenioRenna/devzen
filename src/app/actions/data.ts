@@ -1,12 +1,12 @@
 'use server';
 
-import { pb, bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
+import { bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
 import { recordToSpaceItem, recordToToolAi, recordToSpace, recordToAppInfo } from './utils';
-import { revalidateAndGetClient } from './utils';
+import { createClient } from './utils';
 import type { Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
 
 export async function getSpacesAction(): Promise<Space[]> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   console.log("--- CHECKPOINT 4 [getSpacesAction] ---");
   console.log("Auth check inside action. isValid:", pb.authStore.isValid);
   console.log("User model:", pb.authStore.model?.id);
@@ -31,7 +31,7 @@ export async function getSpacesAction(): Promise<Space[]> {
 }
 
 export async function getItemsAction(): Promise<SpaceItem[]> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   console.log("--- CHECKPOINT 6 [getItemsAction] ---");
   console.log("Auth check inside action. isValid:", pb.authStore.isValid);
   console.log("User model:", pb.authStore.model?.id);
@@ -56,7 +56,7 @@ export async function getItemsAction(): Promise<SpaceItem[]> {
 }
 
 export async function getAppInfoAction(): Promise<AppInfo> {
-    const pb = await revalidateAndGetClient();
+    const pb = createClient();
     if (!pb.authStore.isValid) {
       return { id: '', title: 'DevZen', logo: 'Logo' };
     }
@@ -83,7 +83,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
 }
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
-  const pb = await revalidateAndGetClient();
+  const pb = createClient();
   try {
     const records = await pb.collection(toolsAiCollectionName).getFullList({
       filter: 'deleted = false',
