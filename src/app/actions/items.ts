@@ -468,11 +468,11 @@ export async function addBookmarkFromLibraryAction({
 export async function batchImportToolsAction(tools: { name: string; link: string }[]): Promise<{ success: boolean; count: number }> {
   try {
     const processedTools = tools.map(tool => {
-        let link = tool.link.trim();
-        if (link && !/^(https?:\/\/)/i.test(link)) {
-            link = `https://${link}`;
-        }
-        return { ...tool, link };
+      let link = tool.link.trim();
+      if (link && !/^(https?:\/\/)/i.test(link)) {
+        link = `https://${link}`;
+      }
+      return { nome: tool.name, link };
     });
 
     const response = await fetch('https://ai-tool.eulab.cloud/api/batch', {
@@ -480,7 +480,7 @@ export async function batchImportToolsAction(tools: { name: string; link: string
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tools: processedTools }),
+      body: JSON.stringify(processedTools),
     });
 
     if (!response.ok) {
@@ -498,3 +498,5 @@ export async function batchImportToolsAction(tools: { name: string; link: string
     throw new Error('Si è verificato un errore sconosciuto durante l\'importazione.');
   }
 }
+
+    
