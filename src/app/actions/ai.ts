@@ -18,7 +18,7 @@ import type { Bookmark, Folder, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSp
 import { addBookmarkFromLibraryAction } from './items';
 import { createSpaceAction } from './spaces';
 import { revalidateAndGetClient } from './utils';
-import { pb, bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
+import { bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { recordToSpace, recordToSpaceItem } from './utils';
 import { format } from 'date-fns';
 

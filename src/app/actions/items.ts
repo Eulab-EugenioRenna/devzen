@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { summarizeBookmark, discernInput } from '@/ai/flows';
-import { pb, bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
+import { bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { Bookmark, Folder, SpaceItem, ToolsAi } from '@/lib/types';
 import { revalidateAndGetClient } from './utils';
 import { recordToSpaceItem, recordToToolAi } from './utils';

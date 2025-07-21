@@ -83,8 +83,8 @@ export async function getAppInfoAction(): Promise<AppInfo> {
 }
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
+  const pb = await revalidateAndGetClient();
   try {
-    await revalidateAndGetClient();
     const records = await pb.collection(toolsAiCollectionName).getFullList({
       filter: 'deleted = false',
     });

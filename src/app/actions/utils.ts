@@ -1,8 +1,8 @@
-
 import { pb } from '@/lib/pocketbase';
 import { cookies } from 'next/headers';
 import type { RecordModel } from 'pocketbase';
 import type { SpaceItem, ToolsAi, ToolsAiSummary, Bookmark, Folder, SpaceLink, Space, AppInfo } from '@/lib/types';
+import PocketBase from 'pocketbase';
 
 export async function revalidateAndGetClient() {
     const cookie = cookies().get('pb_auth');

@@ -1,11 +1,11 @@
 'use server';
 
-import { pb, menuCollectionName } from '@/lib/pocketbase';
+import { menuCollectionName } from '@/lib/pocketbase';
 import { revalidateAndGetClient } from './utils';
 import type { AppInfo } from '@/lib/types';
 import type { RecordModel } from 'pocketbase';
 
-function recordToAppInfo(record: RecordModel): AppInfo {
+function recordToAppInfo(pb: any, record: RecordModel): AppInfo {
     const logoUrl = record.logo ? pb.files.getUrl(record, record.logo) : '';
     return {
         id: record.id,
@@ -24,10 +24,10 @@ export async function updateAppInfoAction(id: string, formData: FormData): Promi
     try {
       if (id) {
         const record = await pb.collection(menuCollectionName).update(id, data);
-        return recordToAppInfo(record);
+        return recordToAppInfo(pb, record);
       } else {
         const record = await pb.collection(menuCollectionName).create(data);
-        return recordToAppInfo(record);
+        return recordToAppInfo(pb, record);
       }
     } catch (e) {
         console.error("Impossibile salvare le info dell'app", e);

@@ -2,7 +2,8 @@
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { pb, usersCollectionName } from '@/lib/pocketbase';
+import { usersCollectionName } from '@/lib/pocketbase';
+import { revalidateAndGetClient } from '@/app/actions/utils';
 import { redirect } from 'next/navigation';
 
 const signupSchema = z
@@ -13,6 +14,7 @@ const signupSchema = z
   });
 
 export async function handleSignup(formData: FormData) {
+  const pb = await revalidateAndGetClient();
   const values = Object.fromEntries(formData.entries());
   const validated = signupSchema.safeParse(values);
 

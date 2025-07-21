@@ -1,6 +1,6 @@
 'use server';
 
-import { pb, spacesCollectionName, bookmarksCollectionName } from '@/lib/pocketbase';
+import { spacesCollectionName, bookmarksCollectionName } from '@/lib/pocketbase';
 import type { Space, SpaceLink } from '@/lib/types';
 import { revalidateAndGetClient } from './utils';
 import { recordToSpace, recordToSpaceItem } from './utils';
