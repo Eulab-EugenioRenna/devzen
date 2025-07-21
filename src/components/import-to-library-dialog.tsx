@@ -24,12 +24,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { batchImportToolsAction } from '@/app/actions';
+import { batchImportToolsAction } from '@/app/actions/items';
 import { ScrollArea } from './ui/scroll-area';
 
 const toolSchema = z.object({
   name: z.string().min(1, { message: 'Il nome è obbligatorio.' }),
-  link: z.string().url({ message: 'Inserisci un URL valido.' }),
+  link: z.string().min(1, { message: 'Il link è obbligatorio.' }),
 });
 
 const importSchema = z.object({
@@ -60,7 +60,15 @@ export function ImportToLibraryDialog({ onOpenChange, onImported }: ImportToLibr
 
   const onSubmit = async (values: z.infer<typeof importSchema>) => {
     try {
-      const result = await batchImportToolsAction(values.tools);
+      const processedTools = values.tools.map(tool => {
+        let link = tool.link.trim();
+        if (link && !/^(https?:\/\/)/i.test(link)) {
+            link = `https://${link}`;
+        }
+        return { ...tool, link };
+      });
+
+      const result = await batchImportToolsAction(processedTools);
       toast({
         title: 'Importazione Riuscita!',
         description: `${result.count} nuovi strumenti sono stati inviati alla libreria.`,
@@ -113,7 +121,7 @@ export function ImportToLibraryDialog({ onOpenChange, onImported }: ImportToLibr
                           <FormItem>
                             <FormLabel>Link</FormLabel>
                             <FormControl>
-                              <Input placeholder="https://figma.com" {...field} />
+                              <Input placeholder="figma.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
