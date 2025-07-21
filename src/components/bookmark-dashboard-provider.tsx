@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput, SpaceLink } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput, SpaceLink, DevelopIdeaOutput, ChatMessage, IdeaPayload } from '@/lib/types';
 import {
   DndContext,
   DragOverlay,
@@ -37,7 +37,9 @@ import {
   unlinkSpaceAction,
   chatInSpaceAction,
   regenerateSummaryAction,
-  sendWebhookAction
+  sendWebhookAction,
+  createWorkspaceFromIdeaAction,
+  developIdeaAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -60,6 +62,7 @@ import { DashboardContent } from './dashboard-content';
 import { NoteViewDialog } from './note-view-dialog';
 import { NoteEditViewDialog } from './note-edit-view-dialog';
 import { ShareDialog } from './share-dialog';
+import { DevelopIdeaDialog } from './develop-idea-dialog';
 
 interface DashboardContextType {
   // State
@@ -95,6 +98,7 @@ interface DashboardContextType {
   handleEditAppInfo: () => void;
   handleExport: () => void;
   handleGenerateWorkspace: () => void;
+  handleDevelopIdea: () => void;
   handleAnalyzeSpace: () => void;
   handleAddBookmarkOrNote: (values: { text: string; spaceId: string; }) => Promise<void>;
   handleAddFromLibrary: () => void;
@@ -150,6 +154,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [tools, setTools] = React.useState<ToolsAi[]>(initialTools);
   const [isMounted, setIsMounted] = React.useState(false);
   const [isGeneratingWorkspace, setIsGeneratingWorkspace] = React.useState(false);
+  const [isDevelopingIdea, setIsDevelopingIdea] = React.useState(false);
   const [isAddingFromLibrary, setIsAddingFromLibrary] = React.useState(false);
 
   const [analyzingSpace, setAnalyzingSpace] = React.useState<Space | null>(null);
@@ -510,6 +515,12 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     await refreshAllData();
   };
 
+  const handleIdeaWorkspaceCreated = async (newSpace: Space) => {
+    await refreshAllData();
+    setActiveSpaceId(newSpace.id);
+    setIsDevelopingIdea(false);
+  }
+
   const handleExport = async () => {
     try {
         const jsonString = await exportWorkspaceAction(spaces.map(s => s.id));
@@ -579,6 +590,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleEditAppInfo: () => setIsEditingAppInfo(true),
     handleExport,
     handleGenerateWorkspace: () => setIsGeneratingWorkspace(true),
+    handleDevelopIdea: () => setIsDevelopingIdea(true),
     handleAnalyzeSpace,
     handleAddBookmarkOrNote,
     handleAddFromLibrary: () => setIsAddingFromLibrary(true),
@@ -667,6 +679,12 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
         {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}
         {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} onLibraryImported={refreshAllData} />}
         {isGeneratingWorkspace && <GenerateWorkspaceDialog onOpenChange={setIsGeneratingWorkspace} onWorkspaceGenerated={handleWorkspaceGenerated} />}
+        {isDevelopingIdea && <DevelopIdeaDialog 
+          onOpenChange={setIsDevelopingIdea}
+          onWorkspaceCreated={handleIdeaWorkspaceCreated}
+          developIdeaAction={developIdeaAction}
+          createWorkspaceAction={createWorkspaceFromIdeaAction}
+        />}
         {analyzingSpace && <AnalyzeSpaceDialog 
             space={analyzingSpace} 
             spaceBookmarks={items.filter(i => i.spaceId === analyzingSpace.id && i.type === 'bookmark') as Bookmark[]}

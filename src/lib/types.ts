@@ -194,3 +194,26 @@ export const ChatInSpaceOutputSchema = z.object({
     answer: z.string(),
 });
 export type ChatInSpaceOutput = z.infer<typeof ChatInSpaceOutputSchema>;
+
+
+// Types for Develop Idea
+export const DevelopIdeaInputSchema = z.object({
+  history: z.array(ChatMessageSchema),
+  prompt: z.string(),
+});
+export type DevelopIdeaInput = z.infer<typeof DevelopIdeaInputSchema>;
+
+export const IdeaPayloadSchema = z.object({
+    spaceName: z.string(),
+    spaceIcon: z.string(),
+    tasks: z.array(z.string()),
+    suggestedTools: z.array(AIBookmarkSchema),
+});
+export type IdeaPayload = z.infer<typeof IdeaPayloadSchema>;
+
+export const DevelopIdeaOutputSchema = z.object({
+    response: z.string(),
+    isFinished: z.boolean(),
+    finalPayload: IdeaPayloadSchema.nullable(),
+});
+export type DevelopIdeaOutput = z.infer<typeof DevelopIdeaOutputSchema>;

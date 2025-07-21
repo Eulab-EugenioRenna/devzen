@@ -17,7 +17,7 @@ import { FolderCard } from '@/components/folder-card';
 import { BookmarkCard } from '@/components/bookmark-card';
 
 import { cn } from '@/lib/utils';
-import { PlusCircle, Plus, LayoutGrid, List, ChevronDown, Library, Bot, Search, Sparkles, Loader2, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Plus, LayoutGrid, List, ChevronDown, Library, Bot, Search, Sparkles, Loader2, Link as LinkIcon, BrainCircuit } from 'lucide-react';
 
 export function DashboardContent() {
   const {
@@ -39,6 +39,7 @@ export function DashboardContent() {
     handleAddBookmarkOrNote,
     handleAddFromLibrary,
     handleGenerateWorkspace,
+    handleDevelopIdea,
     handleItemDelete,
     handleItemEdit,
     handleItemCustomize,
@@ -198,7 +199,11 @@ export function DashboardContent() {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleGenerateWorkspace}>
                             <Bot className="mr-2 h-4 w-4" />
-                            Genera con AI
+                            Genera Workspace con AI
+                        </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleDevelopIdea}>
+                            <BrainCircuit className="mr-2 h-4 w-4" />
+                            Sviluppa Idea con AI
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -206,7 +211,7 @@ export function DashboardContent() {
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 relative">
-        {activeDragItem?.type === 'space' && activeDragItem?.item.id !== activeSpaceId && (
+        {activeDragItem?.type === 'space' && activeDragItem?.item?.id !== activeSpaceId && (
           <div
             ref={setSpaceLinkDroppableRef}
             className={cn(

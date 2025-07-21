@@ -11,9 +11,10 @@ import {
     summarizeText,
     translateText,
     improveText,
-    generateText
+    generateText,
+    developIdea
 } from '@/ai/flows';
-import type { Bookmark, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSpaceOutput, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage, AISpace, AIBookmark, AISpaceItem, AIFolder } from '@/lib/types';
+import type { Bookmark, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSpaceOutput, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage, AISpace, AIBookmark, AISpaceItem, AIFolder, DevelopIdeaInput, DevelopIdeaOutput, IdeaPayload } from '@/lib/types';
 import { addBookmarkFromLibraryAction } from './items';
 import { createSpaceAction } from './spaces';
 import { revalidateAndGetClient } from './utils';
@@ -115,6 +116,43 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
     return { newSpaces, newItems };
 }
 
+export async function createWorkspaceFromIdeaAction(payload: IdeaPayload, conversation: ChatMessage[]): Promise<Space> {
+    const pb = await revalidateAndGetClient();
+    if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
+
+    // 1. Create the new space
+    const newSpace = await createSpaceAction({
+        name: payload.spaceName,
+        icon: payload.spaceIcon,
+        category: 'Idee Sviluppate'
+    });
+
+    // 2. Create the tasks note
+    const tasksContent = `# Task per ${payload.spaceName}\n\n` + payload.tasks.map(task => `- [ ] ${task}`).join('\n');
+    const taskNoteData = {
+        tool: {
+            type: 'bookmark',
+            title: 'Piano d\'Azione e Task',
+            url: `devzen:text-note:${Date.now()}-tasks`,
+            summary: tasksContent,
+            spaceId: newSpace.id,
+            icon: 'ClipboardCheck',
+        },
+        user: pb.authStore.model!.id,
+    };
+    await pb.collection(bookmarksCollectionName).create(taskNoteData);
+    
+    // 3. Create the conversation note
+    await saveChatAsNoteAction({ spaceId: newSpace.id, messages: conversation, titlePrefix: 'Brainstorming Idea' });
+
+    // 4. Create bookmarks for suggested tools
+    for (const tool of payload.suggestedTools) {
+        await createBookmarkFromAI(tool, newSpace.id, null);
+    }
+
+    return newSpace;
+}
+
 export async function exportWorkspaceAction(spaceIds: string[]): Promise<string> {
     const pb = await revalidateAndGetClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
@@ -197,11 +235,11 @@ export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatIn
     return result;
 }
 
-export async function saveChatAsNoteAction({ spaceId, messages }: { spaceId: string, messages: ChatMessage[] }): Promise<Bookmark> {
+export async function saveChatAsNoteAction({ spaceId, messages, titlePrefix = 'Nota Chat' }: { spaceId: string, messages: ChatMessage[], titlePrefix?: string }): Promise<Bookmark> {
   const pb = await revalidateAndGetClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
-  const title = `Nota Chat - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+  const title = `${titlePrefix} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
   const content = JSON.stringify(messages);
   const url = `devzen:note:${Date.now()}`;
 
@@ -246,6 +284,12 @@ export async function improveTextAction(text: string): Promise<string> {
 export async function generateTextAction(prompt: string): Promise<string> {
     return await generateText(prompt);
 }
+
+// ===== Idea Development AI Action =====
+export async function developIdeaAction(input: DevelopIdeaInput): Promise<DevelopIdeaOutput> {
+    return await developIdea(input);
+}
+
 
 // ===== Sharing Actions =====
 export async function sendWebhookAction(url: string, data: any): Promise<{ success: boolean }> {

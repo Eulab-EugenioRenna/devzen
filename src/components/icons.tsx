@@ -32,6 +32,7 @@ export const iconMap: { [key: string]: React.FC<any> } = {
   Lightbulb: LucideIcons.Lightbulb,
   Globe: LucideIcons.Globe,
   NotebookPen: LucideIcons.NotebookPen,
+  ClipboardCheck: LucideIcons.ClipboardCheck,
 };
 
 export function getIcon(name: string | undefined): React.FC<LucideIcons.LucideProps> {
