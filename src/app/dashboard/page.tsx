@@ -3,10 +3,10 @@ import { BookmarkDashboardProvider } from '@/components/bookmark-dashboard-provi
 
 export const dynamic = 'force-dynamic';
 
-export default async function DashboardPage({ userId }: { userId: string }) {
+export default async function DashboardPage() {
   const [items, spaces, appInfo, tools] = await Promise.all([
-      getItemsAction(userId), 
-      getSpacesAction(userId),
+      getItemsAction(), 
+      getSpacesAction(),
       getAppInfoAction(),
       getToolsAiAction(),
     ]);

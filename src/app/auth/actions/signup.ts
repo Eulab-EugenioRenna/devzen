@@ -1,9 +1,10 @@
+
 'use server';
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { usersCollectionName } from '@/lib/pocketbase';
-import { createClient } from '@/app/actions/utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import { redirect } from 'next/navigation';
 
 const signupSchema = z
@@ -14,7 +15,7 @@ const signupSchema = z
   });
 
 export async function handleSignup(formData: FormData) {
-  const pb = createClient();
+  const pb = await createServerClient();
   const values = Object.fromEntries(formData.entries());
   const validated = signupSchema.safeParse(values);
 

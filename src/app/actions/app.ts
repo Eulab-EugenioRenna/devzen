@@ -1,7 +1,8 @@
+
 'use server';
 
 import { menuCollectionName } from '@/lib/pocketbase';
-import { createClient } from './utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import type { AppInfo } from '@/lib/types';
 import type { RecordModel } from 'pocketbase';
 
@@ -15,7 +16,7 @@ function recordToAppInfo(pb: any, record: RecordModel): AppInfo {
 }
 
 export async function updateAppInfoAction(id: string, formData: FormData): Promise<AppInfo> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const data = formData;

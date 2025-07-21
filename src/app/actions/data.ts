@@ -1,18 +1,19 @@
+
 'use server';
 
 import { bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
 import { recordToSpaceItem, recordToToolAi, recordToSpace, recordToAppInfo } from './utils';
-import { createClient } from './utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import type { Space, SpaceItem, AppInfo, ToolsAi } from '@/lib/types';
 
-export async function getSpacesAction(userId: string): Promise<Space[]> {
-  const pb = createClient();
-  if (!userId) return [];
+export async function getSpacesAction(): Promise<Space[]> {
+  const pb = await createServerClient();
+  if (!pb.authStore.isValid) return [];
   
   try {
     const records = await pb.collection(spacesCollectionName).getFullList({
       sort: 'created',
-      filter: `user = "${userId}"`,
+      filter: `user = "${pb.authStore.model!.id}"`,
     });
     return records.map(recordToSpace);
   } catch (error: any) {
@@ -26,14 +27,14 @@ export async function getSpacesAction(userId: string): Promise<Space[]> {
   }
 }
 
-export async function getItemsAction(userId: string): Promise<SpaceItem[]> {
-  const pb = createClient();
-  if (!userId) return [];
+export async function getItemsAction(): Promise<SpaceItem[]> {
+  const pb = await createServerClient();
+  if (!pb.authStore.isValid) return [];
 
   try {
     const records = await pb.collection(bookmarksCollectionName).getFullList({
       sort: '-created',
-      filter: `user = "${userId}"`,
+      filter: `user = "${pb.authStore.model!.id}"`,
     });
     return records.map(recordToSpaceItem).filter((item): item is SpaceItem => item !== null);
   } catch (error: any) {
@@ -48,7 +49,7 @@ export async function getItemsAction(userId: string): Promise<SpaceItem[]> {
 }
 
 export async function getAppInfoAction(): Promise<AppInfo> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) {
       return { id: '', title: 'DevZen', logo: 'Logo' };
     }
@@ -75,7 +76,7 @@ export async function getAppInfoAction(): Promise<AppInfo> {
 }
 
 export async function getToolsAiAction(): Promise<ToolsAi[]> {
-  const pb = createClient();
+  const pb = await createServerClient();
   try {
     const records = await pb.collection(toolsAiCollectionName).getFullList({
       filter: 'deleted = false',

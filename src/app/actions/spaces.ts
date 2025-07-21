@@ -1,12 +1,13 @@
+
 'use server';
 
 import { spacesCollectionName, bookmarksCollectionName } from '@/lib/pocketbase';
 import type { Space, SpaceLink } from '@/lib/types';
-import { createClient } from './utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import { recordToSpace, recordToSpaceItem } from './utils';
 
 export async function createSpaceAction(data: { name: string, icon: string, category?: string }): Promise<Space> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const spaceData = { ...data, user: pb.authStore.model!.id };
@@ -15,7 +16,7 @@ export async function createSpaceAction(data: { name: string, icon: string, cate
 }
 
 export async function updateSpaceAction({ id, data }: { id: string, data: { name: string, icon: string, category?: string, isLink?: boolean } }): Promise<Space> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const record = await pb.collection(spacesCollectionName).update(id, { ...data, user: pb.authStore.model!.id });
@@ -23,7 +24,7 @@ export async function updateSpaceAction({ id, data }: { id: string, data: { name
 }
 
 export async function deleteSpaceAction({ id }: { id: string }): Promise<{ success: boolean }> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const incomingLinks = await pb.collection(bookmarksCollectionName).getFullList({
@@ -53,7 +54,7 @@ export async function deleteSpaceAction({ id }: { id: string }): Promise<{ succe
 }
 
 export async function createSpaceLinkAction(space: Space, targetSpaceId: string): Promise<SpaceLink> {
-  const pb = createClient();
+  const pb = await createServerClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
   
   const linkData = {
@@ -78,7 +79,7 @@ export async function createSpaceLinkAction(space: Space, targetSpaceId: string)
 }
 
 export async function unlinkSpaceAction({ id, linkedSpaceId }: { id: string, linkedSpaceId: string }): Promise<{ success: boolean }> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     await pb.collection(bookmarksCollectionName).delete(id);

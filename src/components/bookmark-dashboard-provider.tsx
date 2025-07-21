@@ -54,7 +54,8 @@ import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
 import { EditAppInfoDialog } from './edit-app-info-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
-import { pb, toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName, menuCollectionName } from '@/lib/pocketbase';
+import { pb } from '@/lib/pocketbase_client';
+import { toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName, menuCollectionName } from '@/lib/pocketbase';
 import { GenerateWorkspaceDialog } from './generate-workspace-dialog';
 import { AnalyzeSpaceDialog } from './analyze-space-dialog';
 import { DashboardSidebar } from './dashboard-sidebar';
@@ -174,11 +175,9 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const { toast } = useToast();
 
   const refreshAllData = React.useCallback(async () => {
-    if (!pb.authStore.model?.id) return;
-    const userId = pb.authStore.model.id;
     const [refreshedSpaces, refreshedItems, refreshedTools] = await Promise.all([
-      getSpacesAction(userId),
-      getItemsAction(userId),
+      getSpacesAction(),
+      getItemsAction(),
       getToolsAiAction(),
     ]);
     setSpaces(refreshedSpaces);

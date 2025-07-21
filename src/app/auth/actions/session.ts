@@ -1,10 +1,12 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
-import { pb } from '@/lib/pocketbase';
+import { createServerClient } from '@/lib/pocketbase_server';
 import { redirect } from 'next/navigation';
 
 export async function handleLogout() {
+  const pb = await createServerClient();
   pb.authStore.clear();
   cookies().delete('pb_auth');
   redirect('/login');

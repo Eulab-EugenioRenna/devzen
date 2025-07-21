@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,8 @@ import { getIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { pb, usersCollectionName } from '@/lib/pocketbase';
+import { pb } from '@/lib/pocketbase_client';
+import { usersCollectionName } from '@/lib/pocketbase';
 import { setAuthCookieAction } from '@/app/auth/actions';
 
 function GoogleIcon() {

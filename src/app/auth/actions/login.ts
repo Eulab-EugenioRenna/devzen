@@ -1,9 +1,10 @@
+
 'use server';
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { usersCollectionName } from '@/lib/pocketbase';
-import { createClient } from '@/app/actions/utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import { redirect } from 'next/navigation';
 
 const loginSchema = z.object({
@@ -12,7 +13,7 @@ const loginSchema = z.object({
 });
 
 export async function handleLogin(formData: FormData) {
-    const pb = createClient();
+    const pb = await createServerClient();
     const values = Object.fromEntries(formData.entries());
     const validated = loginSchema.safeParse(values);
 
@@ -24,9 +25,6 @@ export async function handleLogin(formData: FormData) {
 
     try {
         await pb.collection(usersCollectionName).authWithPassword(email, password);
-        console.log("--- CHECKPOINT 1 [handleLogin] ---");
-        console.log("User authenticated on server. isValid:", pb.authStore.isValid);
-        console.log("User model:", pb.authStore.model?.id);
     } catch (e) {
         console.error(e);
         return { error: 'Credenziali di accesso non valide.' };

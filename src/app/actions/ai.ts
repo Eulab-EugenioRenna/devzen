@@ -1,3 +1,4 @@
+
 'use server';
 
 import { 
@@ -17,7 +18,7 @@ import {
 import type { Bookmark, Folder, Space, AIWorkspace, AnalyzeSpaceInput, AnalyzeSpaceOutput, ChatInSpaceInput, ChatInSpaceOutput, ChatMessage, AISpace, AIBookmark, AISpaceItem, AIFolder, DevelopIdeaInput, DevelopIdeaOutput, IdeaPayload } from '@/lib/types';
 import { addBookmarkFromLibraryAction } from './items';
 import { createSpaceAction } from './spaces';
-import { createClient } from './utils';
+import { createServerClient } from '@/lib/pocketbase_server';
 import { bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { recordToSpace, recordToSpaceItem } from './utils';
 import { format } from 'date-fns';
@@ -47,7 +48,7 @@ export async function generateWorkspaceAction(prompt: string): Promise<AIWorkspa
 }
 
 async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, parentId: string | null): Promise<Bookmark> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     let summary = 'Segnalibro generato dall\'IA.';
@@ -79,7 +80,7 @@ async function createBookmarkFromAI(aiBookmark: AIBookmark, spaceId: string, par
 }
 
 export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Promise<{ newSpaces: Space[], newItems: (Bookmark | Folder)[] }> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
     
     const newSpaces: Space[] = [];
@@ -117,7 +118,7 @@ export async function createWorkspaceFromJsonAction(workspace: AIWorkspace): Pro
 }
 
 export async function createWorkspaceFromIdeaAction(payload: IdeaPayload, conversation: ChatMessage[]): Promise<Space> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     // 1. Create the new space
@@ -154,7 +155,7 @@ export async function createWorkspaceFromIdeaAction(payload: IdeaPayload, conver
 }
 
 export async function exportWorkspaceAction(spaceIds: string[]): Promise<string> {
-    const pb = createClient();
+    const pb = await createServerClient();
     if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
     const workspace: AIWorkspace = { spaces: [] };
@@ -236,7 +237,7 @@ export async function chatInSpaceAction(input: ChatInSpaceInput): Promise<ChatIn
 }
 
 export async function saveChatAsNoteAction({ spaceId, messages, titlePrefix = 'Nota Chat' }: { spaceId: string, messages: ChatMessage[], titlePrefix?: string }): Promise<Bookmark> {
-  const pb = createClient();
+  const pb = await createServerClient();
   if (!pb.authStore.isValid) throw new Error("Utente non autenticato.");
 
   const title = `${titlePrefix} - ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
