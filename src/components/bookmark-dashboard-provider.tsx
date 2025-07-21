@@ -130,9 +130,6 @@ export const useDashboard = () => {
 };
 
 export function BookmarkDashboardProvider({ initialItems, initialSpaces, initialAppInfo, initialTools }: { initialItems: SpaceItem[], initialSpaces: Space[], initialAppInfo: AppInfo, initialTools: ToolsAi[] }) {
-  console.log("--- CHECKPOINT 8 [BookmarkDashboardProvider] ---");
-  console.log(`Received ${initialSpaces.length} spaces and ${initialItems.length} items from server.`);
-  
   const [spaces, setSpaces] = React.useState<Space[]>(initialSpaces);
   const [items, setItems] = React.useState<SpaceItem[]>(initialItems);
   const [activeSpaceId, setActiveSpaceId] = React.useState<string>(initialSpaces[0]?.id ?? '');
@@ -177,10 +174,11 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const { toast } = useToast();
 
   const refreshAllData = React.useCallback(async () => {
-    console.log("Refreshing all data from server...");
+    if (!pb.authStore.model?.id) return;
+    const userId = pb.authStore.model.id;
     const [refreshedSpaces, refreshedItems, refreshedTools] = await Promise.all([
-      getSpacesAction(),
-      getItemsAction(),
+      getSpacesAction(userId),
+      getItemsAction(userId),
       getToolsAiAction(),
     ]);
     setSpaces(refreshedSpaces);
@@ -192,7 +190,6 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     setIsMounted(true);
     
     const handleSubscriptionChange = (e: {action: string, record: any}) => {
-      console.log('Subscription change received:', e.action, e.record.collectionName);
       refreshAllData();
     };
     

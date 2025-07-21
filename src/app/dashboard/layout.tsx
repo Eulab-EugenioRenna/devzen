@@ -22,18 +22,16 @@ export default async function DashboardLayout({
       cookies().delete('pb_auth');
     }
   }
-  
-  console.log("--- CHECKPOINT 2 [DashboardLayout] ---");
-  console.log("Server layout check. isValid:", pb.authStore.isValid);
-  console.log("User model:", pb.authStore.model?.id);
 
-  if (!pb.authStore.isValid) {
+  if (!pb.authStore.isValid || !pb.authStore.model?.id) {
     redirect('/login');
   }
+  
+  const userId = pb.authStore.model.id;
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">{React.cloneElement(children as React.ReactElement, { userId })}</main>
     </div>
   );
 }
