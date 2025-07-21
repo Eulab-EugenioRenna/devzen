@@ -163,18 +163,18 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
     </div>
   );
 
-  const TaskList = ({ tasks, start = 0, end }: { tasks: Task[], start?: number, end?: number }) => (
+  const TaskList = ({ tasks }: { tasks: Task[] }) => (
     <div className="space-y-2">
-      {tasks.slice(start, end).map((task, index) => (
-        <div key={index + start} className="flex items-center space-x-2">
+      {tasks.map((task, index) => (
+        <div key={index} className="flex items-center space-x-2">
           <Checkbox 
-              id={`task-${note.id}-${index + start}`}
+              id={`task-${note.id}-${index}`}
               checked={task.completed}
-              onCheckedChange={() => handleTaskToggle(index + start)}
+              onCheckedChange={() => handleTaskToggle(index)}
               onClick={(e) => e.stopPropagation()}
           />
           <Label 
-              htmlFor={`task-${note.id}-${index + start}`}
+              htmlFor={`task-${note.id}-${index}`}
               className={cn("text-sm truncate", task.completed && "line-through text-muted-foreground")}
           >
               {task.text}
@@ -301,21 +301,20 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
         
             <CardContent className="p-0 pt-3 flex-1 flex flex-col gap-2">
                 <Progress value={progress} className="h-2" />
-                <div className="space-y-2 pt-2">
-                  <TaskList tasks={tasks} end={3} />
-                </div>
-                 {tasks.length > 3 && (
+                {tasks.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="item-1" className="border-b-0">
                         <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline py-1 justify-start gap-1">
-                           <span>+ {tasks.length - 3} altre attività</span>
+                           <span>{totalTasks} attività</span>
                            <ChevronsUpDown className="h-3 w-3" />
                         </AccordionTrigger>
                         <AccordionContent>
-                           <TaskList tasks={tasks} start={3} />
+                           <TaskList tasks={tasks} />
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
+                ) : (
+                    <p className="text-sm text-muted-foreground pt-2">Nessuna attività in questa lista.</p>
                 )}
             </CardContent>
         </div>
@@ -343,5 +342,3 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
     </div>
   );
 }
-
-    
