@@ -95,6 +95,7 @@ export function EditTasksDialog({ note, onOpenChange, onNoteUpdated }: EditTasks
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl h-[70vh] flex flex-col">
         <DialogHeader>
+          <DialogTitle className="sr-only">Modifica Task</DialogTitle>
           <Input 
             value={title}
             onChange={(e) => setTitle(e.target.value)}

@@ -164,7 +164,7 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
   );
 
   const TaskList = ({ tasks, start = 0, end }: { tasks: Task[], start?: number, end?: number }) => (
-    <>
+    <div className="space-y-2">
       {tasks.slice(start, end).map((task, index) => (
         <div key={index + start} className="flex items-center space-x-2">
           <Checkbox 
@@ -181,7 +181,7 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
           </Label>
         </div>
       ))}
-    </>
+    </div>
   );
 
   if (isDragging) {
@@ -305,13 +305,13 @@ export function TaskCard({ note, onNoteUpdated, onDeleted, onCustomize, onDuplic
                   <TaskList tasks={tasks} end={3} />
                 </div>
                  {tasks.length > 3 && (
-                    <Accordion type="single" collapsible className="w-full -mt-2">
+                    <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="item-1" className="border-b-0">
                         <AccordionTrigger className="text-xs text-muted-foreground hover:no-underline py-1 justify-start gap-1">
-                           + {tasks.length - 3} altre attività
+                           <span>+ {tasks.length - 3} altre attività</span>
                            <ChevronsUpDown className="h-3 w-3" />
                         </AccordionTrigger>
-                        <AccordionContent className="space-y-2">
+                        <AccordionContent>
                            <TaskList tasks={tasks} start={3} />
                         </AccordionContent>
                       </AccordionItem>
