@@ -88,17 +88,17 @@ export function AddFromLibraryDialog({ onOpenChange, onBookmarkAdded, onLibraryI
     <Dialog open={true} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="font-headline text-2xl">Importa dalla Libreria di Strumenti AI</DialogTitle>
-          <DialogDescription>
-            Sfoglia un elenco curato di strumenti AI e importali come segnalibri nel tuo spazio.
-          </DialogDescription>
-        </DialogHeader>
-        <div className='px-6 pb-4'>
+          <div className="flex justify-between items-center">
+            <DialogTitle className="font-headline text-2xl">Importa dalla Libreria di Strumenti AI</DialogTitle>
             <Button variant="outline" onClick={() => setIsImporting(true)}>
               <Upload className="mr-2 h-4 w-4" />
               Importa in Libreria
             </Button>
-        </div>
+          </div>
+          <DialogDescription>
+            Sfoglia un elenco curato di strumenti AI e importali come segnalibri nel tuo spazio.
+          </DialogDescription>
+        </DialogHeader>
         <div className="flex-grow flex min-h-0 border-t">
           <aside className="w-1/4 max-w-xs border-r p-4 flex flex-col">
             <h3 className="font-semibold text-lg px-2 mb-2">Categorie</h3>
