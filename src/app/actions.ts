@@ -27,12 +27,12 @@ async function revalidateAndGetClient() {
     if (cookie) {
         pb.authStore.loadFromCookie(cookie.value);
     }
-    if (!pb.authStore.isValid && cookie) {
-        try {
-            await pb.collection(usersCollectionName).authRefresh();
-        } catch (_) {
-            pb.authStore.clear();
-        }
+    try {
+      if(pb.authStore.isValid) {
+        await pb.collection(usersCollectionName).authRefresh();
+      }
+    } catch (_) {
+      pb.authStore.clear();
     }
     return pb;
 }
@@ -729,7 +729,7 @@ export async function batchImportToolsAction(tools: { name: string; link: string
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(tools),
+      body: JSON.stringify({ tools }),
     });
 
     if (!response.ok) {
