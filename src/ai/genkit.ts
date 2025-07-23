@@ -1,14 +1,15 @@
 import { genkit, configureGenkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getUserAction } from '@/app/actions/user';
-import { User } from '@/lib/types';
+import type { User } from '@/lib/types';
 
 let userCache: User | null = null;
 let userCacheTimestamp = 0;
 
 async function getCachedUser(): Promise<User | null> {
     const now = Date.now();
-    if (userCache && (now - userCacheTimestamp < 1000)) { // Cache per 1 secondo
+    // Cache for 1 second to avoid refetching on multiple concurrent AI calls
+    if (userCache && (now - userCacheTimestamp < 1000)) { 
         return userCache;
     }
     try {
@@ -24,19 +25,15 @@ async function getCachedUser(): Promise<User | null> {
 export async function getInitializedAI() {
     const user = await getCachedUser();
 
-    const apiKey = user?.aiApiKey || process.env.GEMINI_API_KEY;
+    const apiKey = user?.aiApiKey;
     const modelName = user?.aiModel || 'googleai/gemini-1.5-flash-latest';
 
-    if (apiKey) {
-        return genkit({
-            plugins: [googleAI({ apiKey })],
-            model: modelName,
-        });
+    if (!apiKey || !modelName) {
+        throw new Error("Per favore, configura la tua chiave API AI e il modello nelle impostazioni per utilizzare questa funzionalità.");
     }
-
-    // Fallback se nessuna chiave è disponibile
+    
     return genkit({
-        plugins: [googleAI()],
+        plugins: [googleAI({ apiKey })],
         model: modelName,
     });
 }
