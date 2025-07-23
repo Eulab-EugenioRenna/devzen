@@ -1,7 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { getInitializedAI } from '@/ai/genkit';
 import { summarizeBookmark, discernInput } from '@/ai/flows';
 import { bookmarksCollectionName, spacesCollectionName, toolsAiCollectionName } from '@/lib/pocketbase';
 import type { Bookmark, Folder, SpaceItem, ToolsAi } from '@/lib/types';
@@ -42,6 +42,7 @@ export async function addBookmarkOrNoteAction({
     let summary: string;
     let title: string = '';
     try {
+      const ai = await getInitializedAI();
       const result = await summarizeBookmark({ url: parsedUrl.href });
       const pageInfo = await ai.generate({
           prompt: `Estrai il titolo dalla pagina web a questo URL: ${parsedUrl.href}. Restituisci solo il testo del titolo.`,
