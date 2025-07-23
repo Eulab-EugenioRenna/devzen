@@ -6,7 +6,7 @@
  * - developIdea - A conversational function that helps flesh out an idea.
  */
 
-import { ai } from '@/ai/genkit';
+import { getInitializedAI } from '@/ai/genkit';
 import { getToolsAiAction } from '@/app/actions/data';
 import { AIBookmarkSchema, ChatMessageSchema } from '@/lib/types';
 import { z } from 'genkit';
@@ -32,43 +32,48 @@ const DevelopIdeaOutputSchema = z.object({
 export type DevelopIdeaOutput = z.infer<typeof DevelopIdeaOutputSchema>;
 
 export async function developIdea(input: DevelopIdeaInput): Promise<DevelopIdeaOutput> {
-  return developIdeaFlow(input);
-}
-
-const getLibraryTools = ai.defineTool(
+  const ai = await getInitializedAI();
+  const developIdeaFlow = ai.defineFlow(
     {
-        name: 'getLibraryToolsForIdea',
-        description: 'Ottieni un elenco di strumenti AI curati dalla libreria per un determinato argomento o categoria, da suggerire per lo sviluppo di un\'idea.',
-        inputSchema: z.object({
-            query: z.string().describe('Una categoria o parola chiave per la ricerca, ad es. "marketing" o "sviluppo web".'),
-        }),
-        outputSchema: z.array(z.object({
-            title: z.string(),
-            url: z.string().url(),
-            icon: z.string().optional(),
-        })),
+      name: 'developIdeaFlow',
+      inputSchema: DevelopIdeaInputSchema,
+      outputSchema: DevelopIdeaOutputSchema,
     },
     async (input) => {
-        const allTools = await getToolsAiAction();
-        const lowerCaseQuery = input.query.toLowerCase();
-        return allTools
-            .filter(tool => 
-                tool.name.toLowerCase().includes(lowerCaseQuery) ||
-                tool.category.toLowerCase().includes(lowerCaseQuery) ||
-                tool.summary.summary.toLowerCase().includes(lowerCaseQuery) ||
-                tool.summary.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
-            )
-            .map(tool => ({ title: tool.name, url: tool.link, icon: tool.brand }))
-            .slice(0, 5); // Limit to 5 tools
-    }
-);
+      const getLibraryTools = ai.defineTool(
+          {
+              name: 'getLibraryToolsForIdea',
+              description: 'Ottieni un elenco di strumenti AI curati dalla libreria per un determinato argomento o categoria, da suggerire per lo sviluppo di un\'idea.',
+              inputSchema: z.object({
+                  query: z.string().describe('Una categoria o parola chiave per la ricerca, ad es. "marketing" o "sviluppo web".'),
+              }),
+              outputSchema: z.array(z.object({
+                  title: z.string(),
+                  url: z.string().url(),
+                  icon: z.string().optional(),
+              })),
+          },
+          async (input) => {
+              const allTools = await getToolsAiAction();
+              const lowerCaseQuery = input.query.toLowerCase();
+              return allTools
+                  .filter(tool => 
+                      tool.name.toLowerCase().includes(lowerCaseQuery) ||
+                      tool.category.toLowerCase().includes(lowerCaseQuery) ||
+                      tool.summary.summary.toLowerCase().includes(lowerCaseQuery) ||
+                      tool.summary.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
+                  )
+                  .map(tool => ({ title: tool.name, url: tool.link, icon: tool.brand }))
+                  .slice(0, 5); // Limit to 5 tools
+          }
+      );
 
-const developIdeaPrompt = ai.definePrompt({
-  name: 'developIdeaPrompt',
-  input: { schema: DevelopIdeaInputSchema },
-  output: { schema: DevelopIdeaOutputSchema },
-  tools: [getLibraryTools],
-  prompt: `Sei un esperto consulente di strategia e product manager. Il tuo compito è aiutare un utente a trasformare un'idea vaga in un piano d'azione concreto. Comunichi in italiano.
+      const developIdeaPrompt = ai.definePrompt({
+        name: 'developIdeaPrompt',
+        input: { schema: DevelopIdeaInputSchema },
+        output: { schema: DevelopIdeaOutputSchema },
+        tools: [getLibraryTools],
+        prompt: `Sei un esperto consulente di strategia e product manager. Il tuo compito è aiutare un utente a trasformare un'idea vaga in un piano d'azione concreto. Comunichi in italiano.
 
 Ecco il flusso della conversazione:
 1.  **Introduzione**: Se la cronologia è vuota, presentati e chiedi all'utente quale idea vuole sviluppare.
@@ -91,16 +96,11 @@ CRONOLOGIA DELLA CHAT:
 Istruzioni importanti:
 - Non impostare MAI 'isFinished' su 'true' a meno che tu non abbia ricevuto un'esplicita conferma dall'utente per procedere con la strutturazione del piano.
 - La tua risposta deve essere sempre un singolo oggetto JSON che corrisponde allo schema di output.`,
-});
+      });
 
-const developIdeaFlow = ai.defineFlow(
-  {
-    name: 'developIdeaFlow',
-    inputSchema: DevelopIdeaInputSchema,
-    outputSchema: DevelopIdeaOutputSchema,
-  },
-  async (input) => {
-    const { output } = await developIdeaPrompt(input);
-    return output!;
-  }
-);
+      const { output } = await developIdeaPrompt(input);
+      return output!;
+    }
+  );
+  return developIdeaFlow(input);
+}

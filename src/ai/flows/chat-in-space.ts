@@ -6,19 +6,23 @@
  * - chatInSpace - A function that answers questions about a collection of bookmarks.
  */
 
-import { ai } from '@/ai/genkit';
+import { getInitializedAI } from '@/ai/genkit';
 import { ChatInSpaceInputSchema, ChatInSpaceOutputSchema, type ChatInSpaceInput, type ChatInSpaceOutput } from '@/lib/types';
 
-
 export async function chatInSpace(input: ChatInSpaceInput): Promise<ChatInSpaceOutput> {
-  return chatInSpaceFlow(input);
-}
-
-const chatInSpacePrompt = ai.definePrompt({
-  name: 'chatInSpacePrompt',
-  input: { schema: ChatInSpaceInputSchema },
-  output: { schema: ChatInSpaceOutputSchema },
-  prompt: `Sei un assistente AI esperto in una vasta gamma di strumenti, software e concetti, dal web al montaggio video, al trading e oltre. Il tuo compito è rispondere alle domande dell'utente in modo utile e competente. L'intera risposta DEVE essere in italiano e in formato Markdown.
+  const ai = await getInitializedAI();
+  const chatInSpaceFlow = ai.defineFlow(
+    {
+      name: 'chatInSpaceFlow',
+      inputSchema: ChatInSpaceInputSchema,
+      outputSchema: ChatInSpaceOutputSchema,
+    },
+    async (input) => {
+      const chatInSpacePrompt = ai.definePrompt({
+        name: 'chatInSpacePrompt',
+        input: { schema: ChatInSpaceInputSchema },
+        output: { schema: ChatInSpaceOutputSchema },
+        prompt: `Sei un assistente AI esperto in una vasta gamma di strumenti, software e concetti, dal web al montaggio video, al trading e oltre. Il tuo compito è rispondere alle domande dell'utente in modo utile e competente. L'intera risposta DEVE essere in italiano e in formato Markdown.
 
 Usa i seguenti contesti come guida e punto di partenza per le tue risposte, ma attingi alla tua conoscenza generale per fornire approfondimenti, spiegazioni e suggerimenti che vanno oltre i soli link forniti.
 
@@ -48,16 +52,10 @@ Istruzioni:
 2.  Formula una risposta completa e utile. Se possibile, collega la tua risposta agli strumenti presenti nel contesto dello spazio o suggerisci nuovi strumenti pertinenti dalla libreria.
 3.  Agisci come un esperto, non solo come un riassuntore del contesto.
 4.  Restituisci la tua risposta (ruolo: model) come un singolo oggetto JSON.`,
-});
-
-const chatInSpaceFlow = ai.defineFlow(
-  {
-    name: 'chatInSpaceFlow',
-    inputSchema: ChatInSpaceInputSchema,
-    outputSchema: ChatInSpaceOutputSchema,
-  },
-  async (input) => {
-    const { output } = await chatInSpacePrompt(input);
-    return output!;
-  }
-);
+      });
+      const { output } = await chatInSpacePrompt(input);
+      return output!;
+    }
+  );
+  return chatInSpaceFlow(input);
+}

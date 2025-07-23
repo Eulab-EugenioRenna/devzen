@@ -6,18 +6,23 @@
  * - smartSearch - Searches bookmarks based on a natural language query.
  */
 
-import { ai } from '@/ai/genkit';
+import { getInitializedAI } from '@/ai/genkit';
 import { SmartSearchInputSchema, SmartSearchOutputSchema, type SmartSearchInput, type SmartSearchOutput } from '@/lib/types';
 
 export async function smartSearch(input: SmartSearchInput): Promise<SmartSearchOutput> {
-  return smartSearchFlow(input);
-}
-
-const smartSearchPrompt = ai.definePrompt({
-  name: 'smartSearchPrompt',
-  input: { schema: SmartSearchInputSchema },
-  output: { schema: SmartSearchOutputSchema },
-  prompt: `Sei un assistente di ricerca intelligente. Il tuo compito è analizzare una query di ricerca in linguaggio naturale e trovare i segnalibri più pertinenti da un elenco fornito. Tutta l'analisi DEVE essere in italiano.
+  const ai = await getInitializedAI();
+  const smartSearchFlow = ai.defineFlow(
+    {
+      name: 'smartSearchFlow',
+      inputSchema: SmartSearchInputSchema,
+      outputSchema: SmartSearchOutputSchema,
+    },
+    async (input) => {
+        const smartSearchPrompt = ai.definePrompt({
+            name: 'smartSearchPrompt',
+            input: { schema: SmartSearchInputSchema },
+            output: { schema: SmartSearchOutputSchema },
+            prompt: `Sei un assistente di ricerca intelligente. Il tuo compito è analizzare una query di ricerca in linguaggio naturale e trovare i segnalibri più pertinenti da un elenco fornito. Tutta l'analisi DEVE essere in italiano.
 
 Query dell'utente: "{{query}}"
 
@@ -37,16 +42,11 @@ Istruzioni:
 4.  Se nessun segnalibro è pertinente, restituisci un array vuoto.
 
 Restituisci l'output come un singolo oggetto JSON che corrisponda allo schema di output.`,
-});
+        });
 
-const smartSearchFlow = ai.defineFlow(
-  {
-    name: 'smartSearchFlow',
-    inputSchema: SmartSearchInputSchema,
-    outputSchema: SmartSearchOutputSchema,
-  },
-  async (input) => {
-    const { output } = await smartSearchPrompt(input);
-    return output!;
-  }
-);
+      const { output } = await smartSearchPrompt(input);
+      return output!;
+    }
+  );
+  return smartSearchFlow(input);
+}
