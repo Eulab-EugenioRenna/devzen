@@ -1,4 +1,5 @@
-import { genkit, configureGenkit } from 'genkit';
+
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getUserAction } from '@/app/actions/user';
 import type { User } from '@/lib/types';
@@ -26,12 +27,17 @@ export async function getInitializedAI() {
     const user = await getCachedUser();
 
     const apiKey = user?.aiApiKey;
-    const modelName = user?.aiModel || 'googleai/gemini-1.5-flash-latest';
+    let modelName = user?.aiModel || 'gemini-1.5-flash-latest';
 
     if (!apiKey || !modelName) {
         throw new Error("Per favore, configura la tua chiave API AI e il modello nelle impostazioni per utilizzare questa funzionalità.");
     }
     
+    // Ensure the model name has the required prefix
+    if (!modelName.startsWith('googleai/')) {
+        modelName = `googleai/${modelName}`;
+    }
+
     return genkit({
         plugins: [googleAI({ apiKey })],
         model: modelName,
