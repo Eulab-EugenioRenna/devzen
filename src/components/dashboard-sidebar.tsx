@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Edit, Download, LogOut, Share2 } from 'lucide-react';
+import { Plus, MoreVertical, Settings, GripVertical, ChevronsUpDown, Pencil, Trash2, Download, LogOut, Share2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { handleLogout } from '@/app/auth/actions';
 
@@ -115,8 +115,7 @@ export function DashboardSidebar() {
     showLinks,
     setShowLinks,
     handleNewSpaceClick,
-    handleEditAppInfo,
-    handleExport,
+    handleSettings,
   } = useDashboard();
 
   const isLogoUrl = appInfo.logo?.startsWith('http');
@@ -197,13 +196,9 @@ export function DashboardSidebar() {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" side="top">
-                    <DropdownMenuItem onClick={handleEditAppInfo}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Modifica Titolo & Logo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExport}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Esporta Spazio di Lavoro
+                    <DropdownMenuItem onClick={handleSettings}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Impostazioni
                     </DropdownMenuItem>
                      <DropdownMenuSeparator />
                     <DropdownMenuCheckboxItem

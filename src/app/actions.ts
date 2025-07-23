@@ -4,3 +4,4 @@ export * from './actions/items';
 export * from './actions/spaces';
 export * from './actions/ai';
 export * from './actions/app';
+export * from './actions/user';

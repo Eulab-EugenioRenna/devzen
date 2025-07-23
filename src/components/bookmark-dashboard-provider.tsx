@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput, SpaceLink, DevelopIdeaOutput, ChatMessage, IdeaPayload } from '@/lib/types';
+import type { AppInfo, Bookmark, Folder, Space, SpaceItem, ToolsAi, AnalyzeSpaceOutput, SpaceLink, DevelopIdeaOutput, ChatMessage, IdeaPayload, User } from '@/lib/types';
 import {
   DndContext,
   DragOverlay,
@@ -39,7 +39,9 @@ import {
   regenerateSummaryAction,
   sendWebhookAction,
   createWorkspaceFromIdeaAction,
-  developIdeaAction
+  developIdeaAction,
+  getUserAction,
+  updateAiSettingsAction
 } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +54,7 @@ import { AddEditSpaceDialog } from './add-edit-space-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { FolderViewDialog } from './folder-view-dialog';
 import { CustomizeItemDialog } from './customize-item-dialog';
-import { EditAppInfoDialog } from './edit-app-info-dialog';
+import { SettingsDialog } from './settings-dialog';
 import { AddFromLibraryDialog } from './add-from-library-dialog';
 import { pb } from '@/lib/pocketbase_client';
 import { toolsAiCollectionName, bookmarksCollectionName, spacesCollectionName, usersCollectionName, menuCollectionName } from '@/lib/pocketbase';
@@ -74,6 +76,7 @@ interface DashboardContextType {
   activeSpaceId: string;
   viewMode: 'grid' | 'list';
   appInfo: AppInfo;
+  user: User | null;
   tools: ToolsAi[];
   showLinks: boolean;
   activeDragItem: { item: SpaceItem; type: string } | null;
@@ -97,9 +100,10 @@ interface DashboardContextType {
   handleDeleteSpace: (space: Space) => void;
   handleUnlinkSpace: (link: SpaceLink) => void;
   handleShareItem: (item: SpaceItem | Space) => void;
-  handleAppInfoSave: (formData: FormData) => void;
-  handleEditAppInfo: () => void;
-  handleExport: () => void;
+  handleSettings: () => void;
+  handleAppInfoSave: (formData: FormData) => Promise<void>;
+  handleExport: () => Promise<void>;
+  handleAiSettingsSave: (data: { aiApiKey: string; aiModel: string; }) => Promise<void>;
   handleGenerateWorkspace: () => void;
   handleDevelopIdea: () => void;
   handleAnalyzeSpace: () => void;
@@ -153,7 +157,8 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   
   const [appInfo, setAppInfo] = React.useState<AppInfo>(initialAppInfo);
-  const [isEditingAppInfo, setIsEditingAppInfo] = React.useState(false);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
   
   const [showLinks, setShowLinks] = React.useState(false);
 
@@ -175,14 +180,16 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   const { toast } = useToast();
 
   const refreshAllData = React.useCallback(async () => {
-    const [refreshedSpaces, refreshedItems, refreshedTools] = await Promise.all([
+    const [refreshedSpaces, refreshedItems, refreshedTools, refreshedUser] = await Promise.all([
       getSpacesAction(),
       getItemsAction(),
       getToolsAiAction(),
+      getUserAction(),
     ]);
     setSpaces(refreshedSpaces);
     setItems(refreshedItems);
     setTools(refreshedTools);
+    setUser(refreshedUser);
   }, []);
 
   React.useEffect(() => {
@@ -193,7 +200,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
     
     const subscribeToCollections = () => {
-      const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName];
+      const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName, usersCollectionName];
       collections.forEach(collectionName => {
         pb.collection(collectionName).subscribe('*', handleSubscriptionChange).catch(err => {
             console.error(`Failed to subscribe to ${collectionName}:`, err?.originalError || err);
@@ -202,15 +209,22 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     };
 
     subscribeToCollections();
+    refreshAllData();
 
     return () => {
-       const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName];
+       const collections = [bookmarksCollectionName, spacesCollectionName, menuCollectionName, toolsAiCollectionName, usersCollectionName];
        collections.forEach(collectionName => {
         pb.collection(collectionName).unsubscribe('*');
        });
     };
   }, [refreshAllData]);
   
+  React.useEffect(() => {
+    if (user && !user.aiApiKey) {
+      setIsSettingsOpen(true);
+    }
+  }, [user]);
+
   React.useEffect(() => {
     if (spaces.length > 0 && !spaces.find(s => s.id === activeSpaceId)) {
       setActiveSpaceId(spaces[0].id);
@@ -506,12 +520,20 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
   
   const handleAppInfoSave = async (formData: FormData) => {
     try {
-        const updatedInfo = await updateAppInfoAction(appInfo.id, formData);
-        setAppInfo(updatedInfo); // Also update locally for immediate feedback
-        setIsEditingAppInfo(false);
+        await updateAppInfoAction(appInfo.id, formData);
         toast({ title: 'Info app aggiornate!', description: 'Il nome e l\'icona della tua applicazione sono stati cambiati.'});
     } catch (e) {
         toast({ variant: 'destructive', title: 'Errore', description: 'Impossibile aggiornare le info dell\'app.' });
+    }
+  }
+  
+  const handleAiSettingsSave = async (data: { aiApiKey: string, aiModel: string }) => {
+    try {
+      await updateAiSettingsAction(data);
+      toast({ title: 'Impostazioni AI salvate!', description: 'La tua chiave API e il modello sono stati aggiornati.'});
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Errore sconosciuto.';
+      toast({ variant: 'destructive', title: 'Errore', description: message });
     }
   }
 
@@ -571,6 +593,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     activeSpaceId,
     viewMode,
     appInfo,
+    user,
     tools,
     showLinks,
     activeDragItem,
@@ -590,9 +613,10 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
     handleDeleteSpace: setDeletingSpace,
     handleUnlinkSpace,
     handleShareItem: setSharingItem,
+    handleSettings: () => setIsSettingsOpen(true),
     handleAppInfoSave,
-    handleEditAppInfo: () => setIsEditingAppInfo(true),
     handleExport,
+    handleAiSettingsSave,
     handleGenerateWorkspace: () => setIsGeneratingWorkspace(true),
     handleDevelopIdea: () => setIsDevelopingIdea(true),
     handleAnalyzeSpace,
@@ -687,7 +711,7 @@ export function BookmarkDashboardProvider({ initialItems, initialSpaces, initial
           onNoteUpdated={handleNoteUpdate}
         />}
         {customizingItem && <CustomizeItemDialog item={customizingItem} onOpenChange={(open) => !open && setCustomizingItem(null)} onItemUpdated={handleCustomizeItem} />}
-        {isEditingAppInfo && <EditAppInfoDialog appInfo={appInfo} onSave={handleAppInfoSave} onOpenChange={setIsEditingAppInfo} />}
+        {isSettingsOpen && <SettingsDialog onOpenChange={setIsSettingsOpen} />}
         {isAddingFromLibrary && <AddFromLibraryDialog tools={tools} onBookmarkAdded={handleAddFromLibraryFlow} onOpenChange={setIsAddingFromLibrary} onLibraryImported={refreshAllData} />}
         {isGeneratingWorkspace && <GenerateWorkspaceDialog onOpenChange={setIsGeneratingWorkspace} onWorkspaceGenerated={handleWorkspaceGenerated} />}
         {isDevelopingIdea && <DevelopIdeaDialog 

@@ -48,6 +48,16 @@ export interface AppInfo {
   logo: string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  aiApiKey?: string;
+  aiModel?: string;
+}
+
 export const ToolsAiSummarySchema = z.object({
     apiAvailable: z.boolean(),
     category: z.string(),
