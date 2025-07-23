@@ -39,8 +39,10 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Download, Image as ImageIcon, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { getIcon } from './icons';
+import { getAvailableAIModelsAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 // ===== Personalizza Tab =====
 
@@ -162,12 +164,6 @@ const ExportTab = () => {
 
 // ===== Connessioni Tab =====
 
-const models = [
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest",
-  "gemini-1.0-pro",
-];
-
 const connectionsSchema = z.object({
   aiApiKey: z.string().min(1, { message: 'La chiave API è obbligatoria.' }),
   aiModel: z.string().min(1, { message: 'Devi selezionare un modello.' }),
@@ -175,16 +171,51 @@ const connectionsSchema = z.object({
 
 const ConnectionsTab = () => {
     const { user, handleAiSettingsSave } = useDashboard();
+    const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [showKey, setShowKey] = React.useState(false);
+    const [availableModels, setAvailableModels] = React.useState<string[]>([]);
+    const [isLoadingModels, setIsLoadingModels] = React.useState(false);
+    const [isKeyValid, setIsKeyValid] = React.useState(false);
 
     const form = useForm<z.infer<typeof connectionsSchema>>({
         resolver: zodResolver(connectionsSchema),
         defaultValues: {
             aiApiKey: user?.aiApiKey ?? '',
-            aiModel: user?.aiModel ?? models[0],
+            aiModel: user?.aiModel ?? '',
         },
     });
+
+    const apiKey = form.watch('aiApiKey');
+
+    React.useEffect(() => {
+        const fetchModels = async () => {
+            if (apiKey && apiKey.length > 20) { // Basic check
+                setIsLoadingModels(true);
+                setIsKeyValid(false);
+                try {
+                    const models = await getAvailableAIModelsAction(apiKey);
+                    setAvailableModels(models);
+                    setIsKeyValid(true);
+                    if (models.length > 0 && !form.getValues('aiModel')) {
+                        form.setValue('aiModel', models.find(m => m.includes('flash')) || models[0]);
+                    }
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : 'Errore sconosciuto';
+                    toast({ variant: 'destructive', title: 'Errore Chiave API', description: message });
+                    setAvailableModels([]);
+                } finally {
+                    setIsLoadingModels(false);
+                }
+            } else {
+                setAvailableModels([]);
+                setIsKeyValid(false);
+            }
+        };
+
+        const debounce = setTimeout(fetchModels, 500);
+        return () => clearTimeout(debounce);
+    }, [apiKey, form, toast]);
 
     const onSubmit = async (values: z.infer<typeof connectionsSchema>) => {
         setIsSubmitting(true);
@@ -207,19 +238,26 @@ const ConnectionsTab = () => {
                                     type={showKey ? 'text' : 'password'}
                                     placeholder="Inserisci la tua chiave API..."
                                     {...field}
-                                    className="pr-10"
+                                    className="pr-16"
                                 />
                             </FormControl>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                                onClick={() => setShowKey(!showKey)}
-                            >
-                                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                <span className="sr-only">{showKey ? 'Nascondi' : 'Mostra'} chiave</span>
-                            </Button>
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                {isLoadingModels ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : isKeyValid ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                                ) : null}
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => setShowKey(!showKey)}
+                                >
+                                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    <span className="sr-only">{showKey ? 'Nascondi' : 'Mostra'} chiave</span>
+                                </Button>
+                            </div>
                        </div>
                       <FormDescription>
                         Puoi ottenere la tua chiave da <a href="https://aistudio.google.com/keys" target="_blank" rel="noopener noreferrer" className="underline text-primary">Google AI Studio</a>.
@@ -234,14 +272,14 @@ const ConnectionsTab = () => {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Modello AI</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={availableModels.length === 0}>
                                 <FormControl>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Seleziona un modello..." />
+                                        <SelectValue placeholder={apiKey ? "Seleziona un modello..." : "Inserisci una chiave API per caricare i modelli"} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {models.map((model) => (
+                                    {availableModels.map((model) => (
                                         <SelectItem key={model} value={model}>
                                         {model}
                                         </SelectItem>
@@ -256,7 +294,7 @@ const ConnectionsTab = () => {
                     )}
                 />
                 <DialogFooter>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || !isKeyValid}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Salva Connessioni
                     </Button>

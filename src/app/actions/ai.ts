@@ -22,6 +22,7 @@ import { createServerClient } from '@/lib/pocketbase_server';
 import { bookmarksCollectionName, spacesCollectionName } from '@/lib/pocketbase';
 import { recordToSpace, recordToSpaceItem } from './utils';
 import { format } from 'date-fns';
+import { z } from 'zod';
 
 // ===== AI Workspace Generation Actions =====
 
@@ -314,5 +315,58 @@ export async function sendWebhookAction(url: string, data: any): Promise<{ succe
       throw new Error(error.message);
     }
     throw new Error('Si è verificato un errore sconosciuto durante l\'invio del webhook.');
+  }
+}
+
+// ===== Settings Actions =====
+const ModelSchema = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  supportedGenerationMethods: z.array(z.string()),
+});
+
+const ModelsResponseSchema = z.object({
+  models: z.array(ModelSchema),
+});
+
+export async function getAvailableAIModelsAction(apiKey: string): Promise<string[]> {
+  if (!apiKey) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Failed to fetch models:', errorData.error.message);
+      throw new Error(`Impossibile recuperare i modelli: ${errorData.error.message}`);
+    }
+    
+    const data = await response.json();
+    const parsed = ModelsResponseSchema.safeParse(data);
+
+    if (!parsed.success) {
+        console.error('Invalid model response structure:', parsed.error);
+        throw new Error('La risposta dell\'API del modello non è valida.');
+    }
+
+    return parsed.data.models
+      .filter(model => model.supportedGenerationMethods.includes('generateContent'))
+      .map(model => model.name.replace('models/', ''))
+      .sort();
+      
+  } catch (error) {
+    console.error("Errore nel recupero dei modelli AI:", error);
+    if (error instanceof Error) {
+      // Re-throw specific, user-friendly errors
+      if (error.message.includes('API key not valid')) {
+        throw new Error('La chiave API fornita non è valida. Controllala e riprova.');
+      }
+       throw new Error(error.message);
+    }
+    throw new Error('Si è verificato un errore sconosciuto durante il recupero dei modelli.');
   }
 }
